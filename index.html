@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Apps</title>
+  <link rel="stylesheet" media="all" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.0-rc2/css/bootstrap.min.css">
+</head>
+<body>
+
+  <div style="margin:15px;">
+    <div>Hello World v2.0</div>
+    <div style="height:60px; margin-top:5px;">
+      <div class="alert" style="display:none;"></div>
+    </div>
+    <div id="chat-history" style="border:1px solid #ccc; width:500px; height:200px; overflow-y:auto;"></div>
+    <div style="margin-top:3px;">
+      Chat: <input type="text" id="mychat" required="required" style="width:409px;" />
+      <button type="button" id="send-chat">Send</button>
+    </div>
+
+    <hr style="margin:25px 0;" />
+
+    <div class="loginWrap">
+      <div style="padding:1px 2px">Username: <input type="text" id="username" required="required" /></div>
+      <div style="padding:1px 2px">Password: <input type="password" id="password" required="required" /></div>
+      <button type="button" id="login" disabled="disabled">Login</button>
+    </div>
+    <div class="commandWrap" style="display:none;">
+      <div>Command: <input type="text" id="command" required="required" /></div>
+      <button type="button" id="send-command">Send</button>
+    </div>
+
+    <hr style="margin:25px 0;" />
+
+    <div class="clientDevice" style="display:none; margin-top:10px;">
+      <h3>Add New Device</h3>
+      <div style="padding:1px 2px">Serial No: <input type="text" id="serial-no" required="required" /></div>
+      <button type="button" id="register-device" disabled="disabled">Add</button>
+    </div>
+    <div class="addDevice" style="display:none; margin-top:10px;">
+      <h3>Add Client Account</h3>
+      <div style="padding:1px 2px">Username: <input type="text" id="add-username" required="required" /></div>
+      <div style="padding:1px 2px">Password: <input type="password" id="add-password" required="required" /></div>
+      <div style="padding:1px 2px">Fullname: <input type="text" id="add-fullname" required="required" /></div>
+      <button type="button" id="add-client" disabled="disabled">Add</button>
+
+      <hr style="margin:25px 0;" />
+
+      <h3>Add New Device</h3>
+      <div style="padding:1px 2px">Name: <input type="text" id="device-name" required="required" /></div>
+      <div style="padding:1px 2px">Mac Address: <input type="text" id="mac-add" maxlength="12" required="required" /></div>
+      <div style="padding:1px 2px">Serial No: <input type="text" id="serial" required="required" /></div>
+      <button type="button" id="add-device" disabled="disabled">Add</button>
+    </div>
+  </div>
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+  <script>
+      var _client = '';
+      var _data   = {};
+
+      function loggedSuccess () {
+          var deviceCls = '';
+          if (typeof _data.root == 'undefined') {
+              _client   = _data.client;
+              deviceCls = 'clientDevice';
+          } else {
+              deviceCls = 'addDevice';
+          }
+
+          $('div.loginWrap').slideUp(function(){
+              $('div.commandWrap,div.'+deviceCls).fadeIn(function(){
+                  $('#command').focus();
+              });
+          });
+      } // loggedSuccess
+
+      function commandFail () {
+          $('div.commandWrap,div.clientDevice,div.addDevice').slideUp(function(){
+              $('div.loginWrap').fadeIn(function(){
+                  $('#username').focus();
+              });
+          });
+      } // commandFail
+
+      function commandSuccess () {
+          $('#command').val('').focus();
+      } // commandSuccess
+
+      function addClientSuccess () {
+          $('#add-username,#add-password,#add-fullname').val('');
+          $('#add-username').focus();
+      } // addClientSuccess
+
+      function addDeviceSuccess () {
+          $('#device-name,#mac-add,#serial').val('');
+          $('#device-name').focus();
+      } // addDeviceSuccess
+
+      function resetMessage (second) {
+          if (typeof second == 'undefined') {
+              second = 3000;
+          }
+          setTimeout(function(){
+              $('div.alert').fadeOut(function(){
+                  $(this).attr('class', 'alert').html('');
+              });
+          }, second);
+      } // resetMessage
+
+      var socket = io.connect('http://192.168.43.46:8080');
+      socket.on('WelcomeMessage', function(data){
+          socket.emit('message server', { msg: 'A new guest has connected' });
+          $('div.alert').attr('class', 'alert alert-info').html(data.message).fadeIn();
+          $('button').removeAttr('disabled');
+          resetMessage(5000);
+      });
+      socket.on('StatusUpdate', function(data){
+          if (data.status) {
+              $('div.alert').attr('class', 'alert alert-success').html(data.mesg).fadeIn();
+          } else {
+              $('div.alert').attr('class', 'alert alert-danger').html(data.mesg).fadeIn();
+          }
+          resetMessage();
+
+          _data = data;
+          (new Function(data.callback+'();'))();
+      });
+      socket.on('netChat', function(data){
+          var name = (typeof data.user == 'undefined') ? 'Device '+data.client : data.user;
+          var line = '<div>['+data.time+'] '+name+': '+data.message+'</div>';
+          $('#chat-history').append(line);
+      });
+      socket.on('disconnect', function(){
+          $('div.alert').attr('class', 'alert alert-danger').html('Server is offline').fadeIn();
+          $('button').attr('disabled', 'disabled');
+      });
+
+
+      var loginFn = function(){
+          var usr = $('#username').val();
+          var pwd = $('#password').val();
+          if (usr && pwd) {
+              socket.emit('login', {
+                  username: usr,
+                  password: pwd
+              });
+          }
+      };
+      var chatFn = function(){
+          var chat = $('#mychat').val();
+          if (chat) {
+              var date = new Date();
+              var line = '<div>['+date.toTimeString()+'] Me: '+chat+'</div>';
+
+              socket.emit('send chat', chat);
+              $('#mychat').val('').focus();
+              $('#chat-history').append(line);
+          }
+      };
+      var commandFn = function(){
+          var cmd = $('#command').val();
+          if (cmd) {
+              socket.emit('command device', { command:cmd });
+          }
+      };
+      var registerFn = function(){
+          socket.emit('add device', {
+              serial: $('#serial-no').val()
+          });
+      };
+
+      $('#password').keypress(function(e){
+          if (e.keyCode == 13) { loginFn(); }
+      });
+      $('#mychat').keypress(function(e){
+          if (e.keyCode == 13) { chatFn(); }
+      });
+      $('#command').keypress(function(e){
+          if (e.keyCode == 13) { commandFn(); }
+      });
+      $('#serial-no').keypress(function(e){
+          if (e.keyCode == 13) { registerFn(); }
+      });
+      $('#login').click(loginFn);
+      $('#send-chat').click(chatFn);
+      $('#send-command').click(commandFn);
+      $('#register-device').click(registerFn);
+      $('#add-device').click(function(){
+          socket.emit('add device', {
+              name: $('#device-name').val(),
+              macAdd: $('#mac-add').val(),
+              serial: $('#serial').val()
+          });
+      });
+      $('#add-client').click(function(){
+          socket.emit('add client', {
+              username: $('#add-username').val(),
+              password: $('#add-password').val(),
+              fullname: $('#add-fullname').val()
+          });
+      });
+  </script>
+</body>
+</html>
