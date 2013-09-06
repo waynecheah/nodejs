@@ -250,7 +250,7 @@ var server = net.createServer(function (socket) {
                     }
                 });
             }
-        } else if (mesg.substr(0,4) == 'BODY' || body.indexOf(mesg.substr(0,4)) >= 0) {
+        } else if (mesg.substr(0,4) == 'BODY' || (body.indexOf(mesg.substr(0,4)) >= 0 && mesg.substr(6,1) != '?')) {
             if (typeof socket.logged == 'undefined' || !socket.logged) {
                 log('n', 'w', 'Device is not logged yet');
                 socket.write('e1\r\n');
@@ -261,7 +261,7 @@ var server = net.createServer(function (socket) {
                 socket.body = true;
                 socket.bCon = {};
             } else if (mesg.substr(0,5) == 'BTYP=') {
-                log('n', 'i', mesg);
+                log('n', 'i', 'Body type has updated. '+mesg);
             } else if (body.indexOf(mesg.substr(0,4)) >= 0) { // device is updating server of its current status
                 var attr = mesg.substr(0,4);
                 var no   = mesg.substr(4,2);
@@ -337,14 +337,33 @@ var server = net.createServer(function (socket) {
             }
         } else if (body.indexOf(mesg.substr(0,4)) >= 0 && mesg.substr(6,1) == '?') { // device ask if server want to update its attribute
             log('n', 'i', 'Change device attribute: '+mesg.substr(0,6));
+            var attr = mesg.substr(0,4);
+            var no   = mesg.substr(4,2);
+            var val  = '';
+
+            if (typeof socket.bCon == 'undefined') {
+                log('n', 'e', 'BODY has not initialized\r\n');
+                socket.write('e1\r\n');
+                return;
+            }
+            if (typeof socket.bCon[attr+no] != 'undefined') {
+                val = socket.bCon[attr+no];
+                //socket.write(val+'\r\n');
+            } else {
+                log('n', 'i', 'Unrecognized BODY attribute name ['+attr+no+']');
+                socket.write('e1\r\n');
+                return;
+            }
+
+            // TODO(remove): testing purpose, to be removed
             if (mesg.substr(0,4) == 'BGPI') {
-                socket.write('1,Input'+mesg.substr(4,2));
+                socket.write('1,Input'+no+'\r\n');
             } else if (mesg.substr(0,4) == 'BGPO') {
-                socket.write('1,Output'+mesg.substr(4,2));
+                socket.write('1,Output'+no+'\r\n');
             } else if (mesg.substr(0,4) == 'BVAR') {
-                socket.write('Nah,Var'+mesg.substr(4,2));
+                socket.write('Nah,Var'+no+'\r\n');
             } else if (mesg.substr(0,4) == 'BSTA') {
-                socket.write('1,Status'+mesg.substr(4,2));
+                socket.write('1,Status'+no+'\r\n');
             } else {
                 socket.write('e1\r\n');
             }
@@ -372,6 +391,12 @@ var server = net.createServer(function (socket) {
                 socket.write('HEAD has not initialized\r\n');
             } else {
                 socket.write(JSON.stringify(socket.hid)+'\r\n');
+            }
+
+            if (typeof socket.bCon == 'undefined') {
+                socket.write('BODY has not initialized\r\n');
+            } else {
+                socket.write(JSON.stringify(socket.bCon)+'\r\n');
             }
         } else if (mesg == 'aes') {
             var encrypted = encryption('hellohellohello!', 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
