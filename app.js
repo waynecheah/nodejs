@@ -11,7 +11,7 @@ var nodemailer = require('nodemailer');
 var sockets    = [];
 var websockets = [];
 var _timer     = null;
-var host       = '192.168.1.75';
+var host       = '127.0.0.1';
 
 /*var config  = {
  mail: require('./config/mail')
@@ -357,14 +357,19 @@ var server = net.createServer(function (socket) {
 
             // TODO(remove): testing purpose, to be removed
             if (mesg.substr(0,4) == 'BGPI') {
+                log('n', 'i', 'value change to 1,Input'+no);
                 socket.write('1,Input'+no+'\r\n');
             } else if (mesg.substr(0,4) == 'BGPO') {
+                log('n', 'i', 'value change to 1,Output'+no);
                 socket.write('1,Output'+no+'\r\n');
             } else if (mesg.substr(0,4) == 'BVAR') {
-                socket.write('Nah,Var'+no+'\r\n');
+                log('n', 'i', 'value change to Nah!,Var'+no);
+                socket.write('Nah!,Var'+no+'\r\n');
             } else if (mesg.substr(0,4) == 'BSTA') {
+                log('n', 'i', 'value change to 1,Status'+no);
                 socket.write('1,Status'+no+'\r\n');
             } else {
+                log('n', 'e', 'Unknown attribute name ['+mesg.substr(0,4)+']');
                 socket.write('e1\r\n');
             }
         } else if (mesg.substr(0,4) == 'RQS?') {
@@ -520,15 +525,34 @@ io.sockets.on('connection', function(sock) {
 
             if (client && typeof client.fullname != 'undefined' && client.fullname) {
                 log('w', 's', 'User has logged as '+data.username);
+                Device.findOne({ clientId:client.id }, 'id serial', function(err, device){
+                    var body = [];
 
-                // TODO(addon): get device's current status
-                sock.set('user', client, function () {
-                    sock.emit('StatusUpdate', {
-                        status: true,
-                        callback: 'loggedSuccess',
-                        client: client,
-                        //devices: {},
-                        mesg: 'You have successfully logged'
+                    if (err) {
+                        log('w', 'e', err);
+                        sock.emit('StatusUpdate', {
+                            status: false,
+                            mesg: 'Find devices process failure, please try again..'
+                        });
+                        return;
+                    }
+
+                    if (device && typeof device.serial != 'undefined' && device.serial) { // list all owner devices
+                        for (var i=0; i<sockets.length; i++) { // loop all devices that on the line
+                            if (sockets[0].hid.h3 == device.serial) { // owner's device match & found online
+                                body = sockets[0].bCon;
+                            }
+                        }
+                    }
+
+                    sock.set('user', client, function () {
+                        sock.emit('StatusUpdate', {
+                            status: true,
+                            callback: 'loggedSuccess',
+                            client: client,
+                            body: body,
+                            mesg: 'You have successfully logged'
+                        });
                     });
                 });
             } else {
@@ -688,6 +712,17 @@ io.sockets.on('connection', function(sock) {
                     });
                 }
             });
+        });
+    });
+    sock.on('set body', function(req){
+        sock.get('user', function(err, user){
+            if (typeof user.username == 'undefined') {
+                sock.emit('StatusUpdate', {
+                    status: false,
+                    mesg: 'You have not logged'
+                });
+                return;
+            }
         });
     });
     sock.on('command device', function(data){

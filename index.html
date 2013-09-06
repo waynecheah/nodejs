@@ -57,12 +57,14 @@
   <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
   <script>
       var _client = '';
+      var _body   = '';
       var _data   = {};
 
       function loggedSuccess () {
           var deviceCls = '';
           if (typeof _data.root == 'undefined') {
               _client   = _data.client;
+              _body     = _data.body;
               deviceCls = 'clientDevice';
           } else {
               deviceCls = 'addDevice';
