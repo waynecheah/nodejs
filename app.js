@@ -731,6 +731,7 @@ io.sockets.on('connection', function(sock) {
     });
     sock.on('disconnect', function () {
         io.sockets.emit('user disconnected');
+        var i = websockets.indexOf(sock);
         websockets.splice(i, 1);
     });
 });
