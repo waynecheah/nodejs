@@ -250,7 +250,7 @@ var server = net.createServer(function (socket) {
                     }
                 });
             }
-        } else if (mesg.substr(0,4) == 'BODY' || (body.indexOf(mesg.substr(0,4)) >= 0 && mesg.substr(6,1) != '?')) {
+        } else if (mesg.substr(0,4) == 'BODY' || mesg.substr(0,4) == 'BTYP' || (body.indexOf(mesg.substr(0,4)) >= 0 && mesg.substr(6,1) == '=')) {
             if (typeof socket.logged == 'undefined' || !socket.logged) {
                 log('n', 'w', 'Device is not logged yet');
                 socket.write('e1\r\n');
