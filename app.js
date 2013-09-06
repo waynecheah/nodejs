@@ -357,17 +357,17 @@ var server = net.createServer(function (socket) {
 
             // TODO(remove): testing purpose, to be removed
             if (mesg.substr(0,4) == 'BGPI') {
-                log('n', 'i', 'value change to 1,Input'+no);
-                socket.write('1,Input'+no+'\r\n');
+                log('n', 'i', 'value not available,Input'+no);
+                socket.write('na\r\n');
             } else if (mesg.substr(0,4) == 'BGPO') {
                 log('n', 'i', 'value change to 1,Output'+no);
-                socket.write('1,Output'+no+'\r\n');
+                socket.write('d=1'+no+'\r\n');
             } else if (mesg.substr(0,4) == 'BVAR') {
-                log('n', 'i', 'value change to Nah!,Var'+no);
-                socket.write('Nah!,Var'+no+'\r\n');
+                log('n', 'i', 'value not available,Var'+no);
+                socket.write('na\r\n');
             } else if (mesg.substr(0,4) == 'BSTA') {
-                log('n', 'i', 'value change to 1,Status'+no);
-                socket.write('1,Status'+no+'\r\n');
+                log('n', 'i', 'value not available,Status'+no);
+                socket.write('na\r\n');
             } else {
                 log('n', 'e', 'Unknown attribute name ['+mesg.substr(0,4)+']');
                 socket.write('e1\r\n');
