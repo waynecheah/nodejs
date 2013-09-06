@@ -11,7 +11,7 @@ var nodemailer = require('nodemailer');
 var sockets    = [];
 var websockets = [];
 var _timer     = null;
-var host       = '127.0.0.1';
+var host       = '192.168.1.75';
 
 /*var config  = {
  mail: require('./config/mail')
