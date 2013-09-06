@@ -108,7 +108,7 @@
           }, second);
       } // resetMessage
 
-      var socket = io.connect('http://192.168.43.46:8080');
+      var socket = io.connect('http://cheah.homeip.net:8080');
       socket.on('WelcomeMessage', function(data){
           socket.emit('message server', { msg: 'A new guest has connected' });
           $('div.alert').attr('class', 'alert alert-info').html(data.message).fadeIn();
