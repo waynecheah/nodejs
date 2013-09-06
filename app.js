@@ -19,12 +19,12 @@ var host       = '127.0.0.1';
 var smtpTransport = nodemailer.createTransport('SMTP', {
     service: 'Gmail',
     auth: {
-        user: 'username@gmail.com',
-        pass: 'password'
+        user: 'nodejs@kokweng.net',
+        pass: 'jumpknee123'
     }
 });
 var mailOptions = {
-    from: "Wayne Cheah ✔ <cheahkokweng@gmail.com>", // sender address
+    from: "Nodejs Rock ✔ <nodejs@kokweng.net>", // sender address
     to: "cheah_88@hotmail.com", // list of receivers
     subject: "Say Hello ✔", // Subject line
     text: "Hello world ✔", // plaintext body
@@ -604,7 +604,7 @@ io.sockets.on('connection', function(sock) {
                         });
 
                         var mailOpts = {
-                            from: "Wayne Cheah ✔ <cheahkokweng@gmail.com>",
+                            from: "Nodejs Rock ✔ <nodejs@kokweng.net>",
                             to: user.fullname+" <"+user.username+">",
                             subject: "Your new registered device verification code ✔",
                             text: 'Dear '+user.fullname+", ✔\r\nFollowing is your newly registered device verification code\r\nCode: "+data.id,
