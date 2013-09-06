@@ -17,7 +17,7 @@ var host       = '127.0.0.1';
  mail: require('./config/mail')
  };*/
 var smtpTransport = nodemailer.createTransport('SMTP', {
-    service: 'Gmail',
+    service: 'KokWeng.net',
     auth: {
         user: 'nodejs@kokweng.net',
         pass: 'jumpknee123'
