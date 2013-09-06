@@ -10,7 +10,7 @@ var nodemailer = require('nodemailer');
 
 var sockets    = [];
 var websockets = [];
-var _websock   = '';
+var _timer     = null;
 var host       = '127.0.0.1';
 
 /*var config  = {
@@ -52,6 +52,15 @@ function decryption (data, key, iv, format) {
     decipher.setAutoPadding(false);
     return decipher.update(data, format, 'utf8');
 } // decryption
+
+function authorised (socket) {
+    if (typeof socket.logged == 'undefined' || !socket.logged) {
+        log('n', 'w', 'Device is not logged yet');
+        socket.write('e1\r\n');
+        return false;
+    }
+    return true;
+} // authorised
 
 function datetime () {
     var date = new Date();
@@ -300,6 +309,7 @@ var server = net.createServer(function (socket) {
         } else if (mesg == 'QUE?') {
             var que = false;
 
+            //if (!authorised()) { return; }
             if (typeof socket.logged == 'undefined' || !socket.logged) {
                 log('n', 'w', 'Device is not logged yet');
                 socket.write('e1\r\n');
@@ -310,7 +320,7 @@ var server = net.createServer(function (socket) {
                 if (typeof websockets[i].store != 'undefined') {
                     if (typeof websockets[i].store.data != 'undefined') {
                         if (typeof websockets[i].store.data.user != 'undefined') {
-                            if (websockets[i].store.data.user.id == socket.clientId) {
+                            if (websockets[i].store.data.user.id == socket.clientId) { // device's owner found online
                                 que = true;
                             }
                         }
@@ -319,10 +329,10 @@ var server = net.createServer(function (socket) {
             }
 
             if (que) {
-                log('n', 'i', 'Device owner is on the line, stay awake and get up for work');
+                log('n', 'i', 'Something in queue, device need to send each BODY ATTRIBUTE(?) to get all update');
                 socket.write('ok\r\n');
             } else {
-                log('n', 'i', 'Device owner is offline, device may turn to sleep mode now');
+                log('n', 'i', 'Nothing in queue, so nothing to update device BODY');
                 socket.write('na\r\n');
             }
         } else if (body.indexOf(mesg.substr(0,4)) >= 0 && mesg.substr(6,1) == '?') { // device ask if server want to update its attribute
@@ -339,22 +349,23 @@ var server = net.createServer(function (socket) {
                 socket.write('e1\r\n');
             }
         } else if (mesg.substr(0,4) == 'RQS?') {
-            log('n', 'i', 'Device send request if both party able to continue comunicate, reply ok to continue');
+            log('n', 'i', 'Device send request to check if both party still in connect and maintaining the communication, reply ok to continue');
             socket.write('ok\r\n');
         } else if (mesg.substr(0,4) == 'DNT?') {
-            log('n', 'i', 'Device asking for current time ['+datetime()+']');
+            log('n', 'i', 'Device asking for current time ['+datetime()+'] to update its timer');
             socket.write('d=\r\n'); // TODO(date): yyymmdd, hhmmss
         } else if (mesg.substr(0,5) == 'STS=1') {
             log('n', 'i', 'Device asking if server wanted to lead, reply ok to lead');
-            socket.write('ok\r\n'); // server refuse to lead, d=0\r\n
-            log('n', 'i', 'replied ok already');
+            socket.write('ok\r\n'); // if server refuse to lead, send d=0\r\n
+            log('n', 's', 'Server is leading now!');
 
-            setTimeout(function(){
-                log('n', 'i', 'Send d=0 to ask device to lead itself');
-                //socket.write('d=0\r\n');
-            }, 3000);
+            _timer = setTimeout(function(){ // TODO(remove): for temporary testing propose
+                log('n', 'i', 'Send d=0 to ask device to lead back itself');
+                socket.write('d=0\r\n');
+            }, 10000);
         } else if (mesg.substr(0,5) == 'STS=0') {
-            log('n', 'i', 'Device urgently want to lead back!!!');
+            log('n', 'i', 'Device URGENTLY want to lead back, probably some Event has triggered!!!');
+            clearTimeout(_timer);
             socket.write('ok\r\n');
         } else if (mesg == 'check') { // for debug only
             if (typeof socket.hid == 'undefined') {
@@ -695,6 +706,7 @@ io.sockets.on('connection', function(sock) {
     });
     sock.on('disconnect', function () {
         io.sockets.emit('user disconnected');
+        websockets.splice(i, 1);
     });
 });
 
