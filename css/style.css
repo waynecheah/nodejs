@@ -1,0 +1,39 @@
+h3.listTitle {
+    padding-top: 9px;
+    margin: 0;
+}
+img.freesize, img.freesize2 {
+    max-width: none;
+    max-height: none;
+}
+img.freesize2 {
+    left: auto;
+}
+#page-lights div.slider {
+    margin: 0;
+}
+#page-lights div.slider div.ui-slider {
+    width: 100%;
+}
+.divcenter {
+    margin-left: auto;
+    margin-right: auto;
+}
+.bold {
+    font-weight: bold;
+}
+.normal {
+    font-weight: normal;
+}
+.italic {
+    font-style: italic;
+}
+.center {
+    text-align: center;
+}
+.right {
+    text-align: right;
+}
+.grey {
+    color: #808080;
+}

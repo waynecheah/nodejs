@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>
+    Smart Home Mobile
+  </title>
+  <meta name="description" content="here is the description of the mobile app">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+  <link href="http://fonts.googleapis.com/css?family=PT+Sans+Narrow:400,700" rel='stylesheet' />
+
+  <link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.css" />
+  <link rel="stylesheet" href="css/bootstrap.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+</head>
+<body>
+<!--[if lt IE 7]>
+<p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
+<![endif]-->
+
+<!-- Add your site or application content here -->
+
+    <!-- Sign In -->
+    <div data-role="page" id="sign-in">
+      <div id="signin" data-theme="b" data-role="header" data-position="fixed" class="signin">
+        <h3>
+          Sign In
+        </h3>
+      </div>
+      <div data-role="content">
+        <div data-role="fieldcontain">
+          <label for="username">
+            Username
+          </label>
+          <input name="username" id="username" placeholder="username" value="" type="text" data-mini="true">
+        </div>
+        <div data-role="fieldcontain">
+          <label for="password">
+            Password
+          </label>
+          <input name="password" id="password" placeholder="password" value="" type="password" data-mini="true">
+        </div>
+        <div data-role="fieldcontain">
+          <label for="save-password">
+            Save Password
+          </label>
+          <select name="toggleswitch1" id="save-password" data-theme="" data-role="slider" data-mini="true">
+            <option value="off">
+              No
+            </option>
+            <option value="on">
+              Yes
+            </option>
+          </select>
+        </div>
+      </div>
+      <div data-theme="d" data-role="footer" data-position="fixed">
+        <div class="ui-grid-a">
+          <div class="ui-block-a">&nbsp;</div>
+          <div class="ui-block-b" style="text-align:right; padding-right:1em;">
+            <a id="login" data-role="button" data-inline="true" data-transition="flip" href="#home" data-icon="check" data-iconpos="left">
+              Login
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Home -->
+    <div data-role="page" id="home">
+      <div data-theme="c" data-role="header" data-position="fixed" class="header">
+        <h3 class="companyName">
+          Home Security and Automation
+        </h3>
+      </div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="c" data-inset="false">
+          <li data-theme="c">
+            <a href="#page-security" data-transition="slide" style="padding-bottom:7px;">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <div class="ui-grid-b">
+                <div class="ui-block-a" style="padding-top:9px;"><h3>Security</h3></div>
+                <div class="ui-block-b" style="padding-top:9px; text-align:right;">
+                  <p>Status</p>
+                  <p>Troubles</p>
+                  <p>Connection</p>
+                </div>
+                <div class="ui-block-c" style="padding-top:9px;">
+                  <p>: Disarmed</p>
+                  <p>: OK</p>
+                  <p>: OK</p>
+                </div>
+              </div>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page-cameras" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <div class="ui-grid-a">
+                <div class="ui-block-a" style="padding-top:9px;"><h3>Cameras</h3></div>
+                <div class="ui-block-b" style="line-height:45px; padding-top:13px; text-align:right;"><p>Available</p></div>
+              </div>
+              <span class="ui-li-count">3</span>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page-termostats" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <div style="padding:9px 0;"><h3>Thermostats</h3></div>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page-lights" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <div class="ui-grid-a">
+                <div class="ui-block-a" style="padding-top:9px;"><h3>Lights</h3></div>
+                <div class="ui-block-b" style="line-height:45px; padding-top:13px; text-align:right;"><p>Available</p></div>
+              </div>
+              <span class="ui-li-count">2</span>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page-history" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <div style="padding:9px 0;"><h3>History</h3></div>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div data-theme="a" data-role="footer" data-position="fixed" class="footer">
+        <div data-role="navbar" data-iconpos="top" class="visible-xs">
+          <ul>
+            <li><a href="#home" data-direction="reverse" data-transition="flow" data-theme="" data-icon="home" class="ui-btn-active ui-state-persist">Home</a></li>
+            <li><a href="#page-security" data-transition="flow" data-theme="" data-icon="alert">Security</a></li>
+            <li><a href="#page-cameras" data-transition="flow" data-theme="" data-icon="star">Cameras</a></li>
+            <li><a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">Thermostats</a></li>
+          </ul>
+        </div>
+        <div data-role="navbar" data-iconpos="top" class="hidden-xs">
+          <ul>
+            <li><a href="#home" data-direction="reverse" data-transition="flow" data-theme="" data-icon="home">Home</a></li>
+            <li><a href="#page-security" data-transition="flow" data-theme="" data-icon="alert" class="ui-btn-active ui-state-persist">Security</a></li>
+            <li><a href="#page-cameras" data-transition="flow" data-theme="" data-icon="star">Cameras</a></li>
+            <li><a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">Thermostats</a></li>
+            <li><a href="#page-lights" data-transition="flow" data-theme="" data-icon="info">Lights</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Security -->
+    <div data-role="page" id="page-security">
+      <div data-theme="b" data-role="header" data-position="fixed">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Back
+        </a>
+        <h3 class="header">
+          Security
+        </h3>
+      </div>
+      <div data-role="content">
+        <button data-role="button" data-transition="none" data-theme="e" href="#"
+           data-icon="delete" data-iconpos="left" class="disarmed">
+          Disarmed - Press to Arm
+        </button>
+        <h2 class="grey" style="normal">Home Security Zones</h2>
+        <ul data-role="listview" data-divider-theme="d" data-inset="false">
+          <li data-theme="c">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Front Door</h3>
+              <p>Closed</p>
+            </a>
+          </li>
+          <li data-theme="d">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Back Door</h3>
+              <p>Closed</p>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Garage Door</h3>
+              <p>Closed</p>
+            </a>
+          </li>
+          <li data-theme="d">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Kitchen Window</h3>
+              <p>Closed</p>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Hallway Motion</h3>
+              <p>Clear</p>
+            </a>
+          </li>
+          <li data-theme="d">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Smoke Detector</h3>
+              <p>Clear</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div data-theme="a" data-role="footer" data-position="fixed" class="footer">
+        <div data-role="navbar" data-iconpos="top" class="visible-xs">
+          <ul>
+            <li><a href="#home" data-direction="reverse" data-transition="flow" data-theme="" data-icon="home">Home</a></li>
+            <li><a href="#page-security" data-transition="flow" data-theme="" data-icon="alert" class="ui-btn-active ui-state-persist">Security</a></li>
+            <li><a href="#page-cameras" data-transition="flow" data-theme="" data-icon="star">Cameras</a></li>
+            <li><a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">Thermostats</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Cameras -->
+    <div data-role="page" id="page-cameras">
+      <div data-theme="b" data-role="header" data-position="fixed" class="header">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Back
+        </a>
+        <h3 class="header">
+          Cameras
+        </h3>
+      </div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="c" data-inset="false">
+          <li data-theme="c">
+            <a href="#page-cam1" data-transition="slide">
+              <img data-src="holder.js/120x80/social" alt="..." class="ui-li-thumb freesize" />
+              <h3 style="padding-left:40px;">Kitchen Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page-cam2" data-transition="slide">
+              <img data-src="holder.js/120x80/social" alt="..." class="ui-li-thumb freesize" />
+              <h3 style="padding-left:40px;">Dining Room</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page-cam3" data-transition="slide">
+              <img data-src="holder.js/120x80/social" alt="..." class="ui-li-thumb freesize" />
+              <h3 style="padding-left:40px;">Upstairs Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div data-theme="a" data-role="footer" data-position="fixed" class="footer">
+        <div data-role="navbar" data-iconpos="top">
+          <ul>
+            <li>
+              <a href="#home" data-direction="reverse" data-transition="flow" data-theme="" data-icon="home">
+                Home
+              </a>
+            </li>
+            <li>
+              <a href="#page-security" data-direction="reverse" data-transition="flow" data-theme="" data-icon="alert">
+                Security
+              </a>
+            </li>
+            <li>
+              <a href="#page-cameras" data-transition="flow" data-theme="" data-icon="star" class="ui-btn-active ui-state-persist">
+                Cameras
+              </a>
+            </li>
+            <li>
+              <a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">
+                Thermostats
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Lights -->
+    <div data-role="page" id="page-lights">
+      <div data-theme="b" data-role="header" data-position="fixed" class="header">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Back
+        </a>
+        <h3 class="header">
+          Lights
+        </h3>
+      </div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="c" data-inset="false">
+          <li data-theme="c">
+            <div class="row">
+              <div class="col-xs-2 col-sm-1">
+                <img data-src="holder.js/55x100/industrial" alt="..." class="ui-li-thumb freesize2" />
+              </div>
+              <div class="col-xs-10 col-sm-11">
+                <div class="row">
+                  <div class="col-xs-8">
+                    <h3 class="listTitle" style="line-height:41px;">Dimmable Light</h3>
+                  </div>
+                  <div class="col-xs-4">
+                    <div data-role="fieldcontain" style="text-align:right;">
+                      <select name="lightSwitch1" id="lightSwitch1" data-role="slider">
+                        <option value="off">
+                          Off
+                        </option>
+                        <option value="on" selected>
+                          On
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-xs-12">
+                    <div data-role="fieldcontain" class="slider">
+                      <input id="light1" type="range" name="light1" value="50" min="0" max="100" data-highlight="true">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+          <li data-theme="c">
+            <div class="row">
+              <div class="col-xs-2 col-sm-1">
+                <img data-src="holder.js/55x100/industrial" alt="..." class="ui-li-thumb freesize2" />
+              </div>
+              <div class="col-xs-10 col-sm-11">
+                <div class="row">
+                  <div class="col-xs-8">
+                    <h3 class="listTitle" style="line-height:91px;">On/Off Light</h3>
+                  </div>
+                  <div class="col-xs-4">
+                    <div data-role="fieldcontain" class="right" style="padding-top:20px;">
+                      <select name="lightSwitch2" id="lightSwitch2" data-role="slider">
+                        <option value="off">
+                          Off
+                        </option>
+                        <option value="on">
+                          On
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div data-theme="a" data-role="footer" data-position="fixed" class="footer">
+        <div data-role="navbar" data-iconpos="top">
+          <ul>
+            <li>
+              <a href="#home" data-direction="reverse" data-transition="flow" data-theme="" data-icon="home">
+                Home
+              </a>
+            </li>
+            <li>
+              <a href="#page-security" data-direction="reverse" data-transition="flow" data-theme="" data-icon="alert">
+                Security
+              </a>
+            </li>
+            <li>
+              <a href="#page-cameras" data-transition="flow" data-theme="" data-icon="star">
+                Cameras
+              </a>
+            </li>
+            <li>
+              <a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">
+                Thermostats
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- History -->
+    <div data-role="page" id="page-history">
+      <div data-theme="b" data-role="header" data-position="fixed">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Back
+        </a>
+        <h3 class="header">
+          History
+        </h3>
+      </div>
+      <div data-role="content">
+        <div class="center">
+          <div data-role="controlgroup" data-type="horizontal">
+            <a href="#" data-role="button" class="ui-btn-active">All</a>
+            <a href="#" data-role="button">Alarm</a>
+            <a href="#" data-role="button">Arm</a>
+            <a href="#" data-role="button">Zone</a>
+          </div>
+        </div>
+        <h2 class="grey center normal">January 12, 2013</h2>
+        <ul data-role="listview" data-divider-theme="d" data-inset="false">
+          <li data-theme="c">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <div class="ui-grid-a">
+                <div class="ui-block-a">
+                  <h3 class="listTitle">Event</h3>
+                  <p>Camera 1 (1 image)</p>
+                </div>
+                <div class="ui-block-b" style="line-height:45px; padding-top:13px; text-align:right;"><p>6:06 PM</p></div>
+              </div>
+            </a>
+          </li>
+          <li data-theme="d">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Kitchen door</h3>
+              <p>communication restored</p>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Kitchen door</h3>
+              <p>communication failure</p>
+            </a>
+          </li>
+          <li data-theme="d">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Zone door</h3>
+              <p>communication failure</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div data-theme="a" data-role="footer" data-position="fixed" class="footer">
+        <div data-role="navbar" data-iconpos="top" class="visible-xs">
+          <ul>
+            <li><a href="#home" data-direction="reverse" data-transition="flow" data-theme="" data-icon="home">Home</a></li>
+            <li><a href="#page-security" data-transition="flow" data-theme="" data-icon="alert">Security</a></li>
+            <li><a href="#page-cameras" data-transition="flow" data-theme="" data-icon="star">Cameras</a></li>
+            <li><a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">Thermostats</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="js/jquery-1.10.1.min.js"><\/script>')</script>
+    <script src="//code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.0/holder.min.js"></script>
+    <script>
+
+    </script>
+</body>
+</html>
