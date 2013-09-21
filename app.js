@@ -2,6 +2,7 @@
 var mongoose   = require('mongoose');
 var http       = require('http');
 var net        = require('net');
+var connect    = require('connect');
 var io         = require('socket.io');
 var fs         = require('fs');
 var crypto     = require('crypto');
@@ -11,7 +12,7 @@ var nodemailer = require('nodemailer');
 var sockets    = [];
 var websockets = [];
 var _timer     = null;
-var host       = '192.168.1.75';
+var host       = '192.168.1.64';
 
 /*var config  = {
  mail: require('./config/mail')
@@ -152,18 +153,30 @@ var fnLog = function(log) {
 
 
 //
+// Connect middleware
+//
+var app = connect()
+    .use(connect.favicon())
+    .use(connect.logger('dev'))
+    .use(connect.static('public'))
+    .use(connect.directory('public'))
+    .use(connect.cookieParser())
+    .use(connect.session({ secret: 'session secret at here' }))
+    .use(function(req, res){
+        fs.readFile(__dirname + '/index.html', function(err, data){
+            if (err) {
+                response.writeHead(500, { 'Content-Type':'text/plain' });
+                return response.end('Error');
+            }
+            res.writeHead(200, { 'Content-Type':'text/html' });
+            res.end(data);
+        });
+    });
+
+//
 // Web Server
 //
-var webserver = http.createServer(function(req,res){
-    fs.readFile(__dirname + '/index.html', function(err, data){
-        if (err) {
-            response.writeHead(500, { 'Content-Type':'text/plain' });
-            return response.end('Error');
-        }
-        res.writeHead(200, { 'Content-Type':'text/html' });
-        res.end(data);
-    });
-});
+var webserver = http.createServer(app);
 webserver.listen(8080, host);
 log('s', 'i', 'Webserver running at http://'+host+':8080');
 
