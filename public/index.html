@@ -111,9 +111,9 @@
               <span class="ui-li-count">3</span>
             </a>
           </li>
-          <li data-theme="c">
+          <li data-theme="c" class="ui-disabled">
             <a href="#page-termostats" data-transition="slide">
-              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <img src="img/thermostats.png" alt="..." class="ui-li-thumb" />
               <div style="padding:9px 0;"><h3>Thermostats</h3></div>
             </a>
           </li>
@@ -481,7 +481,7 @@
           }
       } // updateTroubles
 
-      function updateAlarmStatus () {
+      function updateAlarmStatus (create) {
           var thm = 'b';
 
           if ($('#page-security button.armBtn').parent().hasClass('ui-btn') == false) { // button is not rendered
@@ -491,20 +491,37 @@
           if (_data.status.alarm_status == 'a') {
               thm = 'e';
               $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
-              $('#page-security button.armBtn span.armed').html('Armed Away - Press to Disamed');
+              $('#page-security button.armBtn span.armTxt').html('Armed Away - Press to Disamed');
           } else if (_data.status.alarm_status == 'h') {
               thm = 'e';
               $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
-              $('#page-security button.armBtn span.armed').html('Armed Home - Press to Disamed');
+              $('#page-security button.armBtn span.armTxt').html('Armed Home - Press to Disamed');
           } else if (_data.status.alarm_status == 'r') {
               $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
-              $('#page-security button.armBtn span.disarmed').html('Disarmed - Press to Arm');
+              $('#page-security button.armBtn span.armTxt').html('Disarmed - Press to Arm');
           } else if (_data.status.alarm_status == 'p') {
               $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
-              $('#page-security button.armBtn span.disarmed').html('Panic - Press to Arm');
+              $('#page-security button.armBtn span.armTxt').html('Panic - Press to Arm');
           }
-          $('#page-security button.armBtn').button('refresh').buttonMarkup({ theme:thm });
+
+          if (create) {
+              $('#page-security button.armBtn').buttonMarkup({ theme:thm });
+          } else {
+              $('#page-security button.armBtn').button('refresh').buttonMarkup({ theme:thm });
+          }
       } // updateAlarmStatus
+
+      function updateZone (id, value) {
+          var mapping = {
+              o: 'Opened',
+              c: 'Closed',
+              b: 'Bypassed',
+              d: 'Disabled'
+          };
+          if ($('#page-security ul[data-role=listview] li').length > 0) { // listview is rendered
+              $('#page-security ul[data-role=listview] li.'+id+' p.ui-li-desc').html(mapping[value]);
+          }
+      } // updateZone
 
       var socket = io.connect('http://cheah.homeip.net:8080');
 
@@ -517,7 +534,7 @@
       socket.on('disconnect', function(){
           $('.connection').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
       });
-      socket.on('Updates', function(data){
+      socket.on('InitialUpdates', function(data){
            if (typeof data.info != 'undefined') {
                _data = data;
 
@@ -529,22 +546,20 @@
           $('.troubles').removeClass('text-success text-default').addClass('text-danger').html('N/A');
           $('.status').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
       });
-      socket.on('DeviceUpdate', function(id, type, value){
-          if (type == 'info') {
-              _data.info[id] = value;
-          } else if (type == 'status') {
-              _data.status[id] = value;
+      socket.on('DeviceUpdate', function(d){
+          if (d.type == 'info') {
+              _data.info[d.id] = d.value;
+          } else if (d.type == 'status') {
+              _data.status[d.id] = d.value;
 
-              if (id == 'alarm_status') {
-                  updateAlarmStatus();
+              if (d.id == 'alarm_status') {
+                  updateAlarmStatus(false);
               } else {
                   updateTroubles();
               }
-          } else if (type == 'zone') {
-              _data.zones[id] = value;
-              if ($('#page-security ul[data-role=listview] li').length > 0) { // listview is rendered
-                  $('#page-security ul[data-role=listview] li.'+id+' p.ui-li-desc').html(value);
-              }
+          } else if (d.type == 'zone') {
+              _data.zones[d.id] = d.value;
+              updateZone(d.id, d.value);
           }
       });
 
@@ -552,9 +567,8 @@
           if (typeof _data.status == 'undefined') {
               return;
           }
-console.log('page create');
+
           var listview = '';
-          var thm      = 'b';
           var mapping  = {
               o: 'Opened',
               c: 'Closed',
@@ -562,22 +576,7 @@ console.log('page create');
               d: 'Disabled'
           };
 
-          if (_data.status.alarm_status == 'a') {
-              thm = 'e';
-              $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-lock');
-              $('#page-security button.armBtn span.armed').html('Armed Away - Press to Disamed');
-          } else if (_data.status.alarm_status == 'h') {
-              thm = 'e';
-              $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-lock');
-              $('#page-security button.armBtn span.armed').html('Armed Home - Press to Disamed');
-          } else if (_data.status.alarm_status == 'r') {
-              $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-warning-sign');
-              $('#page-security button.armBtn span.disarmed').html('Disarmed - Press to Arm');
-          } else if (_data.status.alarm_status == 'p') {
-              $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-warning-sign');
-              $('#page-security button.armBtn span.disarmed').html('Panic - Press to Arm');
-          }
-          $('#page-security button.armBtn').buttonMarkup({ theme:thm });//.button('refresh');
+          updateAlarmStatus('create');
 
           $.each(_data.zones, function(k, v){
               listview += '<li data-theme="c" class="'+k+'"><a href="#page1" data-transition="slide">' +
@@ -585,7 +584,7 @@ console.log('page create');
                           '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p></a></li>';
           });
 
-          $('#page-security ul[data-role=listview]').html(listview);//.listview('refresh');
+          $('#page-security ul[data-role=listview]').html(listview);
           Holder.run();
       });
     </script>

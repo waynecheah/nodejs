@@ -88,19 +88,17 @@ function gv (data, start) { // get value
     return data.substr(start);
 } // gv
 
-function statusUpdate (websock, netsock) {
-    if (typeof netsock != 'undefined') {
-        websock.emit('Updates', {
-            info: netsock.info,
-            status: netsock.status,
-            zones: netsock.zones
-        });
+function statusUpdate (data) {
+    if (typeof data == 'object') {
+        for (var i=0; i<websockets.length; i++) {
+            websockets[i].emit('InitialUpdates', data);
+        }
     }
 } // statusUpdate
 
-function deviceUpdate (id, type, value) {
-    if (typeof netsock != 'undefined') {
-        websock.emit('DeviceUpdate', {
+function deviceUpdate (id, type, value, socketInfo) {
+    for (var i=0; i<websockets.length; i++) {
+        websockets[i].emit('DeviceUpdate', {
             id: id,
             type: type,
             value: value
@@ -440,10 +438,11 @@ var server = net.createServer(function (socket) {
                     socket.tmp   = {};
                     socket.write('ok'+RN);
 
-
-                    for (var i=0; i<websockets.length; i++) {
-                        statusUpdate(websockets[i], socket);
-                    }
+                    statusUpdate({
+                        info: socket.info,
+                        status: socket.status,
+                        zones: socket.zones
+                    });
                 }
             }
         } else if (typeof socket.zones != 'undefined') { // continue listening to device
@@ -455,32 +454,32 @@ var server = net.createServer(function (socket) {
                 log('n', 'i', 'Alarm status changed: '+gv(dt, ps));
                 socket.status.alarm_status = gv(dt, ps);
                 socket.write('ok'+RN);
-                deviceUpdate('alarm_status', 'status', gv(dt, ps));
+                deviceUpdate('alarm_status', 'status', gv(dt, ps), socket.info);
             } else if (ps = iss(dt, 'power')) {
                 log('n', 'i', 'System power changed: '+gv(dt, ps));
                 socket.status.power = gv(dt, ps);
                 socket.write('ok'+RN);
-                deviceUpdate('power', 'status', gv(dt, ps));
+                deviceUpdate('power', 'status', gv(dt, ps), socket.info);
             } else if (ps = iss(dt, 'battery')) {
                 log('n', 'i', 'System battery changed: '+gv(dt, ps));
                 socket.status.battery = gv(dt, ps);
                 socket.write('ok'+RN);
-                deviceUpdate('battery', 'status', gv(dt, ps));
+                deviceUpdate('battery', 'status', gv(dt, ps), socket.info);
             } else if (ps = iss(dt, 'pstn')) {
                 log('n', 'i', 'System pstn changed: '+gv(dt, ps));
                 socket.status.pstn = gv(dt, ps);
                 socket.write('ok'+RN);
-                deviceUpdate('pstn', 'status', gv(dt, ps));
+                deviceUpdate('pstn', 'status', gv(dt, ps), socket.info);
             } else if (ps = iss(dt, 'comm')) {
                 log('n', 'i', 'System comm changed: '+gv(dt, ps));
                 socket.status.comm = gv(dt, ps);
                 socket.write('ok'+RN);
-                deviceUpdate('comm', 'status', gv(dt, ps));
+                deviceUpdate('comm', 'status', gv(dt, ps), socket.info);
             } else if (ps = iss(dt, 'keypad')) {
-                log('n', 'i', 'System  changed: '+gv(dt, ps));
+                log('n', 'i', 'System keypad changed: '+gv(dt, ps));
                 socket.status.keypad = gv(dt, ps);
                 socket.write('ok'+RN);
-                deviceUpdate('keypad', 'status', gv(dt, ps));
+                deviceUpdate('keypad', 'status', gv(dt, ps), socket.info);
             } else if (obj = issi(dt, 'z')) {
                 sts = gv(dt, obj.p);
                 if (allsts.indexOf(sts) < 0) {
@@ -493,7 +492,7 @@ var server = net.createServer(function (socket) {
                     log('n', 'i', 'Zone '+obj.i+' status changed: '+sts);
                     socket.zones['z'+obj.i] = sts;
                     socket.write('ok'+RN);
-                    deviceUpdate('z'+obj.i, 'zone', sts);
+                    deviceUpdate('z'+obj.i, 'zone', sts, socket.info);
                 }
             }
         } else if (mesg.substr(0,5) == 'HEAD=' || mesg.substr(0,3) == 'HID') {
@@ -809,7 +808,7 @@ io.sockets.on('connection', function(sock) {
 
     if (typeof sockets[0] != 'undefined') {
         var sk = sockets[0];
-        sock.emit('Updates', {
+        sock.emit('InitialUpdates', {
             info: sk.info,
             status: sk.status,
             zones: sk.zones
