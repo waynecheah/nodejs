@@ -252,8 +252,8 @@ var app = connect()
     .use(function(req, res){
         fs.readFile(__dirname + '/index.html', function(err, data){
             if (err) {
-                response.writeHead(500, { 'Content-Type':'text/plain' });
-                return response.end('Error');
+                res.writeHead(500, { 'Content-Type':'text/plain' });
+                return res.end('Error');
             }
             res.writeHead(200, { 'Content-Type':'text/html' });
             res.end(data);
