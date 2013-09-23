@@ -173,50 +173,7 @@
           <span class="glyphicon"></span> <span class="armTxt">Disarmed - Press to Arm</span>
         </button>
         <h2 class="grey normal">Home Security Zones</h2>
-        <ul data-role="listview" data-divider-theme="d" data-inset="false">
-          <li data-theme="c">
-            <a href="#page1" data-transition="slide">
-              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
-              <h3>Front Door</h3>
-              <p>Closed</p>
-            </a>
-          </li>
-          <li data-theme="d">
-            <a href="#page1" data-transition="slide">
-              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
-              <h3>Back Door</h3>
-              <p>Closed</p>
-            </a>
-          </li>
-          <li data-theme="c">
-            <a href="#page1" data-transition="slide">
-              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
-              <h3>Garage Door</h3>
-              <p>Closed</p>
-            </a>
-          </li>
-          <li data-theme="d">
-            <a href="#page1" data-transition="slide">
-              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
-              <h3>Kitchen Window</h3>
-              <p>Closed</p>
-            </a>
-          </li>
-          <li data-theme="c">
-            <a href="#page1" data-transition="slide">
-              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
-              <h3>Hallway Motion</h3>
-              <p>Clear</p>
-            </a>
-          </li>
-          <li data-theme="d">
-            <a href="#page1" data-transition="slide">
-              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
-              <h3>Smoke Detector</h3>
-              <p>Clear</p>
-            </a>
-          </li>
-        </ul>
+        <ul data-role="listview" data-divider-theme="d" data-inset="false"></ul>
       </div>
       <div data-theme="a" data-role="footer" data-position="fixed" class="footer">
         <div data-role="navbar" data-iconpos="top" class="visible-xs">
@@ -504,7 +461,52 @@
           }, second);
       } // resetMessage
 
-      var socket = io.connect('http://192.168.1.75:8080');
+      function updateTroubles () {
+          var troubles = 0;
+          var total    = 0;
+
+          $.each(_data.status, function(k, v){
+              if (k != 'alarm_status') {
+                  total++;
+                  if (v == 0) {
+                      troubles++
+                  }
+              }
+          });
+
+          if (troubles) {
+              $('.troubles').removeClass('text-success text-default').addClass('text-danger').html('Problem '+troubles+'/'+total);
+          } else {
+              $('.troubles').removeClass('text-danger text-default').addClass('text-success').html('OK '+troubles+'/'+total);
+          }
+      } // updateTroubles
+
+      function updateAlarmStatus () {
+          var thm = 'b';
+
+          if ($('#page-security button.armBtn').parent().hasClass('ui-btn') == false) { // button is not rendered
+              return;
+          }
+
+          if (_data.status.alarm_status == 'a') {
+              thm = 'e';
+              $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
+              $('#page-security button.armBtn span.armed').html('Armed Away - Press to Disamed');
+          } else if (_data.status.alarm_status == 'h') {
+              thm = 'e';
+              $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
+              $('#page-security button.armBtn span.armed').html('Armed Home - Press to Disamed');
+          } else if (_data.status.alarm_status == 'r') {
+              $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
+              $('#page-security button.armBtn span.disarmed').html('Disarmed - Press to Arm');
+          } else if (_data.status.alarm_status == 'p') {
+              $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
+              $('#page-security button.armBtn span.disarmed').html('Panic - Press to Arm');
+          }
+          $('#page-security button.armBtn').button('refresh').buttonMarkup({ theme:thm });
+      } // updateAlarmStatus
+
+      var socket = io.connect('http://cheah.homeip.net:8080');
 
       socket.on('connect', function(){
           $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
@@ -517,65 +519,74 @@
       });
       socket.on('Updates', function(data){
            if (typeof data.info != 'undefined') {
-               var troubles = 0;
-               var total    = 0;
-               var listview = '';
-               var thm      = 'b';
-               var mapping  = {
-                   o: 'Opened',
-                   c: 'Closed',
-                   b: 'Bypassed',
-                   d: 'Disabled'
-               };
+               _data = data;
 
-               $.each(data.status, function(k, v){
-                    if (k != 'alarm_status') {
-                        total++;
-                        if (v == 0) {
-                            troubles++
-                        }
-                    }
-               });
-
-               if (troubles) {
-                   $('.troubles').removeClass('text-success text-default').addClass('text-danger').html('Problem '+troubles+'/'+total);
-               } else {
-                   $('.troubles').removeClass('text-danger text-default').addClass('text-success').html('OK '+troubles+'/'+total);
-               }
-
+               updateTroubles();
                $('.status').removeClass('text-danger text-default').addClass('text-success').html(data.info.name+' connected');
-
-
-               if (data.status.alarm_status == 'a') {
-                   thm = 'e';
-                   $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-lock');
-                   $('#page-security button.armBtn span.armed').html('Armed Away - Press to Disamed');
-               } else if (data.status.alarm_status == 'h') {
-                   thm = 'e';
-                   $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-lock');
-                   $('#page-security button.armBtn span.armed').html('Armed Home - Press to Disamed');
-               } else if (data.status.alarm_status == 'r') {
-                   $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-warning-sign');
-                   $('#page-security button.armBtn span.disarmed').html('Disarmed - Press to Arm');
-               } else if (data.status.alarm_status == 'p') {
-                   $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-warning-sign');
-                   $('#page-security button.armBtn span.disarmed').html('Panic - Press to Arm');
-               }
-               $('#page-security button.armBtn').button('refresh').buttonMarkup({ theme:thm });
-
-               $.each(data.zones, function(k, v){
-                   listview += '<li data-theme="c"><a href="#page1" data-transition="slide">' +
-                               '<img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
-                               '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p></a></li>';
-               });
-
-               $('#page-security ul[data-role=listview]').html(listview).listview('refresh');
-               Holder.run();
            }
       });
       socket.on('Offline', function(data){
           $('.troubles').removeClass('text-success text-default').addClass('text-danger').html('N/A');
           $('.status').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
+      });
+      socket.on('DeviceUpdate', function(id, type, value){
+          if (type == 'info') {
+              _data.info[id] = value;
+          } else if (type == 'status') {
+              _data.status[id] = value;
+
+              if (id == 'alarm_status') {
+                  updateAlarmStatus();
+              } else {
+                  updateTroubles();
+              }
+          } else if (type == 'zone') {
+              _data.zones[id] = value;
+              if ($('#page-security ul[data-role=listview] li').length > 0) { // listview is rendered
+                  $('#page-security ul[data-role=listview] li.'+id+' p.ui-li-desc').html(value);
+              }
+          }
+      });
+
+      $('#page-security').on('pagecreate', function(){
+          if (typeof _data.status == 'undefined') {
+              return;
+          }
+console.log('page create');
+          var listview = '';
+          var thm      = 'b';
+          var mapping  = {
+              o: 'Opened',
+              c: 'Closed',
+              b: 'Bypassed',
+              d: 'Disabled'
+          };
+
+          if (_data.status.alarm_status == 'a') {
+              thm = 'e';
+              $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-lock');
+              $('#page-security button.armBtn span.armed').html('Armed Away - Press to Disamed');
+          } else if (_data.status.alarm_status == 'h') {
+              thm = 'e';
+              $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-lock');
+              $('#page-security button.armBtn span.armed').html('Armed Home - Press to Disamed');
+          } else if (_data.status.alarm_status == 'r') {
+              $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-warning-sign');
+              $('#page-security button.armBtn span.disarmed').html('Disarmed - Press to Arm');
+          } else if (_data.status.alarm_status == 'p') {
+              $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-warning-sign');
+              $('#page-security button.armBtn span.disarmed').html('Panic - Press to Arm');
+          }
+          $('#page-security button.armBtn').buttonMarkup({ theme:thm });//.button('refresh');
+
+          $.each(_data.zones, function(k, v){
+              listview += '<li data-theme="c" class="'+k+'"><a href="#page1" data-transition="slide">' +
+                          '<img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
+                          '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p></a></li>';
+          });
+
+          $('#page-security ul[data-role=listview]').html(listview);//.listview('refresh');
+          Holder.run();
       });
     </script>
 </body>
