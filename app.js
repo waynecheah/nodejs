@@ -11,8 +11,22 @@ var nodemailer = require('nodemailer');
 
 var sockets    = [];
 var websockets = [];
+var RN         = '\r\n';
 var _timer     = null;
-var host       = '192.168.1.64';
+var host       = '192.168.1.75';
+var clientErr  = {};
+var serverErr  = {
+    e1: 'System error',
+    e2: 'Error found while query made to database',
+    e3: 'Required authorisation data not found',
+    e4: 'Unrecognized device, serial not found in database',
+    e5: 'Unrecognized alarm status',
+    e6: 'Alarm status is not reported',
+    e7: 'System status is not completely reported',
+    e8: 'Unrecognized zone status',
+    e9: 'No any zone received for update'
+};
+var webErr     = {};
 
 /*var config  = {
  mail: require('./config/mail')
@@ -31,6 +45,60 @@ var mailOptions = {
     text: "Hello world ✔", // plaintext body
     html: "<b>Hello world ✔</b>" // html body
 }
+
+function isc (data, cmd) {
+    var length = cmd.length;
+    var data   = data.replace(RN, '');
+    if (data.substr(0,length) == cmd) {
+        return true;
+    }
+    return false;
+} // isc
+
+function issi (data, key) {
+    var length = key.length + 1;
+    var data   = data.replace(RN, '');
+    var pos1   = data.search(key);
+    var pos2   = data.search('=');
+    var index  = null;
+
+    if (pos1 < 0 || pos2 < 0) {
+        return false;
+    }
+
+    index = data.substr((pos1+1), (pos2-1));
+
+    return {
+        p: (pos2+1),
+        i: index
+    };
+} // issi
+
+function iss (data, key) { // is set
+    var length = key.length + 1;
+    var data   = data.replace(RN, '');
+    if (data.substr(0,length) == key+'=') {
+        return length;
+    }
+    return false;
+} // iss
+
+function gv (data, start) { // get value
+    var data = data.replace(RN, '');
+    return data.substr(start);
+} // gv
+
+function statusUpdate (websock, netsock) {
+    if (typeof netsock != 'undefined') {
+        websock.emit('Updates', {
+            info: netsock.info,
+            status: netsock.status,
+            zones: netsock.zones
+        });
+    }
+} // statusUpdate
+
+
 
 function hex2a (hex) {
     var str = '';
@@ -126,6 +194,15 @@ var Device = mongoose.model('Device', {
         var: String,
         sta: Boolean
     },
+    status: {
+        alarm_status: String,
+        power: String,
+        battery: String,
+        pstn: String,
+        comm: String,
+        keypad: String
+    },
+    zones: [{ id:Number, name:String, status:String }],
     created: { type:Date, default:Date.now },
     modified: { type:Date, default:Date.now }
 });
@@ -189,13 +266,17 @@ var server = net.createServer(function (socket) {
 
     log('n', 'i', 'Client '+socket.id+' connected');
     sockets.push(socket); // assign socket to global variable
+    socket.write('id?'+RN);
 
     socket.on('connect', function(){
         socket.write('Welcome! And you name is?');
     });
     socket.on('data', function(data) { // send from client
-        var mesg = data.toString().replace('\r\n','');
+        var mesg = data.toString().replace(RN, '');
         var body = ['BGPI','BGPO','BVAR','BSTA'];
+        var dt   = data.toString();
+        var ps   = 0;
+        var obj  = {};
 
         if (mesg == 'quit') {
             socket.write('\r\nSee ya ;)\r\n');
@@ -205,7 +286,195 @@ var server = net.createServer(function (socket) {
                     sockets[i].end();
                 }
             }
+        } else if (typeof socket.info == 'undefined') { // when device has not logged, all data sent will go here
+// AUTHORISATION
+            if (typeof socket.tmp == 'undefined') {
+                socket.tmp = {};
+            }
+            if (ps = iss(dt, 'serial')) {
+                log('n', 'i', 'Received serial: '+gv(dt, ps));
+                socket.tmp['serial'] = gv(dt, ps);
+                socket.write('ok'+RN);
+            } else if (ps = iss(dt, 'name')) {
+                log('n', 'i', 'Received name: '+gv(dt, ps));
+                socket.tmp['name'] = gv(dt, ps);
+                socket.write('ok'+RN);
+            } else if (ps = iss(dt, 'version')) {
+                log('n', 'i', 'Received version: '+gv(dt, ps));
+                socket.tmp['version'] = gv(dt, ps);
+                socket.write('ok'+RN);
+            } else if (isc(dt, '-done-')) {
+                var serial, name, version;
+
+                if (typeof socket.tmp.serial != 'undefined') {
+                    serial = socket.tmp.serial;
+                }
+                if (typeof socket.tmp.name != 'undefined') {
+                    name = socket.tmp.name;
+                }
+                if (typeof socket.tmp.version != 'undefined') {
+                    version = socket.tmp.version;
+                }
+                if (!serial || !name || !version) {
+                    log('n', 'w', 'Device has not submitted all required authorisation data');
+                    socket.write('e3'+RN);
+                    return;
+                }
+
+                Device.findOne({ serial:serial }, 'id owner clientId', function(err, data){
+                    if (err) {
+                        log('n', 'e', err);
+                        log('n', 'd', socket.tmp);
+                        socket.write('e2'+RN);
+                        return;
+                    } else if (!data || typeof data.id == 'undefined') { // unrecognized serial
+                        log('n', 'w', 'Device ID ['+socket.id+'] made an invalid access. Unrecognized serial '+socket.tmp.serial);
+                        log('n', 'd', socket.tmp);
+                        socket.write('e4'+RN);
+                        return;
+                    } else {
+                        log('n', 'i', 'Device ID ['+socket.id+'] has logged successfully');
+                        log('n', 'd', socket.tmp);
+                        log('n', 'd', data);
+                        socket.clientId = data.clientId;
+                        socket.info     = socket.tmp;
+                        socket.tmp      = {};
+                        socket.write('ok'+RN);
+                        socket.write('alarm_status?'+RN);
+                    }
+                });
+            } else {
+                log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
+                socket.write('e0'+RN);
+            }
+        } else if (typeof socket.status == 'undefined') {
+// GET DEVICE CURRENT STATUS
+            if (ps = iss(dt, 'alarm_status')) {
+                var allsts = ['a', 'h', 'r', 'p'];
+                var status = gv(dt, ps);
+                if (allsts.indexOf(status) < 0) {
+                    log('n', 'e', 'Unrecognized alarm status: '+status);
+                    socket.write('e5'+RN);
+                } else {
+                    log('n', 'i', 'Received alarm status: '+status);
+                    socket.tmp['alarm_status'] = status;
+                    socket.write('ok'+RN);
+                    socket.write('system_status?'+RN);
+                }
+            } else if (ps = iss(dt, 'power')) {
+                log('n', 'i', 'Received system power status: '+gv(dt, ps));
+                socket.tmp['power'] = gv(dt, ps);
+                socket.write('ok'+RN);
+            } else if (ps = iss(dt, 'battery')) {
+                log('n', 'i', 'Received system battery status: '+gv(dt, ps));
+                socket.tmp['battery'] = gv(dt, ps);
+                socket.write('ok'+RN);
+            } else if (ps = iss(dt, 'pstn')) {
+                log('n', 'i', 'Received system pstn status: '+gv(dt, ps));
+                socket.tmp['pstn'] = gv(dt, ps);
+                socket.write('ok'+RN);
+            } else if (ps = iss(dt, 'comm')) {
+                log('n', 'i', 'Received system communication status: '+gv(dt, ps));
+                socket.tmp['comm'] = gv(dt, ps);
+                socket.write('ok'+RN);
+            } else if (ps = iss(dt, 'keypad')) {
+                log('n', 'i', 'Received system keypad status: '+gv(dt, ps));
+                socket.tmp['keypad'] = gv(dt, ps);
+                socket.write('ok'+RN);
+            } else if (isc(dt, '-done-')) {
+                var t = socket.tmp;
+                if (typeof t.alarm_status == 'undefined') {
+                    log('n', 'w', 'Device has not submitted alarm status');
+                    socket.write('e6'+RN);
+                } else if (typeof t.power == 'undefined' || typeof t.battery == 'undefined' || typeof t.pstn == 'undefined' ||
+                    typeof t.comm == 'undefined' || typeof t.keypad == 'undefined') {
+                    log('n', 'e', 'Device has not submitted all system status it should have');
+                    socket.write('e7'+RN);
+                } else {
+                    log('n', 'i', 'Device id ['+socket.id+'] has completely updated its current alarm & system status');
+                    log('n', 'd', socket.tmp);
+                    socket.status = socket.tmp;
+                    socket.tmp = {};
+                    socket.write('ok'+RN);
+                    socket.write('zones?'+RN);
+
+                    Device.findOneAndUpdate({ serial:socket.info.serial }, { status:socket.status });
+                }
+            } else {
+                log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
+                socket.write('e0'+RN);
+            }
+        } else if (typeof socket.zones == 'undefined') {
+// GET DEVICE ZONES INFORMATION
+            var allsts = ['o', 'c', 'b', 'd'];
+            var sts;
+
+            if (obj = issi(dt, 'z')) {
+                sts = gv(dt, obj.p);
+                if (allsts.indexOf(sts) < 0) {
+                    log('n', 'e', 'Unrecognized zone status: '+sts);
+                    socket.write('e8'+RN);
+                } else {
+                    log('n', 'i', 'Received Zone '+obj.i+' status: '+sts);
+                    socket.tmp['z'+obj.i] = sts;
+                    socket.write('ok'+RN);
+                }
+            } else if (isc(dt, '-done-')) {
+                if (socket.tmp.length == 0) {
+                    log('n', 'e', 'No any zone received for update');
+                    socket.write('e9'+RN);
+                } else {
+                    log('n', 'i', socket.tmp.length+' zones are updated of its status');
+                    log('n', 'd', socket.tmp);
+                    socket.zones = socket.tmp;
+                    socket.tmp   = {};
+                    socket.write('ok'+RN);
+
+
+                    for (var i=0; i<websockets.length; i++) {
+                        statusUpdate(websockets[i], socket);
+                    }
+                }
+            }
+        } else if (typeof socket.zones != 'undefined') { // continue listening to device
+// READY MODE, ANY EVENT TRIGGER GOES HERE
+            var allsts = ['o', 'c', 'b', 'd'];
+            var sts;
+
+            if (ps = iss(dt, 'alarm_status')) {
+                log('n', 'i', 'Alarm status changed: '+gv(dt, ps));
+                socket.status.alarm_status = gv(dt, ps);
+            } else if (ps = iss(dt, 'power')) {
+                log('n', 'i', 'System power changed: '+gv(dt, ps));
+                socket.status.power = gv(dt, ps);
+            } else if (ps = iss(dt, 'battery')) {
+                log('n', 'i', 'System battery changed: '+gv(dt, ps));
+                socket.status.battery = gv(dt, ps);
+            } else if (ps = iss(dt, 'pstn')) {
+                log('n', 'i', 'System pstn changed: '+gv(dt, ps));
+                socket.status.pstn = gv(dt, ps);
+            } else if (ps = iss(dt, '')) {
+                log('n', 'i', 'System comm changed: '+gv(dt, ps));
+                socket.status.comm = gv(dt, ps);
+            } else if (ps = iss(dt, 'keypad')) {
+                log('n', 'i', 'System  changed: '+gv(dt, ps));
+                socket.status.keypad = gv(dt, ps);
+            } else if (obj = issi(dt, 'z')) {
+                sts = gv(dt, obj.p);
+                if (allsts.indexOf(sts) < 0) {
+                    log('n', 'e', 'Unrecognized zone status: '+sts);
+                    socket.write('e8'+RN);
+                } else if (typeof socket.zones['z'+obj.i] == 'undefined') {
+                    log('n', 'e', 'Invalid zone: z'+obj.i);
+                    socket.write('e10'+RN);
+                } else {
+                    log('n', 'i', 'Zone '+obj.i+' status changed: '+sts);
+                    socket.zones['z'+obj.i] = sts;
+                    socket.write('ok'+RN);
+                }
+            }
         } else if (mesg.substr(0,5) == 'HEAD=' || mesg.substr(0,3) == 'HID') {
+// SET HEAD
             if (mesg == 'HEAD=1') { // device initialed login request
                 log('n', 'i', 'Device ID ['+socket.id+'] initial HEAD=1');
                 socket.head = true;
@@ -386,6 +655,7 @@ var server = net.createServer(function (socket) {
                 socket.write('e1\r\n');
             }
         } else if (mesg.substr(0,4) == 'RQS?') {
+// SET BODY
             log('n', 'i', 'Device send request to check if both party still in connect and maintaining the communication, reply ok to continue');
             socket.write('ok\r\n');
         } else if (mesg.substr(0,4) == 'DNT?') {
@@ -405,6 +675,7 @@ var server = net.createServer(function (socket) {
             clearTimeout(_timer);
             socket.write('ok\r\n');
         } else if (mesg == 'check') { // for debug only
+// DEBUG HEAD AND BODY
             if (typeof socket.hid == 'undefined') {
                 socket.write('HEAD has not initialized\r\n');
             } else {
@@ -417,6 +688,7 @@ var server = net.createServer(function (socket) {
                 socket.write(JSON.stringify(socket.bCon)+'\r\n');
             }
         } else if (mesg == 'aes') {
+// AES (128bit) TEST
             var encrypted = encryption('hellohellohello!', 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
             log('n', 'i', 'Encrypted: ['+encrypted+']');
 
@@ -446,6 +718,7 @@ var server = net.createServer(function (socket) {
             }
             log('n', 's', 'Decrypted: ['+decrypted+']');
         } else if (mesg == 'mail') {
+// SEND MAIL
             smtpTransport.sendMail(mailOptions, function(err, res){
                 if (err) {
                     log('n', 'e', err);
@@ -455,6 +728,7 @@ var server = net.createServer(function (socket) {
                 //smtpTransport.close(); // shut down the connection pool, no more messages
             });
         } else {
+// FREE CHAT
             var x    = sockets.indexOf(socket);
             var id   = (x < 0) ? null : sockets[x]._handle.fd;
             var name = (id) ? 'Client '+id : 'Unknown Device';
@@ -485,7 +759,11 @@ var server = net.createServer(function (socket) {
         var i = sockets.indexOf(socket);
         log('n', 'i', 'client '+socket.id+' disconnected');
         sockets.splice(i, 1);
+
         // TODO(system): notify offline status to user who connected to it
+        for (var i=0; i<websockets.length; i++) {
+            websockets[i].emit('Offline');
+        }
         //process.exit(0);
     });
 
@@ -506,7 +784,18 @@ io.sockets.on('connection', function(sock) {
     log('w', 'i', 'web client '+sock.id+' connected');
     websockets.push(sock); // assign websocket to global variable
 
-    sock.emit('WelcomeMessage', { message:'~ Welcome to the world of socket.io ~', user:'Unknown' });
+    if (typeof sockets[0] != 'undefined') {
+        var sk = sockets[0];
+        sock.emit('Updates', {
+            info: sk.info,
+            status: sk.status,
+            zones: sk.zones
+        });
+    }
+
+
+    sock.emit('WelcomeMessage', { message:'~ Welcome to the world of socket.io ~', user:'Unknown' })
+
     sock.on('message server', function(data) {
         log('w', 'i', 'Client push:\r');
         log('w', 'd', data);

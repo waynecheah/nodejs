@@ -85,7 +85,7 @@
         <ul data-role="listview" data-divider-theme="c" data-inset="false">
           <li data-theme="c">
             <a href="#page-security" data-transition="slide" style="padding-bottom:7px;">
-              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <img src="img/lock.png" alt="..." class="ui-li-thumb" />
               <div class="ui-grid-b">
                 <div class="ui-block-a" style="padding-top:9px;"><h3>Security</h3></div>
                 <div class="ui-block-b" style="padding-top:9px; text-align:right;">
@@ -94,16 +94,16 @@
                   <p>Connection</p>
                 </div>
                 <div class="ui-block-c" style="padding-top:9px;">
-                  <p>: Disarmed</p>
-                  <p>: OK</p>
-                  <p>: OK</p>
+                  <p>: <strong class="status text-default">Disconnected</strong></p>
+                  <p>: <strong class="troubles text-default">N/A</strong></p>
+                  <p>: <strong class="connection text-default">Disconnected</strong></p>
                 </div>
               </div>
             </a>
           </li>
           <li data-theme="c">
             <a href="#page-cameras" data-transition="slide">
-              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <img src="img/camera.png" alt="..." class="ui-li-thumb" />
               <div class="ui-grid-a">
                 <div class="ui-block-a" style="padding-top:9px;"><h3>Cameras</h3></div>
                 <div class="ui-block-b" style="line-height:45px; padding-top:13px; text-align:right;"><p>Available</p></div>
@@ -119,7 +119,7 @@
           </li>
           <li data-theme="c">
             <a href="#page-lights" data-transition="slide">
-              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <img src="img/light.png" alt="..." class="ui-li-thumb" />
               <div class="ui-grid-a">
                 <div class="ui-block-a" style="padding-top:9px;"><h3>Lights</h3></div>
                 <div class="ui-block-b" style="line-height:45px; padding-top:13px; text-align:right;"><p>Available</p></div>
@@ -129,7 +129,7 @@
           </li>
           <li data-theme="c">
             <a href="#page-history" data-transition="slide">
-              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <img src="img/history.png" alt="..." class="ui-li-thumb" />
               <div style="padding:9px 0;"><h3>History</h3></div>
             </a>
           </li>
@@ -169,11 +169,10 @@
         </h3>
       </div>
       <div data-role="content">
-        <button data-role="button" data-transition="none" data-theme="e" href="#"
-           data-icon="delete" data-iconpos="left" class="disarmed">
-          Disarmed - Press to Arm
+        <button data-role="button" data-transition="none" href="#" class="armBtn">
+          <span class="glyphicon"></span> <span class="armTxt">Disarmed - Press to Arm</span>
         </button>
-        <h2 class="grey" style="normal">Home Security Zones</h2>
+        <h2 class="grey normal">Home Security Zones</h2>
         <ul data-role="listview" data-divider-theme="d" data-inset="false">
           <li data-theme="c">
             <a href="#page1" data-transition="slide">
@@ -470,9 +469,114 @@
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
     <script>window.jQuery || document.write('<script src="js/jquery-1.10.1.min.js"><\/script>')</script>
     <script src="//code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.0/holder.min.js"></script>
     <script>
+      var _client = '';
+      var _body   = '';
+      var _data   = {};
 
+      function loggedSuccess () {
+        var deviceCls = '';
+        if (typeof _data.root == 'undefined') {
+          _client   = _data.client;
+          _body     = _data.body;
+          deviceCls = 'clientDevice';
+        } else {
+          deviceCls = 'addDevice';
+        }
+
+        $('div.loginWrap').slideUp(function(){
+          $('div.commandWrap,div.'+deviceCls).fadeIn(function(){
+            $('#command').focus();
+          });
+        });
+      } // loggedSuccess
+
+      function resetMessage (second) {
+          if (typeof second == 'undefined') {
+              second = 3000;
+          }
+          setTimeout(function(){
+              $('div.alert').fadeOut(function(){
+                  $(this).attr('class', 'alert').html('');
+              });
+          }, second);
+      } // resetMessage
+
+      var socket = io.connect('http://192.168.1.75:8080');
+
+      socket.on('connect', function(){
+          $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
+      });
+      socket.on('connecting', function(){
+          $('.connection').removeClass('text-danger text-success').addClass('text-default').html('Connecting..');
+      });
+      socket.on('disconnect', function(){
+          $('.connection').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
+      });
+      socket.on('Updates', function(data){
+           if (typeof data.info != 'undefined') {
+               var troubles = 0;
+               var total    = 0;
+               var listview = '';
+               var thm      = 'b';
+               var mapping  = {
+                   o: 'Opened',
+                   c: 'Closed',
+                   b: 'Bypassed',
+                   d: 'Disabled'
+               };
+
+               $.each(data.status, function(k, v){
+                    if (k != 'alarm_status') {
+                        total++;
+                        if (v == 0) {
+                            troubles++
+                        }
+                    }
+               });
+
+               if (troubles) {
+                   $('.troubles').removeClass('text-success text-default').addClass('text-danger').html('Problem '+troubles+'/'+total);
+               } else {
+                   $('.troubles').removeClass('text-danger text-default').addClass('text-success').html('OK '+troubles+'/'+total);
+               }
+
+               $('.status').removeClass('text-danger text-default').addClass('text-success').html(data.info.name+' connected');
+
+
+               if (data.status.alarm_status == 'a') {
+                   thm = 'e';
+                   $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-lock');
+                   $('#page-security button.armBtn span.armed').html('Armed Away - Press to Disamed');
+               } else if (data.status.alarm_status == 'h') {
+                   thm = 'e';
+                   $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-lock');
+                   $('#page-security button.armBtn span.armed').html('Armed Home - Press to Disamed');
+               } else if (data.status.alarm_status == 'r') {
+                   $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-warning-sign');
+                   $('#page-security button.armBtn span.disarmed').html('Disarmed - Press to Arm');
+               } else if (data.status.alarm_status == 'p') {
+                   $('#page-security button.armBtn span.glyphicon').addClass('glyphicon-warning-sign');
+                   $('#page-security button.armBtn span.disarmed').html('Panic - Press to Arm');
+               }
+               $('#page-security button.armBtn').button('refresh').buttonMarkup({ theme:thm });
+
+               $.each(data.zones, function(k, v){
+                   listview += '<li data-theme="c"><a href="#page1" data-transition="slide">' +
+                               '<img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
+                               '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p></a></li>';
+               });
+
+               $('#page-security ul[data-role=listview]').html(listview).listview('refresh');
+               Holder.run();
+           }
+      });
+      socket.on('Offline', function(data){
+          $('.troubles').removeClass('text-success text-default').addClass('text-danger').html('N/A');
+          $('.status').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
+      });
     </script>
 </body>
 </html>
