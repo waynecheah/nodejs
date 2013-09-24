@@ -483,6 +483,7 @@
 
       function updateAlarmStatus (create) {
           var thm = 'b';
+          var sts = '';
 
           if ($('#page-security button.armBtn').parent().hasClass('ui-btn') == false) { // button is not rendered
               return;
@@ -490,16 +491,20 @@
 
           if (_data.status.alarm_status == 'a') {
               thm = 'e';
+              sts = 'Armed Away';
               $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
               $('#page-security button.armBtn span.armTxt').html('Armed Away - Press to Disamed');
           } else if (_data.status.alarm_status == 'h') {
               thm = 'e';
+              sts = 'Armed Home';
               $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
               $('#page-security button.armBtn span.armTxt').html('Armed Home - Press to Disamed');
           } else if (_data.status.alarm_status == 'r') {
+              sts = 'Disarmed';
               $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
               $('#page-security button.armBtn span.armTxt').html('Disarmed - Press to Arm');
           } else if (_data.status.alarm_status == 'p') {
+              sts = 'Panic';
               $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
               $('#page-security button.armBtn span.armTxt').html('Panic - Press to Arm');
           }
@@ -509,9 +514,15 @@
           if (create) {
               $('#page-security button.armBtn').buttonMarkup({ theme:thm });
           } else {
+              notification('Alarm Status', 'Alarm status is now changed to '+sts);
               $('#page-security button.armBtn').button('refresh').buttonMarkup({ theme:thm });
           }
       } // updateAlarmStatus
+
+      function updateSystemStatus (id, value) {
+          var sts = (value == 1) ? 'OK' : 'Failure';
+          notification('System Status', 'System status of '+id+' is now changed to '+sts);
+      } // updateSystemStatus
 
       function updateZone (id, value) {
           var mapping = {
@@ -520,10 +531,30 @@
               b: 'Bypassed',
               d: 'Disabled'
           };
+
+          notification('Zone Status', 'Zone '+id+' status is now changed to '+mapping[value]);
+
           if ($('#page-security ul[data-role=listview] li').length > 0) { // listview is rendered
               $('#page-security ul[data-role=listview] li.'+id+' p.ui-li-desc').html(mapping[value]);
           }
       } // updateZone
+
+      function notification (title, content) {
+        if (window.webkitNotifications.checkPermission() == 0) { // 0 is PERMISSION_ALLOWED
+            var ntf = window.webkitNotifications.createNotification('img/warning.png', title, content);
+            ntf.ondisplay = function() {
+                window.setTimeout(function() {
+                    ntf.cancel();
+                }, 5000);
+            };
+            ntf.onclose = function() {
+                console.log('Notification closing');
+            };
+            nft.show();
+        } else {
+            window.webkitNotifications.requestPermission();
+        }
+      } // notification
 
       var socket = io.connect('http://cheah.homeip.net:8080');
 
@@ -557,6 +588,7 @@
               if (d.id == 'alarm_status') {
                   updateAlarmStatus(false);
               } else {
+                  updateSystemStatus(d.id, d.value);
                   updateTroubles();
               }
           } else if (d.type == 'zone') {

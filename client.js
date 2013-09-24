@@ -18,7 +18,8 @@ var serverErr = {
     e6: 'Alarm status is not reported',
     e7: 'System status is not completely reported',
     e8: 'Unrecognized zone status',
-    e9: 'No any zone received for update'
+    e9: 'No any zone received for update',
+    e10: 'Invalid zone number'
 };
 var _data  = {
     info: {
@@ -42,23 +43,26 @@ var _data  = {
         z5: 'c'
     }
 };
-var _stage = 'authorisation';
+var _stage = '';
 
 
-function write (msg, l, type) {
-    _timer += 500;
+function write (msg, l, type, stage) {
+    _timer += 200;
     setTimeout(function(){
         if (l) {
             var t = (typeof type == 'undefined') ? 'i' : type;
             log('n', t, l);
         }
+        if (typeof stage != 'undefined') {
+            _stage = stage;
+        }
         socket.write(msg+RN);
     }, _timer);
 } // write
 
-function reset () {
+function resetTime () {
     _timer = 0;
-} // reset
+} // resetTime
 
 function isc (data, cmd) {
     var length = cmd.length;
@@ -110,6 +114,18 @@ function gv (data, start) { // get value
     var data = data.replace(RN, '');
     return data.substr(start);
 } // gv
+
+function g1 (k) {
+    return _data.info[k];
+} // g1
+
+function g2 (k) {
+    return _data.status[k];
+} // g2
+
+function g3 (k) {
+    return _data.zones[k];
+} // g3
 
 
 function hex2a (hex) {
@@ -173,64 +189,72 @@ function log (env, type, mesg) {
 //
 var socket = net.createConnection(port, host);
 socket.setEncoding('utf8');
+socket.cmd = function(data){
+    socket.write(data+RN);
+};
+socket.get = function(type, key) {
+    log('n', 'i', _data[type][key]);
+};
 
 log('n', 'i', 'Socket created.');
 socket.on('data', function(data) {
-    log('n', 'i', 'SERVER RESPONSE: '+data);
+    log('s', 'i', 'SERVER RESPONSE: '+data.replace(RN, ''));
     if (isg(data, 'id')) {
-        write('serial='+_data.info.serial, 'Send serial='+_data.info.serial);
-        write('name='+_data.info.name, 'Send name='+_data.info.name);
-        write('version='+_data.info.name, 'Send version='+_data.info.version);
-        write('-done-', 'Send -done-');
+        write('serial='+g1('serial'), 'Send serial='+g1('serial'));
+        write('name='+g1('name'), 'Send name='+g1('name'));
+        write('version='+g1('version'), 'Send version='+g1('version'));
+        write('-done-', 'Send -done-', 'i', 'authorisation');
     } else if (isg(data, 'alarm_status')) {
-        write('alarm_status='+_data.status.alarm_status, 'Send alarm_status='+_data.status.alarm_status);
+        write('alarm_status='+g2('alarm_status'), 'Send alarm_status='+g2('alarm_status'), 'i', 'alarm_status');
     } else if (isg(data, 'system_status')) {
-        write('power='+_data.status.power, 'Send power='+_data.status.power);
-        write('battery='+_data.status.battery, 'Send battery='+_data.status.battery);
-        write('pstn='+_data.status.pstn, 'Send pstn='+_data.status.pstn);
-        write('comm='+_data.status.comm, 'Send comm='+_data.status.comm);
-        write('keypad='+_data.status.keypad, 'Send keypad='+_data.status.keypad);
-        write('-done-', 'Send -done-');
+        write('power='+g2('power'), 'Send power='+g2('power'));
+        write('battery='+g2('battery'), 'Send battery='+g2('battery'));
+        write('pstn='+g2('pstn'), 'Send pstn='+g2('pstn'));
+        write('comm='+g2('comm'), 'Send comm='+g2('comm'));
+        write('keypad='+g2('keypad'), 'Send keypad='+g2('keypad'));
+        write('-done-', 'Send -done-', 'i', 'system_status');
     } else if (isg(data, 'zones')) {
-        write('z1='+_data.zones.z1, 'Send zone 1 opened: z1='+_data.zones.z1);
-        write('z2='+_data.zones.z2, 'Send zone 2 closed: z2='+_data.zones.z2);
-        write('z3='+_data.zones.z3, 'Send zone 3 bypassed: z3='+_data.zones.z3);
-        write('z4='+_data.zones.z4, 'Send zone 4 disabled: z4='+_data.zones.z4);
-        write('z5='+_data.zones.z5, 'Send z5='+_data.zones.z5);
-        write('-done-', 'Send -done-');
+        write('z1='+g3('z1'), 'Send zone 1 opened: z1='+g3('z1'));
+        write('z2='+g3('z2'), 'Send zone 2 closed: z2='+g3('z2'));
+        write('z3='+g3('z3'), 'Send zone 3 bypassed: z3='+g3('z3'));
+        write('z4='+g3('z4'), 'Send zone 4 disabled: z4='+g3('z4'));
+        write('z5='+g3('z5'), 'Send z5='+g3('z5'));
+        write('-done-', 'Send -done-', 'i', 'zones');
     } else if (data.substr(0,2) == 'ok') {
         log('n', 's', 'OK received from server');
         if (_stage == 'authorisation') {
             log('n', 'i', 'Gain access to the server');
-            _stage = 'alarm_status';
+            resetTime();
+            _stage = '';
         } else if (_stage == 'alarm_status') {
             log('n', 'i', 'Alarm status reported to server successfully');
-            _stage = 'system_status';
+            resetTime();
+            _stage = '';
         } else if (_stage == 'system_status') {
             log('n', 'i', 'System status reported to server successfully');
-            _stage = 'zones';
+            resetTime();
+            _stage = '';
         } else if (_stage == 'zones') {
             log('n', 'i', 'All zones reported to server successfully');
+            resetTime();
             _stage = 'ready';
         }
-        reset();
+        console.log(' ');
     } else if (data.substr(0,1) == 'e') {
         var no = gv(data, 1);
 
         if (typeof serverErr['e'+no] == 'undefined') {
-            log('n', 'e', data);
+            log('s', 'e', data);
         } else {
-            log('n', 'e', '[e'+no+'] '+serverErr['e'+no]);
+            log('s', 'e', '[e'+no+'] '+serverErr['e'+no]);
         }
-        reset();
+        resetTime();
     }
 }).on('connect', function() {
     log('n', 'i', 'Socket connected to server successfully!');
-    socket.cmd = function(data){
-        socket.write(data+RN);
-    };
+    console.log(' ');
 }).on('end', function() {
     log('n', 'i', 'Disconnected from server');
 });
 
-exports.socket = socket;
+exports.s = socket;

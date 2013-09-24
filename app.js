@@ -25,7 +25,8 @@ var serverErr  = {
     e6: 'Alarm status is not reported',
     e7: 'System status is not completely reported',
     e8: 'Unrecognized zone status',
-    e9: 'No any zone received for update'
+    e9: 'No any zone received for update',
+    e10: 'Invalid zone number'
 };
 var webErr     = {};
 
