@@ -5,10 +5,11 @@ var colors = require('colors');
 
 var sockets   = [];
 var RN        = '\r\n';
-var _timer    = null;
-var host      = '192.168.1.75';
+var _timer    = 0;
+var host      = 'cheah.homeip.net';
 var port      = 1470;
 var serverErr = {
+    e0: 'Invalid input',
     e1: 'System error',
     e2: 'Error found while query made to database',
     e3: 'Required authorisation data not found',
@@ -19,7 +20,45 @@ var serverErr = {
     e8: 'Unrecognized zone status',
     e9: 'No any zone received for update'
 };
+var _data  = {
+    info: {
+        serial: '1234',
+        name: 'RaspPi',
+        version: '0.1'
+    },
+    status: {
+        alarm_status: 'r',
+        power: 1,
+        battery: 1,
+        pstn: 1,
+        comm: 0,
+        keypad: 0
+    },
+    zones: {
+        z1: 'o',
+        z2: 'c',
+        z3: 'b',
+        z4: 'd',
+        z5: 'c'
+    }
+};
+var _stage = 'authorisation';
 
+
+function write (msg, l, type) {
+    _timer += 500;
+    setTimeout(function(){
+        if (l) {
+            var t = (typeof type == 'undefined') ? 'i' : type;
+            log('n', t, l);
+        }
+        socket.write(msg+RN);
+    }, _timer);
+} // write
+
+function reset () {
+    _timer = 0;
+} // reset
 
 function isc (data, cmd) {
     var length = cmd.length;
@@ -133,86 +172,48 @@ function log (env, type, mesg) {
 // Net Client
 //
 var socket = net.createConnection(port, host);
-var _data  = {
-    info: {
-        serial: '1234',
-        name: 'RaspPi',
-        version: '0.1'
-    },
-    status: {
-        alarm_status: 'r',
-        power: 1,
-        battery: 1,
-        pstn: 1,
-        comm: 0,
-        keypad: 0
-    },
-    zones: {
-        z1: 'o',
-        z2: 'c',
-        z3: 'b',
-        z4: 'd',
-        z5: 'c'
-    }
-};
-var _stage = 'authorisation';
+socket.setEncoding('utf8');
 
 log('n', 'i', 'Socket created.');
 socket.on('data', function(data) {
-    log('n', 'i', 'RESPONSE: '+data);
-    if (ps = isg(data, 'id')) {
-      log('n', 'i', 'Send serial='+_data.info.serial);
-        socket.write('serial='+_data.info.serial+RN);
-      log('n', 'i', 'Send name='+_data.info.name);
-        socket.write('name='+_data.info.name+RN);
-      log('n', 'i', 'Send version='+_data.info.version);
-        socket.write('version='+_data.info.name+RN);
-      log('n', 'i', 'Send -done-');
-        socket.write('-done-'+RN);
-    } else if (ps = isg(data, 'alarm_status')) {
-      log('n', 'i', 'Send alarm_status='+_data.status.alarm_status);
-        socket.write('alarm_status='+_data.status.alarm_status+RN);
-    } else if (ps = isg(data, 'system_status')) {
-      log('n', 'i', 'Send power='+_data.status.power);
-        socket.write('power='+_data.status.power+RN);
-      log('n', 'i', 'Send battery='+_data.status.battery);
-        socket.write('battery='+_data.status.battery+RN);
-      log('n', 'i', 'Send pstn='+_data.status.pstn);
-        socket.write('pstn='+_data.status.pstn+RN);
-      log('n', 'i', 'Send comm='+_data.status.comm);
-        socket.write('comm='+_data.status.comm+RN);
-      log('n', 'i', 'Send keypad='+_data.status.keypad);
-        socket.write('keypad='+_data.status.keypad+RN);
-      log('n', 'i', 'Send -done-');
-        socket.write('-done-'+RN);
-    } else if (ps = isg(data, 'zones')) {
-      log('n', 'i', 'Send zone 1 opened: z1='+_data.zones.z1);
-        socket.write('z1='+_data.zones.z1+RN);
-      log('n', 'i', 'Send zone 2 closed: z2='+_data.zones.z2);
-        socket.write('z2='+_data.zones.z2+RN);
-      log('n', 'i', 'Send zone 3 bypassed: z3='+_data.zones.z3);
-        socket.write('z3='+_data.zones.z3+RN);
-      log('n', 'i', 'Send zone 4 disabled: z4='+_data.zones.z4);
-        socket.write('z4='+_data.zones.z4+RN);
-      log('n', 'i', 'Send z5='+_data.zones.z5);
-        socket.write('z5='+_data.zones.z5+RN);
-      log('n', 'i', 'Send -done-');
-        socket.write('-done-'+RN);
+    log('n', 'i', 'SERVER RESPONSE: '+data);
+    if (isg(data, 'id')) {
+        write('serial='+_data.info.serial, 'Send serial='+_data.info.serial);
+        write('name='+_data.info.name, 'Send name='+_data.info.name);
+        write('version='+_data.info.name, 'Send version='+_data.info.version);
+        write('-done-', 'Send -done-');
+    } else if (isg(data, 'alarm_status')) {
+        write('alarm_status='+_data.status.alarm_status, 'Send alarm_status='+_data.status.alarm_status);
+    } else if (isg(data, 'system_status')) {
+        write('power='+_data.status.power, 'Send power='+_data.status.power);
+        write('battery='+_data.status.battery, 'Send battery='+_data.status.battery);
+        write('pstn='+_data.status.pstn, 'Send pstn='+_data.status.pstn);
+        write('comm='+_data.status.comm, 'Send comm='+_data.status.comm);
+        write('keypad='+_data.status.keypad, 'Send keypad='+_data.status.keypad);
+        write('-done-', 'Send -done-');
+    } else if (isg(data, 'zones')) {
+        write('z1='+_data.zones.z1, 'Send zone 1 opened: z1='+_data.zones.z1);
+        write('z2='+_data.zones.z2, 'Send zone 2 closed: z2='+_data.zones.z2);
+        write('z3='+_data.zones.z3, 'Send zone 3 bypassed: z3='+_data.zones.z3);
+        write('z4='+_data.zones.z4, 'Send zone 4 disabled: z4='+_data.zones.z4);
+        write('z5='+_data.zones.z5, 'Send z5='+_data.zones.z5);
+        write('-done-', 'Send -done-');
     } else if (data.substr(0,2) == 'ok') {
         log('n', 's', 'OK received from server');
         if (_stage == 'authorisation') {
-          log('n', 'i', 'Gain access to the server');
+            log('n', 'i', 'Gain access to the server');
             _stage = 'alarm_status';
         } else if (_stage == 'alarm_status') {
-          log('n', 'i', 'Alarm status reported to server successfully');
+            log('n', 'i', 'Alarm status reported to server successfully');
             _stage = 'system_status';
         } else if (_stage == 'system_status') {
-          log('n', 'i', 'System status reported to server successfully');
+            log('n', 'i', 'System status reported to server successfully');
             _stage = 'zones';
         } else if (_stage == 'zones') {
-          log('n', 'i', 'All zones reported to server successfully');
+            log('n', 'i', 'All zones reported to server successfully');
             _stage = 'ready';
         }
+        reset();
     } else if (data.substr(0,1) == 'e') {
         var no = gv(data, 1);
 
@@ -221,10 +222,10 @@ socket.on('data', function(data) {
         } else {
             log('n', 'e', '[e'+no+'] '+serverErr['e'+no]);
         }
+        reset();
     }
 }).on('connect', function() {
     log('n', 'i', 'Socket connected to server successfully!');
-    socket.write('say hi'+RN);
     socket.cmd = function(data){
         socket.write(data+RN);
     };
