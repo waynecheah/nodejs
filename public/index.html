@@ -504,6 +504,8 @@
               $('#page-security button.armBtn span.armTxt').html('Panic - Press to Arm');
           }
 
+          $('#page-security button.armBtn').attr('data-status', _data.status.alarm_status);
+
           if (create) {
               $('#page-security button.armBtn').buttonMarkup({ theme:thm });
           } else {
@@ -586,6 +588,12 @@
 
           $('#page-security ul[data-role=listview]').html(listview);
           Holder.run();
+      });
+      $('#page-security button.armBtn').click(function(){
+          var sts = $(this).attr('data-status');
+          socket.emit('app update', 'status', {
+              alarm_status: sts
+          });
       });
     </script>
 </body>

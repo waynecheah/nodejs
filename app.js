@@ -7,6 +7,7 @@ var io         = require('socket.io');
 var fs         = require('fs');
 var crypto     = require('crypto');
 var colors     = require('colors');
+var _          = require('lodash');
 var nodemailer = require('nodemailer');
 
 var sockets    = [];
@@ -815,6 +816,16 @@ io.sockets.on('connection', function(sock) {
         });
     }
 
+    sock.on('app update', function(type, data){
+        for (var i=0; i<sockets.length; i++) {
+            _.each(data, function(v, k){
+                log('w', 'i', 'App update '+type+', set '+k+' = '+v);
+                sockets[i][type][k] = v;
+                sockets[i].write(k+'='+v+RN);
+            });
+        }
+        log('w', 'd', data);
+    });
 
     sock.emit('WelcomeMessage', { message:'~ Welcome to the world of socket.io ~', user:'Unknown' })
 
