@@ -296,7 +296,7 @@ var server = net.createServer(function (socket) {
                     sockets[i].end();
                 }
             }
-        } else if (socket.tmp == 'undefined' && !iss(dt, 'serial')) {
+        } else if (typeof socket.tmp == 'undefined' && !iss(dt, 'serial')) {
             log('n', 'i', 'Probably welcome message sent from device');
             log('n', 'd', dt);
             socket.tmp = {};
