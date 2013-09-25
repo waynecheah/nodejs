@@ -206,6 +206,10 @@ socket.on('data', function(data) {
         write('-done-', 'Send -done-', 'i', 'authorisation');
     } else if (isg(data, 'alarm_status')) {
         write('alarm_status='+g2('alarm_status'), 'Send alarm_status='+g2('alarm_status'), 'i', 'alarm_status');
+    } else if (ps = iss(data, 'alarm_status')) {
+        var value                 = gv(data, ps);
+        _data.status.alarm_status = value;
+        write('alarm_status='+value, 'Receive update, system has set alarm_status='+value, 's');
     } else if (isg(data, 'system_status')) {
         write('power='+g2('power'), 'Send power='+g2('power'));
         write('battery='+g2('battery'), 'Send battery='+g2('battery'));
@@ -238,6 +242,7 @@ socket.on('data', function(data) {
             log('n', 'i', 'All zones reported to server successfully');
             resetTime();
             _stage = 'ready';
+        } else if (_stage == 'ready') {
         }
         console.log(' ');
     } else if (data.substr(0,1) == 'e') {
