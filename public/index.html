@@ -165,7 +165,7 @@
 
 
     <!-- Security -->
-    <div data-role="page" id="page-security">
+    <div data-role="page" id="page-security" data-render="0">
       <div data-theme="b" data-role="header" data-position="fixed">
         <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
            data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
@@ -468,7 +468,7 @@
           }, second);
       } // resetMessage
 
-      function updateTroubles () {
+      function updateTroubles (id) {
           var troubles = 0;
           var total    = 0;
 
@@ -486,15 +486,17 @@
           } else {
               $('.troubles').removeClass('text-danger text-default').addClass('text-success').html('OK '+troubles+'/'+total);
           }
+
+          if (typeof id != 'undefined') {
+              var sts = (_data.status[id] == 1) ? 'OK' : 'Failure';
+              notification('System Status', 'System status of '+id+' is now changed to '+sts);
+          }
       } // updateTroubles
 
-      function updateAlarmStatus (create) {
+      function updateAlarmStatus (alert) {
+          var rdr = $('#page-security').attr('data-render');
           var thm = 'b';
           var sts = '';
-
-          if ($('#page-security button.armBtn').parent().hasClass('ui-btn') == false) { // button is not rendered
-              return;
-          }
 
           if (_data.status.alarm_status == 'a') {
               thm = 'e';
@@ -518,18 +520,40 @@
 
           $('#page-security button.armBtn').attr('data-status', _data.status.alarm_status);
 
-          if (create) {
-              $('#page-security button.armBtn').attr('data-theme', thm);
+          if (rdr == '1') {
+              $('#page-security button.armBtn').attr('data-theme', thm).button('refresh');//.buttonMarkup({ theme:thm });
           } else {
+              $('#page-security button.armBtn').attr('data-theme', thm);
+          }
+
+          if (alert) {
               notification('Alarm Status', 'Alarm status is now changed to '+sts);
-              $('#page-security button.armBtn').button('refresh').buttonMarkup({ theme:thm });
           }
       } // updateAlarmStatus
 
-      function updateSystemStatus (id, value) {
-          var sts = (value == 1) ? 'OK' : 'Failure';
-          notification('System Status', 'System status of '+id+' is now changed to '+sts);
-      } // updateSystemStatus
+      function updateZones () {
+          var rendered = $('#page-security').attr('data-render');
+          var listview = '';
+          var mapping  = {
+              o: 'Opened',
+              c: 'Closed',
+              b: 'Bypassed',
+              d: 'Disabled'
+          };
+
+          $.each(_data.zones, function(k, v){
+              listview += '<li data-theme="c" class="'+k+'"><a href="#page1" data-transition="slide">' +
+                          '<img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
+                          '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p></a></li>';
+          });
+
+          $('#page-security ul[data-role=listview]').html(listview);
+          Holder.run();
+
+          if (rendered == '1') {
+              $('#page-security ul[data-role=listview]').listview('refresh');
+          }
+      } // updateZones
 
       function updateZone (id, value) {
           var mapping = {
@@ -539,11 +563,11 @@
               d: 'Disabled'
           };
 
-          notification('Zone Status', id.replace('z', 'Zone ')+' status is now changed to '+mapping[value]);
-
-          if ($('#page-security ul[data-role=listview] li').length > 0) { // listview is rendered
+          if ($('#page-security ul[data-role=listview] li').length > 0) { // only if listview is rendered
               $('#page-security ul[data-role=listview] li.'+id+' p.ui-li-desc').html(mapping[value]);
           }
+
+          notification('Zone Status', id.replace('z', 'Zone ')+' status is now changed to '+mapping[value]);
       } // updateZone
 
       function notification (title, content, timeclose) {
@@ -599,8 +623,10 @@
            if (typeof data.info != 'undefined') {
                _data = data;
 
-               updateTroubles();
                $('.status').removeClass('text-danger text-default').addClass('text-success').html(data.info.name+' connected');
+               updateTroubles();
+               updateAlarmStatus(false);
+               updateZones();
            }
       });
       socket.on('Offline', function(data){
@@ -615,10 +641,9 @@
               _data.status[d.id] = d.value;
 
               if (d.id == 'alarm_status') {
-                  updateAlarmStatus(false);
+                  updateAlarmStatus(true);
               } else {
-                  updateSystemStatus(d.id, d.value);
-                  updateTroubles();
+                  updateTroubles(d.id);
               }
           } else if (d.type == 'zone') {
               _data.zones[d.id] = d.value;
@@ -638,28 +663,7 @@
           }
       });
       $('#page-security').on('pagecreate', function(){
-          if (typeof _data.status == 'undefined') {
-              return;
-          }
-
-          var listview = '';
-          var mapping  = {
-              o: 'Opened',
-              c: 'Closed',
-              b: 'Bypassed',
-              d: 'Disabled'
-          };
-
-          updateAlarmStatus('create');
-
-          $.each(_data.zones, function(k, v){
-              listview += '<li data-theme="c" class="'+k+'"><a href="#page1" data-transition="slide">' +
-                          '<img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
-                          '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p></a></li>';
-          });
-
-          $('#page-security ul[data-role=listview]').html(listview);
-          Holder.run();
+          $(this).attr('data-render', '1');
       });
       $('#page-security button.armBtn').click(function(){
           var sts = $(this).attr('data-status');
