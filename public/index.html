@@ -547,6 +547,9 @@
       } // updateZone
 
       function notification (title, content, timeclose) {
+          if (typeof window.webkitNotifications == 'undefined') {
+              return;
+          }
           if (window.webkitNotifications.checkPermission() == 0) { // 0 is PERMISSION_ALLOWED
               var ntf  = window.webkitNotifications.createNotification('img/warning.png', title, content);
               var time = (typeof timeclose == 'undefined') ? 8000 : timeclose;
@@ -624,7 +627,7 @@
       });
 
       $('#home').on('pagecreate', function(){
-          if (window.webkitNotifications && window.webkitNotifications.checkPermission()) {
+          if (typeof window.webkitNotifications != 'undefined' && window.webkitNotifications.checkPermission()) {
               $('div.gainPermissions').show();
               $('div.gainPermissions').click(function(){
                   window.webkitNotifications.requestPermission();
