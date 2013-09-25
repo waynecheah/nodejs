@@ -296,6 +296,10 @@ var server = net.createServer(function (socket) {
                     sockets[i].end();
                 }
             }
+        } else if (typeof socket.tmp == 'undefined' && !iss(dt, 'serial')) {
+            log('n', 'i', 'Probably welcome message sent from device');
+            log('n', 'd', dt);
+            socket.tmp = {};
         } else if (typeof socket.info == 'undefined') { // when device has not logged, all data sent will go here
 // AUTHORISATION
             if (typeof socket.tmp == 'undefined') {
