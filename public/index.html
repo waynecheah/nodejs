@@ -134,6 +134,13 @@
             </a>
           </li>
         </ul>
+
+        <div class="gainPermissions" style="display:none; margin-top:35px;">
+          <button data-role="button" data-transition="none" href="#">
+            <span class="txt">Set notification permissions for this App</span>
+          </button>
+        </div>
+
       </div>
       <div data-theme="a" data-role="footer" data-position="fixed" class="footer">
         <div data-role="navbar" data-iconpos="top" class="visible-xs">
@@ -532,31 +539,45 @@
               d: 'Disabled'
           };
 
-          notification('Zone Status', 'Zone '+id+' status is now changed to '+mapping[value]);
+          notification('Zone Status', id.replace('z', 'Zone ')+' status is now changed to '+mapping[value]);
 
           if ($('#page-security ul[data-role=listview] li').length > 0) { // listview is rendered
               $('#page-security ul[data-role=listview] li.'+id+' p.ui-li-desc').html(mapping[value]);
           }
       } // updateZone
 
-      function notification (title, content) {
-        if (window.webkitNotifications.checkPermission() == 0) { // 0 is PERMISSION_ALLOWED
-            var ntf = window.webkitNotifications.createNotification('img/warning.png', title, content);
-            ntf.ondisplay = function() {
-                window.setTimeout(function() {
-                    ntf.cancel();
-                }, 5000);
-            };
-            ntf.onclose = function() {
-                console.log('Notification closing');
-            };
-            nft.show();
-        } else {
-            window.webkitNotifications.requestPermission();
-        }
+      function notification (title, content, timeclose) {
+          if (window.webkitNotifications.checkPermission() == 0) { // 0 is PERMISSION_ALLOWED
+              var ntf  = window.webkitNotifications.createNotification('img/warning.png', title, content);
+              var time = (typeof timeclose == 'undefined') ? 8000 : timeclose;
+
+              ntf.ondisplay = function() {
+                  window.setTimeout(function() {
+                      ntf.cancel();
+                  }, time);
+              };
+              ntf.onclose = function() {
+                  console.log('Notification closing');
+              };
+              ntf.show();
+          } else {
+              window.webkitNotifications.requestPermission();
+          }
       } // notification
 
-      var socket = io.connect('http://cheah.homeip.net:8080');
+      function permissionCheck () {
+          if (window.webkitNotifications.checkPermission() == 0) {
+              $('div.gainPermissions').fadeOut('normal', function(){
+                  $(this).remove();
+              });
+          } else {
+              setTimeout(permissionCheck, 1000);
+          }
+      } // permissionCheck
+
+      var socket = io.connect('http://localhost:8080', {
+          'max reconnection attempts': 100
+      });
 
       socket.on('connect', function(){
           $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
@@ -566,6 +587,10 @@
       });
       socket.on('disconnect', function(){
           $('.connection').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
+          notification('Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000);
+      });
+      socket.on('reconnect', function(){
+          notification('Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000);
       });
       socket.on('InitialUpdates', function(data){
            if (typeof data.info != 'undefined') {
@@ -578,6 +603,7 @@
       socket.on('Offline', function(data){
           $('.troubles').removeClass('text-success text-default').addClass('text-danger').html('N/A');
           $('.status').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
+          notification('Panel Offline', 'Your panel is detected offline now, this may due to internet connection problem.', 10000);
       });
       socket.on('DeviceUpdate', function(d){
           if (d.type == 'info') {
@@ -597,6 +623,17 @@
           }
       });
 
+      $('#home').on('pagecreate', function(){
+          if (window.webkitNotifications && window.webkitNotifications.checkPermission()) {
+              $('div.gainPermissions').show();
+              $('div.gainPermissions').click(function(){
+                  window.webkitNotifications.requestPermission();
+                  permissionCheck();
+              });
+          } else { // either browser not support Notification or it already gained permission
+              $('div.gainPermissions').remove();
+          }
+      });
       $('#page-security').on('pagecreate', function(){
           if (typeof _data.status == 'undefined') {
               return;
