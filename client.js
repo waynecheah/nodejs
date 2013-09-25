@@ -252,6 +252,7 @@ socket.on('data', function(data) {
     }
 }).on('connect', function() {
     log('n', 'i', 'Socket connected to server successfully!');
+    write('Say hello to server. hihi~!', false);
     console.log(' ');
 }).on('end', function() {
     log('n', 'i', 'Disconnected from server');
