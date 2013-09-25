@@ -512,7 +512,8 @@
           $('#page-security button.armBtn').attr('data-status', _data.status.alarm_status);
 
           if (rdr == '1') {
-              $('#page-security button.armBtn').attr('data-theme', thm).button('refresh');//.buttonMarkup({ theme:thm });
+              $('#page-security button.armBtn').button('refresh');
+              $('#page-security button.armBtn').buttonMarkup({ theme:thm });
           } else {
               $('#page-security button.armBtn').attr('data-theme', thm);
           }
@@ -658,6 +659,11 @@
       });
       $('#page-security button.armBtn').click(function(){
           var sts = $(this).attr('data-status');
+          if (sts == 'r') {
+              sts = 'a';
+          } else if (sts == 'a') {
+              sts = 'r';
+          }
           socket.emit('app update', 'status', {
               alarm_status: sts
           });
