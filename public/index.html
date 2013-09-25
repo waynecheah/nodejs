@@ -519,7 +519,7 @@
           $('#page-security button.armBtn').attr('data-status', _data.status.alarm_status);
 
           if (create) {
-              $('#page-security button.armBtn').buttonMarkup({ theme:thm });
+              $('#page-security button.armBtn').attr('data-theme', thm);
           } else {
               notification('Alarm Status', 'Alarm status is now changed to '+sts);
               $('#page-security button.armBtn').button('refresh').buttonMarkup({ theme:thm });
