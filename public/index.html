@@ -111,10 +111,10 @@
               <span class="ui-li-count">3</span>
             </a>
           </li>
-          <li data-theme="c" class="ui-disabled">
-            <a href="#page-termostats" data-transition="slide">
+          <li data-theme="c">
+            <a href="#page-system-status" data-transition="slide">
               <img src="img/thermostats.png" alt="..." class="ui-li-thumb" />
-              <div style="padding:9px 0;"><h3>Thermostats</h3></div>
+              <div style="padding:9px 0;"><h3>System Status</h3></div>
             </a>
           </li>
           <li data-theme="c">
@@ -148,7 +148,7 @@
             <li><a href="#home" data-direction="reverse" data-transition="flow" data-theme="" data-icon="home" class="ui-btn-active ui-state-persist">Home</a></li>
             <li><a href="#page-security" data-transition="flow" data-theme="" data-icon="alert">Security</a></li>
             <li><a href="#page-cameras" data-transition="flow" data-theme="" data-icon="star">Cameras</a></li>
-            <li><a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">Thermostats</a></li>
+            <li><a href="#page-system-status" data-transition="flow" data-theme="" data-icon="info">System Status</a></li>
           </ul>
         </div>
       </div>
@@ -179,7 +179,49 @@
             <li><a href="#home" data-direction="reverse" data-transition="flow" data-theme="" data-icon="home">Home</a></li>
             <li><a href="#page-security" data-transition="flow" data-theme="" data-icon="alert" class="ui-btn-active ui-state-persist">Security</a></li>
             <li><a href="#page-cameras" data-transition="flow" data-theme="" data-icon="star">Cameras</a></li>
-            <li><a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">Thermostats</a></li>
+            <li><a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">System Status</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Status -->
+    <div data-role="page" id="page-system-status">
+      <div data-theme="b" data-role="header" data-position="fixed">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Back
+        </a>
+        <h3 class="header">
+          System Status
+        </h3>
+      </div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="d" data-inset="true">
+          <li data-theme="d">Power
+            <span class="ui-li-aside normal power">N/A</span>
+          </li>
+          <li data-theme="d">Battery
+            <span class="ui-li-aside normal battery">N/A</span>
+          </li>
+          <li data-theme="d">PSTN
+            <span class="ui-li-aside normal pstn">N/A</span>
+          </li>
+          <li data-theme="d">Comm
+            <span class="ui-li-aside normal comm">N/A</span>
+          </li>
+          <li data-theme="d">Keypad
+            <span class="ui-li-aside normal keypad">N/A</span>
+          </li>
+        </ul>
+      </div>
+      <div data-theme="a" data-role="footer" data-position="fixed" class="footer">
+        <div data-role="navbar" data-iconpos="top" class="visible-xs">
+          <ul>
+            <li><a href="#home" data-direction="reverse" data-transition="flow" data-theme="" data-icon="home">Home</a></li>
+            <li><a href="#page-security" data-transition="flow" data-theme="" data-icon="alert">Security</a></li>
+            <li><a href="#page-cameras" data-transition="flow" data-theme="" data-icon="star">Cameras</a></li>
+            <li><a href="#page-system-status" data-transition="flow" data-theme="" data-icon="info" class="ui-btn-active ui-state-persist">System Status</a></li>
           </ul>
         </div>
       </div>
@@ -241,9 +283,7 @@
               </a>
             </li>
             <li>
-              <a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">
-                Thermostats
-              </a>
+              <a href="#page-system-status" data-transition="flow" data-theme="" data-icon="info">System Status</a>
             </li>
           </ul>
         </div>
@@ -342,8 +382,8 @@
               </a>
             </li>
             <li>
-              <a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">
-                Thermostats
+              <a href="#page-system-status" data-transition="flow" data-theme="" data-icon="info">
+                System Status
               </a>
             </li>
           </ul>
@@ -415,7 +455,7 @@
             <li><a href="#home" data-direction="reverse" data-transition="flow" data-theme="" data-icon="home">Home</a></li>
             <li><a href="#page-security" data-transition="flow" data-theme="" data-icon="alert">Security</a></li>
             <li><a href="#page-cameras" data-transition="flow" data-theme="" data-icon="star">Cameras</a></li>
-            <li><a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">Thermostats</a></li>
+            <li><a href="#page-system-status" data-transition="flow" data-theme="" data-icon="info">System Status</a></li>
           </ul>
         </div>
       </div>
@@ -479,7 +519,17 @@
           }
 
           if (typeof id != 'undefined') {
-              var sts = (_data.status[id] == 1) ? 'OK' : 'Failure';
+              var sts, css;
+
+              if (_data.status[id] == 1) {
+                  sts = 'OK';
+                  css = 'text-success';
+              } else {
+                  sts = 'Failure';
+                  css = 'text-danger';
+              }
+
+              $('#page-system-status').find('span.'+id).html(sts).removeClass('text-success text-danger').addClass(css);
               notification('System Status', 'System status of '+id+' is now changed to '+sts);
           }
       } // updateTroubles
@@ -562,6 +612,23 @@
           notification('Zone Status', id.replace('z', 'Zone ')+' status is now changed to '+mapping[value]);
       } // updateZone
 
+      function updateSystemStatus () {
+          var sts, css;
+
+          $.each(_data.status, function(k, v){
+              if (k != 'alarm_status') {
+                  if (v == 1) {
+                      sts = 'OK';
+                      css = 'text-success';
+                  } else {
+                      sts = 'Failure';
+                      css = 'text-danger';
+                  }
+                  $('#page-system-status').find('span.'+k).html(sts).removeClass('text-success text-danger').addClass(css);
+              }
+          });
+      } // updateSystemStatus
+
       function notification (title, content, timeclose) {
           if (typeof window.webkitNotifications == 'undefined') {
               return;
@@ -619,6 +686,7 @@
                updateTroubles();
                updateAlarmStatus(false);
                updateZones();
+               updateSystemStatus();
            }
       });
       socket.on('Offline', function(data){
