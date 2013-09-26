@@ -353,7 +353,7 @@ var server = net.createServer(function (socket) {
                         socket.clientId = data.clientId;
                         socket.info     = socket.tmp;
                         socket.tmp      = {};
-                        socket.write('ok'+RN);
+                        //socket.write('ok'+RN);
                         socket.write('alarm_status?'+RN);
                     }
                 });
@@ -372,7 +372,7 @@ var server = net.createServer(function (socket) {
                 } else {
                     log('n', 'i', 'Received alarm status: '+status);
                     socket.tmp['alarm_status'] = status;
-                    socket.write('ok'+RN);
+                    //socket.write('ok'+RN);
                     socket.write('system_status?'+RN);
                 }
             } else if (ps = iss(dt, 'power')) {
@@ -409,7 +409,7 @@ var server = net.createServer(function (socket) {
                     log('n', 'd', socket.tmp);
                     socket.status = socket.tmp;
                     socket.tmp = {};
-                    socket.write('ok'+RN);
+                    //socket.write('ok'+RN);
                     socket.write('zones?'+RN);
 
                     Device.findOneAndUpdate({ serial:socket.info.serial }, { status:socket.status });
@@ -442,7 +442,7 @@ var server = net.createServer(function (socket) {
                     log('n', 'd', socket.tmp);
                     socket.zones = socket.tmp;
                     socket.tmp   = {};
-                    socket.write('ok'+RN);
+                    //socket.write('ok'+RN);
 
                     statusUpdate({
                         info: socket.info,
