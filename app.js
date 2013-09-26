@@ -372,7 +372,7 @@ var server = net.createServer(function (socket) {
                 } else {
                     log('n', 'i', 'Received alarm status: '+status);
                     socket.tmp['alarm_status'] = status;
-                    //socket.write('ok'+RN);
+                    socket.write('ok'+RN);
                     socket.write('system_status?'+RN);
                 }
             } else if (ps = iss(dt, 'power')) {
