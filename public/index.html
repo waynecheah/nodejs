@@ -220,6 +220,15 @@
             </div>
           </div>
         </div>
+        <div class="countdown" style="display:none; margin-top:30px;">
+          <div class="progress">
+            <div class="progress-bar progress-bar-success" style="width:100%;"
+             role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+              <span class="sr-only">Arm in 10 Seconds</span>
+            </div>
+          </div>
+          <button data-role="button" data-icon="delete" data-iconpos="left" data-theme="e" >Cancel Arm</button>
+        </div>
       </div>
     </div>
 
@@ -702,17 +711,38 @@
       } // permissionCheck
 
       function armCountdown (sec) {
-          var ms;
+          var cls = null;
 
-          if (sec > 0) {
+          if (sec >= 0) {
               sec--;
 
+              if (sec <= 3) {
+                  cls = 'progress-bar-danger';
+              } else if (sec <= 7) {
+                  cls = 'progress-bar-warning';
+              } else {
+                  cls = 'progress-bar-success';
+              }
+
               setTimeout(function(){
+                  $('#page-how-to-arm div.progress-bar').css('width', (sec*10)+'%')
+                   .removeClass('progress-bar-success progress-bar-warning progress-bar-danger').addClass(cls);
                   $('div.ui-loader h1').html('Arm in '+sec+' seconds');
                   armCountdown(sec);
               }, 1000);
           } else {
+              $('#page-how-to-arm div.countdown').fadeOut(function(){
+                  $('#page-how-to-arm div.progress-bar').css('width', '100%')
+              });
+              $('#page-how-to-arm input.passcode').val('');
               $.mobile.loading('hide');
+              socket.emit('app update', 'status', {
+                  alarm_status: 'a'
+              });
+              setTimeout(function(){
+                  //$.mobile.changePage('');
+                  history.back();
+              }, 500);
           }
       } // armCountdown
 
@@ -781,12 +811,13 @@
       $('#page-security').on('pagecreate', function(){
           $(this).attr('data-render', '1');
       });
+      $('#page-how-to-arm').on('pageshow', function(){
+          $('#page-how-to-arm #code1').focus();
+      });
 
       $('#page-security a.armBtn').click(function(){
           var sts = $(this).attr('data-status');
-          if (sts == 'r') {
-              sts = 'a';
-          } else if (sts == 'a') {
+          if (sts == 'a') {
               sts = 'r';
           }
           socket.emit('app update', 'status', {
@@ -806,6 +837,7 @@
                   textVisible: true,
                   theme: 'a'
               });
+              $('#page-how-to-arm div.countdown').fadeIn();
               armCountdown(10);
           } else {
               $('#page-how-to-arm #code'+i).val('').focus();
