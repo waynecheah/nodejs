@@ -188,13 +188,22 @@
 
     <!-- How to Arm -->
     <div data-role="page" id="page-how-to-arm">
+      <div data-theme="e" data-role="header" data-position="fixed">
+        <a href="#home" data-role="button" data-inline="true" data-direction="reverse" data-rel="back"
+           data-theme="c" data-icon="delete" data-iconpos="left" class="ui-btn-left back cancelArm">
+          Cancel
+        </a>
+        <h3 class="header">
+          Confirm Arm
+        </h3>
+      </div>
       <div data-role="content">
         <h3 class="text-muted">Choose How To Arm</h3>
         <div class="center">
           <div data-role="controlgroup" data-type="horizontal">
-            <a href="#" data-role="button">Arm Stay</a>
-            <a href="#" data-role="button" class="ui-btn-active">Arm Away</a>
-            <a href="#" data-role="button">Arm Night</a>
+            <a href="#" data-role="button" data-alarm="h" class="armType">Arm Stay</a>
+            <a href="#" data-role="button" data-alarm="a" class="armType ui-btn-active">Arm Away</a>
+            <a href="#" data-role="button" data-alarm="h" class="armType">Arm Night</a>
           </div>
         </div>
         <h4 class="text-muted">Enter Keypad Code To Arm</h4>
@@ -227,7 +236,7 @@
               <span class="sr-only">Arm in 10 Seconds</span>
             </div>
           </div>
-          <button data-role="button" data-icon="delete" data-iconpos="left" data-theme="e" >Cancel Arm</button>
+          <button data-role="button" data-icon="delete" data-iconpos="left" data-theme="e" class="cancelArm" >Cancel Arm</button>
         </div>
       </div>
     </div>
@@ -516,9 +525,11 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.0/holder.min.js"></script>
     <script>
-      var _client = '';
-      var _body   = '';
-      var _data   = {};
+      var _client    = '';
+      var _body      = '';
+      var _countDown = false;
+      var _cancelArm = false;
+      var _data      = {};
 
       function loggedSuccess () {
         var deviceCls = '';
@@ -713,6 +724,10 @@
       function armCountdown (sec) {
           var cls = null;
 
+          if (!_countDown) {
+              _countDown = true;
+          }
+
           if (sec >= 0) {
               sec--;
 
@@ -725,26 +740,65 @@
               }
 
               setTimeout(function(){
+                  if (_cancelArm) {
+                      _cancelArm = false;
+                      return;
+                  }
                   $('#page-how-to-arm div.progress-bar').css('width', (sec*10)+'%')
                    .removeClass('progress-bar-success progress-bar-warning progress-bar-danger').addClass(cls);
                   $('div.ui-loader h1').html('Arm in '+sec+' seconds');
                   armCountdown(sec);
               }, 1000);
           } else {
+              _countDown = false;
+
               $('#page-how-to-arm div.countdown').fadeOut(function(){
                   $('#page-how-to-arm div.progress-bar').css('width', '100%')
+                   .removeClass('progress-bar-danger').addClass('progress-bar-success');
               });
               $('#page-how-to-arm input.passcode').val('');
               $.mobile.loading('hide');
               socket.emit('app update', 'status', {
-                  alarm_status: 'a'
+                  alarm_status: $('#page-how-to-arm a.ui-btn-active').attr('data-alarm')
               });
+
               setTimeout(function(){
-                  //$.mobile.changePage('');
                   history.back();
               }, 500);
           }
       } // armCountdown
+
+      function cancelCountdown (isBackBtn) {
+          _cancelArm = true;
+
+          $('#page-how-to-arm input.passcode').val('');
+
+          if (!_countDown) {
+              return;
+          }
+          _countDown = false;
+
+          $('#page-how-to-arm div.countdown').fadeOut(function(){
+              $('#page-how-to-arm div.progress-bar').css('width', '100%')
+               .removeClass('progress-bar-warning progress-bar-danger').addClass('progress-bar-success');
+          });
+          $.mobile.loading('hide');
+
+          setTimeout(function(){
+              $.mobile.loading('show', {
+                  text: 'Arm Process Cancelled',
+                  textVisible: true,
+                  textonly: true,
+                  theme: 'b'
+              });
+          }, 500);
+
+          if (!isBackBtn) {
+              setTimeout(function(){
+                 history.back();
+              }, 1500);
+          }
+      } // cancelCountdown
 
 
       var socket = io.connect('http://cheah.homeip.net:8080', {
@@ -810,6 +864,16 @@
       });
       $('#page-security').on('pagecreate', function(){
           $(this).attr('data-render', '1');
+      });
+      $('#page-how-to-arm').on('pagecreate', function(){
+          $('#page-how-to-arm .cancelArm').click(function(){
+              var isBackBtn = $(this).hasClass('back');
+              cancelCountdown(isBackBtn);
+          });
+          $('#page-how-to-arm a.armType').click(function(){
+              $('#page-how-to-arm a.armType').removeClass('ui-btn-active');
+              $(this).addClass('ui-btn-active');
+          });
       });
       $('#page-how-to-arm').on('pageshow', function(){
           $('#page-how-to-arm #code1').focus();
