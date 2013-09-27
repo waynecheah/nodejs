@@ -830,6 +830,8 @@ io.sockets.on('connection', function(sock) {
                 log('w', 'i', 'App update '+type+', set '+k+' = '+v);
                 sockets[i][type][k] = v;
                 sockets[i].write(k+'='+v+RN);
+
+                deviceUpdate(k, type, v, sockets[i].info);
             });
         }
         log('w', 'd', data);

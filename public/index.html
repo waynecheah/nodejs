@@ -168,7 +168,7 @@
         </h3>
       </div>
       <div data-role="content">
-        <a data-role="button" data-transition="slideup" href="#page-how-to-arm" class="armBtn">
+        <a data-role="button" data-transition="slideup" class="armBtn">
           <span class="glyphicon"></span> <span class="armTxt">Disarmed - Press to Arm</span>
         </a>
         <h2 class="grey normal">Home Security Zones</h2>
@@ -207,15 +207,15 @@
           </div>
         </div>
         <h4 class="text-muted">Enter Keypad Code To Arm</h4>
-        <div class="ui-grid-c">
+        <div class="ui-grid-c" style="padding-left:5px;">
           <div class="ui-block-a">
             <div data-role="fieldcontain">
-              <input name="code1" id="code1" data-no="1" type="text" data-mini="true" class="passcode">
+              <input name="code1" id="code1" data-no="1" type="tel" data-mini="true" class="passcode">
             </div>
           </div>
           <div class="ui-block-b">
             <div data-role="fieldcontain">
-              <input name="code2" id="code2" data-no="2" type="number" data-mini="true" class="passcode">
+              <input name="code2" id="code2" data-no="2" type="tel" data-mini="true" class="passcode">
             </div>
           </div>
           <div class="ui-block-c">
@@ -225,7 +225,7 @@
           </div>
           <div class="ui-block-d">
             <div data-role="fieldcontain">
-              <input name="code4" id="code4" data-no="4" type="text" data-mini="true" class="passcode">
+              <input name="code4" id="code4" data-no="4" type="tel" data-mini="true" class="passcode">
             </div>
           </div>
         </div>
@@ -602,30 +602,31 @@
           if (_data.status.alarm_status == 'a') {
               thm = 'e';
               sts = 'Armed Away';
-              $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
-              $('#page-security button.armBtn span.armTxt').html('Armed Away - Press to Disamed');
+              $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
+              $('#page-security a.armBtn span.armTxt').html('Armed Away - Press to Disamed');
           } else if (_data.status.alarm_status == 'h') {
               thm = 'e';
               sts = 'Armed Home';
-              $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
-              $('#page-security button.armBtn span.armTxt').html('Armed Home - Press to Disamed');
+              $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
+              $('#page-security a.armBtn span.armTxt').html('Armed Home - Press to Disamed');
           } else if (_data.status.alarm_status == 'r') {
               sts = 'Disarmed';
-              $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
-              $('#page-security button.armBtn span.armTxt').html('Disarmed - Press to Arm');
+              $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
+              $('#page-security a.armBtn span.armTxt').html('Disarmed - Press to Arm');
           } else if (_data.status.alarm_status == 'p') {
               sts = 'Panic';
-              $('#page-security button.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
-              $('#page-security button.armBtn span.armTxt').html('Panic - Press to Arm');
+              $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
+              $('#page-security a.armBtn span.armTxt').html('Panic - Press to Arm');
           }
 
-          $('#page-security button.armBtn').attr('data-status', _data.status.alarm_status);
+          $('#page-security a.armBtn').attr('data-status', _data.status.alarm_status);
 
           if (rdr == '1') {
-              $('#page-security button.armBtn').button('refresh');
-              $('#page-security button.armBtn').buttonMarkup({ theme:thm });
+              //$('#page-security a.armBtn').button('refresh');
+              $('#page-security a.armBtn').buttonMarkup({ theme:thm });
           } else {
-              $('#page-security button.armBtn').attr('data-theme', thm);
+            console.log('not render '+rdr);
+              $('#page-security a.armBtn').attr('data-theme', thm);
           }
 
           if (alert) {
@@ -726,6 +727,7 @@
 
           if (!_countDown) {
               _countDown = true;
+              _cancelArm = false;
           }
 
           if (sec >= 0) {
@@ -793,11 +795,12 @@
               });
           }, 500);
 
-          if (!isBackBtn) {
-              setTimeout(function(){
-                 history.back();
-              }, 1500);
-          }
+          setTimeout(function(){
+              $.mobile.loading('hide');
+              if (!isBackBtn) {
+                  history.back();
+              }
+          }, 1500);
       } // cancelCountdown
 
 
@@ -879,14 +882,16 @@
           $('#page-how-to-arm #code1').focus();
       });
 
+
       $('#page-security a.armBtn').click(function(){
           var sts = $(this).attr('data-status');
-          if (sts == 'a') {
-              sts = 'r';
+          if (sts == 'a' || sts == 'h') {
+              socket.emit('app update', 'status', {
+                  alarm_status: 'r'
+              });
+          } else {
+              $.mobile.changePage('#page-how-to-arm', { transition:'slideup' });
           }
-          socket.emit('app update', 'status', {
-              alarm_status: sts
-          });
       });
 
       $('#page-how-to-arm input.passcode').click(function(){
@@ -895,6 +900,7 @@
           var n = $(this).attr('data-no');
           var i = parseInt(n) + 1;
           if (i > 4) {
+              armCountdown(10);
               $(this).blur();
               $.mobile.loading('show', {
                   text: 'Arm in 10 seconds...',
@@ -902,7 +908,6 @@
                   theme: 'a'
               });
               $('#page-how-to-arm div.countdown').fadeIn();
-              armCountdown(10);
           } else {
               $('#page-how-to-arm #code'+i).val('').focus();
           }
