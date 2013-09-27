@@ -9,6 +9,10 @@ img.freesize, img.freesize2 {
 img.freesize2 {
     left: auto;
 }
+input.passcode {
+    height: 50px;
+    text-align: center;
+}
 #page-lights div.slider {
     margin: 0;
 }
