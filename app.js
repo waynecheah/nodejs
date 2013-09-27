@@ -276,6 +276,7 @@ var server = net.createServer(function (socket) {
 
     log('n', 'i', 'Client '+socket.id+' connected');
     sockets.push(socket); // assign socket to global variable
+    socket.setKeepAlive(true, 90000);
     socket.write('id?'+RN);
 
     socket.on('connect', function(){
@@ -296,6 +297,8 @@ var server = net.createServer(function (socket) {
                     sockets[i].end();
                 }
             }
+        } else if (mesg.substr(0,7) == '-hello-') { // for device checking server alive and response
+            socket.write('hello'+RN);
         } else if (typeof socket.tmp == 'undefined' && !iss(dt, 'serial')) {
             log('n', 'i', 'Probably welcome message sent from device');
             log('n', 'd', dt);
