@@ -1,3 +1,6 @@
+li.ui-li-static.ui-li-has-thumb {
+    min-height: 60px;
+}
 h3.listTitle {
     padding-top: 9px;
     margin: 0;

@@ -168,9 +168,11 @@
         </h3>
       </div>
       <div data-role="content">
-        <a data-role="button" data-transition="slideup" class="armBtn">
-          <span class="glyphicon"></span> <span class="armTxt">Disarmed - Press to Arm</span>
-        </a>
+        <div class="armBtnWrap" style="display:none;">
+          <a href="#page-how-to-arm" data-role="button" data-transition="slideup" class="armBtn">
+            <span class="glyphicon"></span> <span class="armTxt">Disarmed - Press to Arm</span>
+          </a>
+        </div>
         <h2 class="grey normal">Home Security Zones</h2>
         <ul data-role="listview" data-divider-theme="d" data-inset="false"></ul>
       </div>
@@ -198,15 +200,17 @@
         </h3>
       </div>
       <div data-role="content">
-        <h3 class="text-muted">Choose How To Arm</h3>
-        <div class="center">
-          <div data-role="controlgroup" data-type="horizontal">
-            <a href="#" data-role="button" data-alarm="h" class="armType">Arm Stay</a>
-            <a href="#" data-role="button" data-alarm="a" class="armType ui-btn-active">Arm Away</a>
-            <a href="#" data-role="button" data-alarm="h" class="armType">Arm Night</a>
+        <div class="armTypeWrap">
+          <h3 class="text-muted">Choose How To Arm</h3>
+          <div class="center">
+            <div data-role="controlgroup" data-mini="true" data-type="horizontal">
+              <a href="#" data-role="button" data-alarm="h" class="armType">Arm Stay</a>
+              <a href="#" data-role="button" data-alarm="a" class="armType ui-btn-active">Arm Away</a>
+              <a href="#" data-role="button" data-alarm="h" class="armType">Arm Night</a>
+            </div>
           </div>
         </div>
-        <h4 class="text-muted">Enter Keypad Code To Arm</h4>
+        <h4 class="text-muted armCodeTxt">Enter Keypad Code To Arm</h4>
         <div class="ui-grid-c" style="padding-left:5px;">
           <div class="ui-block-a">
             <div data-role="fieldcontain">
@@ -529,7 +533,11 @@
       var _body      = '';
       var _countDown = false;
       var _cancelArm = false;
-      var _data      = {};
+      var _data      = {
+          status: {
+              alarm_status: 'r'
+          }
+      };
 
       function loggedSuccess () {
         var deviceCls = '';
@@ -637,6 +645,7 @@
       function updateZones () {
           var rendered = $('#page-security').attr('data-render');
           var listview = '';
+          var hideshow = '';
           var mapping  = {
               o: 'Opened',
               c: 'Closed',
@@ -645,9 +654,13 @@
           };
 
           $.each(_data.zones, function(k, v){
-              listview += '<li data-theme="c" class="'+k+'"><a href="#page1" data-transition="slide">' +
-                          '<img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
-                          '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p></a></li>';
+              hideshow  = (v == 'o') ? '' : 'display:none;';
+              listview += '<li data-theme="c" class="'+k+'"><img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
+                          '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p>' +
+                          '<span class="ui-li-aside"><div data-role="fieldcontain" class="bypass" style="'+hideshow+'">' +
+                          '<select name="bp'+k+'" id="bp'+k+'" data-theme="d" data-role="slider">' +
+                          '<option value="o">Open</option><option value="b">Bypass</option></select>' +
+                          '</div></span></li>';
           });
 
           $('#page-security ul[data-role=listview]').html(listview);
@@ -667,6 +680,11 @@
           };
 
           if ($('#page-security ul[data-role=listview] li').length > 0) { // only if listview is rendered
+              if (value == 'o') {
+                  $('#page-security ul[data-role=listview] li.'+id+' div.bypass').show();
+              } else {
+                  $('#page-security ul[data-role=listview] li.'+id+' div.bypass').hide();
+              }
               $('#page-security ul[data-role=listview] li.'+id+' p.ui-li-desc').html(mapping[value]);
           }
 
@@ -700,8 +718,10 @@
 
               ntf.ondisplay = function() {
                   window.setTimeout(function() {
+                    console.log('close '+title);
                       ntf.cancel();
                   }, time);
+                console.log('display '+title);
               };
               ntf.onclose = function() {
                   console.log('Notification closing');
@@ -752,7 +772,13 @@
                   armCountdown(sec);
               }, 1000);
           } else {
-              _countDown = false;
+              var armType = 'r';
+              _countDown  = false;
+              _cancelArm  = false;
+
+              if ($('#page-how-to-arm div.armTypeWrap:visible').length) {
+                  armType = $('#page-how-to-arm a.ui-btn-active').attr('data-alarm');
+              }
 
               $('#page-how-to-arm div.countdown').fadeOut(function(){
                   $('#page-how-to-arm div.progress-bar').css('width', '100%')
@@ -761,7 +787,7 @@
               $('#page-how-to-arm input.passcode').val('');
               $.mobile.loading('hide');
               socket.emit('app update', 'status', {
-                  alarm_status: $('#page-how-to-arm a.ui-btn-active').attr('data-alarm')
+                  alarm_status: armType
               });
 
               setTimeout(function(){
@@ -815,6 +841,9 @@
           $('.connection').removeClass('text-danger text-success').addClass('text-default').html('Connecting..');
       });
       socket.on('disconnect', function(){
+          $('#page-security div.armBtnWrap').hide();
+          $('.troubles').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
+          $('.status').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
           $('.connection').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
           notification('Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000);
       });
@@ -825,7 +854,8 @@
            if (typeof data.info != 'undefined') {
                _data = data;
 
-               $('.status').removeClass('text-danger text-default').addClass('text-success').html(data.info.name+' connected');
+               $('.status').removeClass('text-danger text-default').addClass('text-success').html(data.info.name+' connected')
+               $('#page-security div.armBtnWrap').show();
                updateTroubles();
                updateAlarmStatus(false);
                updateZones();
@@ -833,6 +863,7 @@
            }
       });
       socket.on('Offline', function(data){
+          $('#page-security div.armBtnWrap').hide();
           $('.troubles').removeClass('text-success text-default').addClass('text-danger').html('N/A');
           $('.status').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
           notification('Panel Offline', 'Your panel is detected offline now, this may due to internet connection problem.', 10000);
@@ -876,23 +907,26 @@
           $('#page-how-to-arm a.armType').click(function(){
               $('#page-how-to-arm a.armType').removeClass('ui-btn-active');
               $(this).addClass('ui-btn-active');
+              $('#page-how-to-arm #code1').focus();
           });
       });
       $('#page-how-to-arm').on('pageshow', function(){
-          $('#page-how-to-arm #code1').focus();
-      });
-
-
-      $('#page-security a.armBtn').click(function(){
-          var sts = $(this).attr('data-status');
+          var sts = _data.status.alarm_status;
           if (sts == 'a' || sts == 'h') {
-              socket.emit('app update', 'status', {
-                  alarm_status: 'r'
-              });
+              $('#page-how-to-arm h3.header').html('Confirm Disarmed');
+              $('#page-how-to-arm h4.armCodeTxt').html('Enter Keypad Code To Disarmed');
+              $('#page-how-to-arm div.armTypeWrap').hide();
           } else {
-              $.mobile.changePage('#page-how-to-arm', { transition:'slideup' });
+              $('#page-how-to-arm h3.header').html('Confirm Arm');
+              $('#page-how-to-arm h4.armCodeTxt').html('Enter Keypad Code To Arm');
+              $('#page-how-to-arm div.armTypeWrap').show();
           }
+          $('#page-how-to-arm #code1').focus();
+      }).on('pagehide', function(){
+          $('#page-how-to-arm input.passcode').val('');
+          $('#page-how-to-arm div.countdown').hide();
       });
+
 
       $('#page-how-to-arm input.passcode').click(function(){
           $(this).val('');
@@ -900,14 +934,36 @@
           var n = $(this).attr('data-no');
           var i = parseInt(n) + 1;
           if (i > 4) {
-              armCountdown(10);
-              $(this).blur();
-              $.mobile.loading('show', {
-                  text: 'Arm in 10 seconds...',
-                  textVisible: true,
-                  theme: 'a'
-              });
-              $('#page-how-to-arm div.countdown').fadeIn();
+              var sts = _data.status.alarm_status;
+
+              if (sts == 'a' || sts == 'h') {
+                  socket.emit('app update', 'status', {
+                      alarm_status: 'r'
+                  });
+                
+                  // TODO(callback): wait callback to confirm disarmed
+                  $.mobile.loading('show', {
+                      text: 'Disarmed successfully',
+                      textVisible: true,
+                      textonly: true,
+                      theme: 'b'
+                  });
+                  setTimeout(function(){
+                      $.mobile.loading('hide');
+                      history.back();
+                  }, 1000);
+              } else {
+                  // check zone status
+
+                  armCountdown(10);
+                  $(this).blur();
+                  $.mobile.loading('show', {
+                      text: 'Arm in 10 seconds...',
+                      textVisible: true,
+                      theme: 'a'
+                  });
+                  $('#page-how-to-arm div.countdown').fadeIn();
+              }
           } else {
               $('#page-how-to-arm #code'+i).val('').focus();
           }
