@@ -169,7 +169,7 @@
       </div>
       <div data-role="content">
         <div class="armBtnWrap" style="display:none;">
-          <a href="#page-how-to-arm" data-role="button" data-transition="slideup" class="armBtn">
+          <a data-role="button" data-transition="slideup" class="armBtn">
             <span class="glyphicon"></span> <span class="armTxt">Disarmed - Press to Arm</span>
           </a>
         </div>
@@ -185,6 +185,17 @@
             <li><a href="#page-termostats" data-transition="flow" data-theme="" data-icon="info">System Status</a></li>
           </ul>
         </div>
+      </div>
+    </div>
+
+    <!-- Alert Opened Zones -->
+    <div data-role="page" id="dialog-alert-opened-zones">
+      <div data-role="header">
+        <h2>Opened Zones Detected</h2>
+      </div>
+      <div data-role="content">
+        <h3>Unable to proceed arm when opened zones detected. You may bypass this zones to continue arm.</h3>
+        <a href="#page-security" data-role="button" data-rel="back" data-theme="b" class="">Ok, i get it</a>
       </div>
     </div>
 
@@ -645,7 +656,6 @@
       function updateZones () {
           var rendered = $('#page-security').attr('data-render');
           var listview = '';
-          var hideshow = '';
           var mapping  = {
               o: 'Opened',
               c: 'Closed',
@@ -654,10 +664,9 @@
           };
 
           $.each(_data.zones, function(k, v){
-              hideshow  = (v == 'o') ? '' : 'display:none;';
               listview += '<li data-theme="c" class="'+k+'"><img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
                           '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p>' +
-                          '<span class="ui-li-aside"><div data-role="fieldcontain" class="bypass" style="'+hideshow+'">' +
+                          '<span class="ui-li-aside"><div data-role="fieldcontain" class="bypass" style="display:none;">' +
                           '<select name="bp'+k+'" id="bp'+k+'" data-theme="d" data-role="slider">' +
                           '<option value="o">Open</option><option value="b">Bypass</option></select>' +
                           '</div></span></li>';
@@ -897,7 +906,36 @@
           }
       });
       $('#page-security').on('pagecreate', function(){
+          var sts = _data.status.alarm_status;
+
           $(this).attr('data-render', '1');
+          $('#page-security a.armBtn').click(function(){
+              $('#page-security ul[data-role=listview] div.bypass').hide();
+
+              if (sts == 'r') {
+                  var opened = false;
+                  $.each(_data.zones, function(k, v){
+                      if (v == 'o') {
+                          opened = true;
+                          $('#page-security ul[data-role=listview] li.'+k+' div.bypass').show();
+                      } else {
+                          $('#page-security ul[data-role=listview] li.'+k+' div.bypass').hide();
+                      }
+                  });
+                  if (opened) {
+                      $.mobile.changePage('#dialog-alert-opened-zones', {
+                          role: 'dialog',
+                          overlayTheme: 'a'
+                      });
+                      $('#dialog-alert-opened-zones').dialog('option', 'closeBtn', 'none');
+                      $('#dialog-alert-opened-zones').dialog('option', 'overlayTheme', 'a');
+                  } else {
+                      $.mobile.changePage('#page-how-to-arm');
+                  }
+              } else {
+                  $.mobile.changePage('#page-how-to-arm');
+              }
+          });
       });
       $('#page-how-to-arm').on('pagecreate', function(){
           $('#page-how-to-arm .cancelArm').click(function(){
