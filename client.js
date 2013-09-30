@@ -189,8 +189,20 @@ function log (env, type, mesg) {
 //
 var socket = net.createConnection(port, host);
 socket.setEncoding('utf8');
-socket.cmd = function(data){
-    socket.write(data+RN);
+socket.cmd = function(dt){
+    var allsts = ['o', 'c', 'b', 'd'];
+    var obj, sts;
+
+    if (obj = issi(dt, 'z')) {
+        sts = gv(dt, obj.p);
+        if (allsts.indexOf(sts) < 0) {
+            log('n', 'e', 'Unrecognized zone status: '+sts);
+        } else {
+            log('n', 'i', 'Received Zone '+obj.i+' status: '+sts);
+            socket.zones['z'+obj.i] = sts;
+        }
+    }
+    socket.write(dt+RN);
 };
 socket.get = function(type, key) {
     log('n', 'i', _data[type][key]);

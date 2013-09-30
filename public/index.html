@@ -664,15 +664,31 @@
           };
 
           $.each(_data.zones, function(k, v){
+              var s1 = '';
+              var s2 = '';
+
+              if (v == 'o') {
+                  s1 = ' selected';
+                  s2 = '';
+              } else if (v == 'b') {
+                  s1 = '';
+                  s2 = ' selected';
+              }
+
               listview += '<li data-theme="c" class="'+k+'"><img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
-                          '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p>' +
-                          '<span class="ui-li-aside"><div data-role="fieldcontain" class="bypass" style="display:none;">' +
-                          '<select name="bp'+k+'" id="bp'+k+'" data-theme="d" data-role="slider">' +
-                          '<option value="o">Open</option><option value="b">Bypass</option></select>' +
+                          '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p><span class="ui-li-aside">' +
+                          '<div data-role="fieldcontain" data-status="'+v+'" class="bypass" style="display:none;">' +
+                          '<select name="'+k+'" id="bp'+k+'" data-theme="d" data-role="slider">' +
+                          '<option value="o"'+s1+'>Open</option><option value="b"'+s2+'>Bypass</option></select>' +
                           '</div></span></li>';
           });
 
           $('#page-security ul[data-role=listview]').html(listview);
+          $('#page-security ul[data-role=listview] li select[data-role=slider]').on('slidestop', function(e, ui){
+              var obj = {};
+              obj[$(e.target).attr('name')] = $(e.target).val();
+              socket.emit('app update', 'zones', obj);
+          });
           Holder.run();
 
           if (rendered == '1') {
@@ -689,11 +705,13 @@
           };
 
           if ($('#page-security ul[data-role=listview] li').length > 0) { // only if listview is rendered
-              if (value == 'o') {
-                  $('#page-security ul[data-role=listview] li.'+id+' div.bypass').show();
+              if (value == 'o' || value == 'b') {
+                  $('#bp'+id).val(value);
+                  $('#page-security ul[data-role=listview] li select[data-role=slider]').slider('refresh');
               } else {
                   $('#page-security ul[data-role=listview] li.'+id+' div.bypass').hide();
               }
+              $('#page-security ul[data-role=listview] li.'+id+' div.bypass').attr('data-status', value);
               $('#page-security ul[data-role=listview] li.'+id+' p.ui-li-desc').html(mapping[value]);
           }
 
@@ -888,7 +906,7 @@
               } else {
                   updateTroubles(d.id);
               }
-          } else if (d.type == 'zone') {
+          } else if (d.type == 'zone' || d.type == 'zones') {
               _data.zones[d.id] = d.value;
               updateZone(d.id, d.value);
           }
@@ -906,26 +924,27 @@
           }
       });
       $('#page-security').on('pagecreate', function(){
-          var sts = _data.status.alarm_status;
-
           $(this).attr('data-render', '1');
           $('#page-security a.armBtn').click(function(){
-              $('#page-security ul[data-role=listview] div.bypass').hide();
+              var sts = _data.status.alarm_status;
 
               if (sts == 'r') {
                   var opened = false;
                   $.each(_data.zones, function(k, v){
-                      if (v == 'o') {
-                          opened = true;
-                          $('#page-security ul[data-role=listview] li.'+k+' div.bypass').show();
+                      if (v == 'o' || v == 'b') {
+                          if (v == 'o') {
+                              opened = true;
+                          }
+                          setTimeout(function(){
+                              $('#page-security ul[data-role=listview] li.'+k+' div.bypass').show();
+                          }, 1000);
                       } else {
                           $('#page-security ul[data-role=listview] li.'+k+' div.bypass').hide();
                       }
                   });
                   if (opened) {
                       $.mobile.changePage('#dialog-alert-opened-zones', {
-                          role: 'dialog',
-                          overlayTheme: 'a'
+                          role: 'dialog'
                       });
                       $('#dialog-alert-opened-zones').dialog('option', 'closeBtn', 'none');
                       $('#dialog-alert-opened-zones').dialog('option', 'overlayTheme', 'a');
@@ -936,6 +955,9 @@
                   $.mobile.changePage('#page-how-to-arm');
               }
           });
+      });
+      $('#page-security').on('pagehide', function(){
+          $('#page-security ul[data-role=listview] div.bypass').hide();
       });
       $('#page-how-to-arm').on('pagecreate', function(){
           $('#page-how-to-arm .cancelArm').click(function(){
