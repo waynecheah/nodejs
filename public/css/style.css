@@ -22,6 +22,11 @@ input.passcode {
 #page-lights div.slider div.ui-slider {
     width: 100%;
 }
+.bs, .bs:before, .bs:after {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
 .divcenter {
     margin-left: auto;
     margin-right: auto;

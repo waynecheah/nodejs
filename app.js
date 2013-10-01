@@ -106,6 +106,10 @@ function deviceUpdate (id, type, value, socketInfo) {
             value: value
         });
     }
+
+    if (typeof socketInfo != 'undefined' && typeof socketInfo.serial != 'undefined') {
+        fnDeviceLog(type, socketInfo.serial, id, value);
+    }
 } // deviceUpdate
 
 
@@ -219,21 +223,46 @@ var Device = mongoose.model('Device', {
 var Log = mongoose.model('Log', {
     date: String,
     time: String,
+    type: String,
     user: String,
+    device: String,
     query: String,
-    command: String
+    key: String,
+    value: String
 });
-var fnLog = function(log) {
+var fnDeviceLog = function(type, serial, key, val) {
     var date = new Date();
     var log  = new Log({
         date: date.toDateString(),
         time: date.toTimeString(),
-        user: 'Device 1',
-        query: log
+        type: type,
+        device: serial,
+        key: key,
+        value: val
     });
     log.save(function(err, data) {
         if (err) {
             log('s', 'e', 'Event has logged failure');
+        } else {
+            log('s', 'd', data);
+        }
+    });
+};
+var fnUserLog = function(type, client, key, val) {
+    var date = new Date();
+    var log  = new Log({
+        date: date.toDateString(),
+        time: date.toTimeString(),
+        type: type,
+        user: client,
+        key: key,
+        value: val
+    });
+    log.save(function(err, data) {
+        if (err) {
+            log('s', 'e', 'Event has logged failure');
+        } else {
+            log('s', 'd', data);
         }
     });
 };
@@ -831,7 +860,8 @@ io.sockets.on('connection', function(sock) {
                 sockets[i][type][k] = v;
                 sockets[i].write(k+'='+v+RN);
 
-                deviceUpdate(k, type, v, sockets[i].info);
+                fnUserLog(type, sock.id, k, v);
+                deviceUpdate(k, type, v, false);
             });
         }
         log('w', 'd', data);
