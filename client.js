@@ -47,7 +47,7 @@ var _stage = '';
 
 
 function write (msg, l, type, stage) {
-    _timer += 200;
+    _timer += 50;
     setTimeout(function(){
         if (l) {
             var t = (typeof type == 'undefined') ? 'i' : type;
@@ -199,7 +199,7 @@ socket.cmd = function(dt){
             log('n', 'e', 'Unrecognized zone status: '+sts);
         } else {
             log('n', 'i', 'Received Zone '+obj.i+' status: '+sts);
-            socket.zones['z'+obj.i] = sts;
+            _data.zones['z'+obj.i] = sts;
         }
     }
     socket.write(dt+RN);

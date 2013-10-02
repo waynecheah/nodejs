@@ -232,7 +232,7 @@ var Log = mongoose.model('Log', {
 });
 var fnDeviceLog = function(type, serial, key, val) {
     var date = new Date();
-    var log  = new Log({
+    var logs = new Log({
         date: date.toDateString(),
         time: date.toTimeString(),
         type: type,
@@ -240,12 +240,13 @@ var fnDeviceLog = function(type, serial, key, val) {
         key: key,
         value: val
     });
-    log.save(function(err, data) {
+    logs.save(function(err) {
         if (err) {
             log('s', 'e', 'Event has logged failure');
-        } else {
-            log('s', 'd', data);
+            return;
         }
+        log('s', 's', 'Event has logged successfully');
+        log('s', 'd', logs);
     });
 };
 var fnUserLog = function(type, client, key, val) {
@@ -405,7 +406,9 @@ var server = net.createServer(function (socket) {
                     log('n', 'i', 'Received alarm status: '+status);
                     socket.tmp['alarm_status'] = status;
                     socket.write('ok'+RN);
-                    socket.write('system_status?'+RN);
+                    setTimeout(function(){
+                        socket.write('system_status?'+RN);
+                    }, 50);
                 }
             } else if (ps = iss(dt, 'power')) {
                 log('n', 'i', 'Received system power status: '+gv(dt, ps));
