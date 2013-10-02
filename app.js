@@ -15,6 +15,8 @@ var websockets = [];
 var RN         = '\r\n';
 var _timer     = null;
 var host       = '192.168.1.75';
+var tmpSystem  = {};
+var tmpZones   = {};
 var clientErr  = {};
 var serverErr  = {
     e1: 'System error',
@@ -58,17 +60,15 @@ function isc (data, cmd) {
 } // isc
 
 function issi (data, key) {
-    var length = key.length + 1;
-    var data   = data.replace(RN, '');
-    var pos1   = data.search(key);
-    var pos2   = data.search('=');
-    var index  = null;
+    var data = data.replace(RN, '');
+    var pos1 = data.search(key);
+    var pos2 = data.search('=');
 
     if (pos1 < 0 || pos2 < 0) {
         return false;
     }
 
-    index = data.substr((pos1+1), (pos2-1));
+    var index = data.substr((pos1+1), (pos2-1));
 
     return {
         p: (pos2+1),
@@ -89,6 +89,107 @@ function gv (data, start) { // get value
     var data = data.replace(RN, '');
     return data.substr(start);
 } // gv
+
+function getSystemStatus (socket, data) {
+    var system = data.split(RN);
+    var ps;
+
+    _.each(system, function(dt,i){
+        if (ps = iss(dt, 'alarm_status')) {
+            var allSts = ['a', 'h', 'r', 'p'];
+            var status = gv(dt, ps);
+
+            if (allSts.indexOf(status) < 0) {
+                log('n', 'e', 'Unrecognized alarm status: '+status);
+                socket.write('e5'+RN);
+            } else {
+                log('n', 'i', 'Received alarm status: '+status);
+                tmpSystem['alarm_status'] = status;
+                socket.write('ok'+RN);
+                setTimeout(function(){
+                    socket.write('system_status?'+RN);
+                }, 50);
+            }
+        } else if (ps = iss(dt, 'power')) {
+            log('n', 'i', 'Received system power status: '+gv(dt, ps));
+            tmpSystem['power'] = gv(dt, ps);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'battery')) {
+            log('n', 'i', 'Received system battery status: '+gv(dt, ps));
+            tmpSystem['battery'] = gv(dt, ps);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'pstn')) {
+            log('n', 'i', 'Received system pstn status: '+gv(dt, ps));
+            tmpSystem['pstn'] = gv(dt, ps);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'comm')) {
+            log('n', 'i', 'Received system communication status: '+gv(dt, ps));
+            tmpSystem['comm'] = gv(dt, ps);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'keypad')) {
+            log('n', 'i', 'Received system keypad status: '+gv(dt, ps));
+            tmpSystem['keypad'] = gv(dt, ps);
+            socket.write('ok'+RN);
+        } else if (isc(dt, '-done-')) {
+            var t = tmpSystem;
+            if (typeof t.alarm_status == 'undefined') {
+                log('n', 'w', 'Device has not submitted alarm status');
+                socket.write('e6'+RN);
+            } else if (typeof t.power == 'undefined' || typeof t.battery == 'undefined' || typeof t.pstn == 'undefined' ||
+                typeof t.comm == 'undefined' || typeof t.keypad == 'undefined') {
+                log('n', 'e', 'Device has not submitted all system status it should have');
+                socket.write('e7'+RN);
+            } else {
+                log('n', 'i', 'Device id ['+socket.id+'] has completely updated its current alarm & system status');
+                log('n', 'd', tmpSystem);
+                socket.status = tmpSystem;
+                tmpSystem     = {};
+                socket.write('zones?'+RN);
+
+                Device.findOneAndUpdate({ serial:socket.info.serial }, { status:socket.status });
+            }
+        } else if (dt) {
+            log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
+            socket.write('e0'+RN);
+        }
+    });
+} // getSystemStatus
+
+function getZones (socket, data) {
+    var allSts = ['o', 'c', 'b', 'd'];
+    var zones  = data.split(RN);
+    var sts;
+
+    _.each(zones, function(dt,i){
+        if (obj = issi(dt, 'z')) {
+            sts = gv(dt, obj.p);
+            if (allSts.indexOf(sts) < 0) {
+                log('n', 'e', 'Unrecognized zone status: '+sts);
+                socket.write('e8'+RN);
+            } else {
+                log('n', 'i', 'Received Zone '+obj.i+' status: '+sts);
+                tmpZones['z'+obj.i] = sts;
+                socket.write('ok'+RN);
+            }
+        } else if (isc(dt, '-done-')) {
+            if (_.size(tmpZones) == 0) {
+                log('n', 'e', 'No any zone received for update');
+                socket.write('e9'+RN);
+            } else {
+                log('n', 'i', _.size(tmpZones)+' zones have updated of its status');
+                log('n', 'd', tmpZones);
+                socket.zones = socket.tmp;
+                tmpZones     = {};
+
+                statusUpdate({
+                    info: socket.info,
+                    status: socket.status,
+                    zones: socket.zones
+                });
+            }
+        }
+    });
+} // getZones
 
 function statusUpdate (data) {
     if (typeof data == 'object') {
@@ -328,7 +429,7 @@ var server = net.createServer(function (socket) {
                 }
             }
         } else if (mesg.substr(0,7) == '-hello-') { // for device checking server alive and response
-            socket.write('hello'+RN);
+            socket.write('ok'+RN);
         } else if (typeof socket.tmp == 'undefined' && !iss(dt, 'serial')) {
             log('n', 'i', 'Probably welcome message sent from device');
             log('n', 'd', dt);
@@ -396,96 +497,10 @@ var server = net.createServer(function (socket) {
             }
         } else if (typeof socket.status == 'undefined') {
 // GET DEVICE CURRENT STATUS
-            if (ps = iss(dt, 'alarm_status')) {
-                var allsts = ['a', 'h', 'r', 'p'];
-                var status = gv(dt, ps);
-                if (allsts.indexOf(status) < 0) {
-                    log('n', 'e', 'Unrecognized alarm status: '+status);
-                    socket.write('e5'+RN);
-                } else {
-                    log('n', 'i', 'Received alarm status: '+status);
-                    socket.tmp['alarm_status'] = status;
-                    socket.write('ok'+RN);
-                    setTimeout(function(){
-                        socket.write('system_status?'+RN);
-                    }, 50);
-                }
-            } else if (ps = iss(dt, 'power')) {
-                log('n', 'i', 'Received system power status: '+gv(dt, ps));
-                socket.tmp['power'] = gv(dt, ps);
-                socket.write('ok'+RN);
-            } else if (ps = iss(dt, 'battery')) {
-                log('n', 'i', 'Received system battery status: '+gv(dt, ps));
-                socket.tmp['battery'] = gv(dt, ps);
-                socket.write('ok'+RN);
-            } else if (ps = iss(dt, 'pstn')) {
-                log('n', 'i', 'Received system pstn status: '+gv(dt, ps));
-                socket.tmp['pstn'] = gv(dt, ps);
-                socket.write('ok'+RN);
-            } else if (ps = iss(dt, 'comm')) {
-                log('n', 'i', 'Received system communication status: '+gv(dt, ps));
-                socket.tmp['comm'] = gv(dt, ps);
-                socket.write('ok'+RN);
-            } else if (ps = iss(dt, 'keypad')) {
-                log('n', 'i', 'Received system keypad status: '+gv(dt, ps));
-                socket.tmp['keypad'] = gv(dt, ps);
-                socket.write('ok'+RN);
-            } else if (isc(dt, '-done-')) {
-                var t = socket.tmp;
-                if (typeof t.alarm_status == 'undefined') {
-                    log('n', 'w', 'Device has not submitted alarm status');
-                    socket.write('e6'+RN);
-                } else if (typeof t.power == 'undefined' || typeof t.battery == 'undefined' || typeof t.pstn == 'undefined' ||
-                    typeof t.comm == 'undefined' || typeof t.keypad == 'undefined') {
-                    log('n', 'e', 'Device has not submitted all system status it should have');
-                    socket.write('e7'+RN);
-                } else {
-                    log('n', 'i', 'Device id ['+socket.id+'] has completely updated its current alarm & system status');
-                    log('n', 'd', socket.tmp);
-                    socket.status = socket.tmp;
-                    socket.tmp = {};
-                    //socket.write('ok'+RN);
-                    socket.write('zones?'+RN);
-
-                    Device.findOneAndUpdate({ serial:socket.info.serial }, { status:socket.status });
-                }
-            } else {
-                log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
-                socket.write('e0'+RN);
-            }
+            getSystemStatus(socket, dt);
         } else if (typeof socket.zones == 'undefined') {
 // GET DEVICE ZONES INFORMATION
-            var allsts = ['o', 'c', 'b', 'd'];
-            var sts;
-
-            if (obj = issi(dt, 'z')) {
-                sts = gv(dt, obj.p);
-                if (allsts.indexOf(sts) < 0) {
-                    log('n', 'e', 'Unrecognized zone status: '+sts);
-                    socket.write('e8'+RN);
-                } else {
-                    log('n', 'i', 'Received Zone '+obj.i+' status: '+sts);
-                    socket.tmp['z'+obj.i] = sts;
-                    socket.write('ok'+RN);
-                }
-            } else if (isc(dt, '-done-')) {
-                if (socket.tmp.length == 0) {
-                    log('n', 'e', 'No any zone received for update');
-                    socket.write('e9'+RN);
-                } else {
-                    log('n', 'i', socket.tmp.length+' zones are updated of its status');
-                    log('n', 'd', socket.tmp);
-                    socket.zones = socket.tmp;
-                    socket.tmp   = {};
-                    //socket.write('ok'+RN);
-
-                    statusUpdate({
-                        info: socket.info,
-                        status: socket.status,
-                        zones: socket.zones
-                    });
-                }
-            }
+            getZones(socket, dt);
         } else if (typeof socket.zones != 'undefined') { // continue listening to device
 // READY MODE, ANY EVENT TRIGGER GOES HERE
             var allsts = ['o', 'c', 'b', 'd'];
@@ -821,6 +836,11 @@ var server = net.createServer(function (socket) {
     socket.on('end', function() {
         var i = sockets.indexOf(socket);
         log('n', 'i', 'client '+socket.id+' disconnected');
+
+        delete socket.info;
+        delete socket.status;
+        delete socket.zones;
+
         sockets.splice(i, 1);
 
         // TODO(system): notify offline status to user who connected to it

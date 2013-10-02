@@ -6,7 +6,7 @@ var colors = require('colors');
 var sockets   = [];
 var RN        = '\r\n';
 var _timer    = 0;
-var host      = 'cheah.homeip.net';
+var host      = '192.168.1.75';
 var port      = 1470;
 var serverErr = {
     e0: 'Invalid input',
@@ -59,6 +59,17 @@ function write (msg, l, type, stage) {
         socket.write(msg+RN);
     }, _timer);
 } // write
+
+function write2 (msg, lg, type, stage) {
+    if (lg) { // there is log found need to display on screen
+        var t = (typeof type == 'undefined') ? 'i' : type;
+        log('n', t, lg);
+    }
+    if (typeof stage != 'undefined') { // stage change to other type
+        _stage = stage;
+    }
+    socket.write(msg+RN);
+} // write2
 
 function resetTime () {
     _timer = 0;
@@ -221,21 +232,21 @@ socket.on('data', function(data) {
     } else if (ps = iss(data, 'alarm_status')) {
         var value                 = gv(data, ps);
         _data.status.alarm_status = value;
-        write('alarm_status='+value, 'Receive update, system has set alarm_status='+value, 's');
+        write2('alarm_status='+value, 'Receive update, system has set alarm_status='+value, 's');
     } else if (isg(data, 'system_status')) {
-        write('power='+g2('power'), 'Send power='+g2('power'));
-        write('battery='+g2('battery'), 'Send battery='+g2('battery'));
-        write('pstn='+g2('pstn'), 'Send pstn='+g2('pstn'));
-        write('comm='+g2('comm'), 'Send comm='+g2('comm'));
-        write('keypad='+g2('keypad'), 'Send keypad='+g2('keypad'));
-        write('-done-', 'Send -done-', 'i', 'system_status');
+        write2('power='+g2('power'), 'Send power='+g2('power'));
+        write2('battery='+g2('battery'), 'Send battery='+g2('battery'));
+        write2('pstn='+g2('pstn'), 'Send pstn='+g2('pstn'));
+        write2('comm='+g2('comm'), 'Send comm='+g2('comm'));
+        write2('keypad='+g2('keypad'), 'Send keypad='+g2('keypad'));
+        write2('-done-', 'Send -done-', 'i', 'system_status');
     } else if (isg(data, 'zones')) {
-        write('z1='+g3('z1'), 'Send zone 1 opened: z1='+g3('z1'));
-        write('z2='+g3('z2'), 'Send zone 2 closed: z2='+g3('z2'));
-        write('z3='+g3('z3'), 'Send zone 3 bypassed: z3='+g3('z3'));
-        write('z4='+g3('z4'), 'Send zone 4 disabled: z4='+g3('z4'));
-        write('z5='+g3('z5'), 'Send z5='+g3('z5'));
-        write('-done-', 'Send -done-', 'i', 'zones');
+        write2('z1='+g3('z1'), 'Send zone 1 opened: z1='+g3('z1'));
+        write2('z2='+g3('z2'), 'Send zone 2 closed: z2='+g3('z2'));
+        write2('z3='+g3('z3'), 'Send zone 3 bypassed: z3='+g3('z3'));
+        write2('z4='+g3('z4'), 'Send zone 4 disabled: z4='+g3('z4'));
+        write2('z5='+g3('z5'), 'Send zone 5 closed: z5='+g3('z5'));
+        write2('-done-', 'Send -done-', 'i', 'zones');
     } else if (data.substr(0,2) == 'ok') {
         log('n', 's', 'OK received from server');
         if (_stage == 'authorisation') {
