@@ -221,7 +221,10 @@ socket.get = function(type, key) {
 
 log('n', 'i', 'Socket created.');
 socket.on('data', function(data) {
+    var ps;
+
     log('s', 'i', 'SERVER RESPONSE: '+data.replace(RN, ''));
+
     if (isg(data, 'id')) {
         write('serial='+g1('serial'), 'Send serial='+g1('serial'));
         write('name='+g1('name'), 'Send name='+g1('name'));

@@ -15,6 +15,7 @@ var websockets = [];
 var RN         = '\r\n';
 var _timer     = null;
 var host       = '192.168.1.75';
+var tmpInfo    = {};
 var tmpSystem  = {};
 var tmpZones   = {};
 var clientErr  = {};
@@ -90,6 +91,58 @@ function gv (data, start) { // get value
     return data.substr(start);
 } // gv
 
+function getDeviceInfo (socket, data) {
+    var info = data.split(RN);
+    var ps;
+
+    _.each(info, function(dt,i){
+        if (ps = iss(dt, 'serial')) {
+            log('n', 'i', 'Received serial: '+gv(dt, ps));
+            tmpInfo.serial = gv(dt, ps);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'name')) {
+            log('n', 'i', 'Received name: '+gv(dt, ps));
+            tmpInfo.name = gv(dt, ps);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'version')) {
+            log('n', 'i', 'Received version: '+gv(dt, ps));
+            tmpInfo.version = gv(dt, ps);
+            socket.write('ok'+RN);
+        } else if (isc(dt, '-done-')) {
+            var t = tmpInfo;
+
+            if (typeof t.serial == 'undefined' || typeof t.name == 'undefined' || typeof t.version == 'undefined') {
+                log('n', 'w', 'Device has not submitted all required authorisation data');
+                socket.write('e3'+RN);
+                return;
+            }
+
+            Device.findOne({ serial:t.serial }, 'id owner clientId', function(err, data){
+                if (err) {
+                    log('n', 'e', err);
+                    log('n', 'd', tmpInfo);
+                    socket.write('e2'+RN);
+                } else if (!data || typeof data.id == 'undefined') { // unrecognized serial
+                    log('n', 'w', 'Device ID ['+socket.id+'] made an invalid access. Unrecognized serial '+t.serial);
+                    log('n', 'd', tmpInfo);
+                    socket.write('e4'+RN);
+                } else {
+                    log('n', 'i', 'Device ID ['+socket.id+'] has logged successfully');
+                    log('n', 'd', tmpInfo);
+                    log('n', 'd', data);
+                    socket.clientId = data.clientId;
+                    socket.info     = tmpInfo;
+                    tmpInfo         = {};
+                    socket.write('alarm_status?'+RN);
+                }
+            });
+        } else if (dt) {
+            log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
+            socket.write('e0'+RN);
+        }
+    });
+} // getDeviceInfo
+
 function getSystemStatus (socket, data) {
     var system = data.split(RN);
     var ps;
@@ -104,7 +157,7 @@ function getSystemStatus (socket, data) {
                 socket.write('e5'+RN);
             } else {
                 log('n', 'i', 'Received alarm status: '+status);
-                tmpSystem['alarm_status'] = status;
+                tmpSystem.alarm_status = status;
                 socket.write('ok'+RN);
                 setTimeout(function(){
                     socket.write('system_status?'+RN);
@@ -112,23 +165,23 @@ function getSystemStatus (socket, data) {
             }
         } else if (ps = iss(dt, 'power')) {
             log('n', 'i', 'Received system power status: '+gv(dt, ps));
-            tmpSystem['power'] = gv(dt, ps);
+            tmpSystem.power = gv(dt, ps);
             socket.write('ok'+RN);
         } else if (ps = iss(dt, 'battery')) {
             log('n', 'i', 'Received system battery status: '+gv(dt, ps));
-            tmpSystem['battery'] = gv(dt, ps);
+            tmpSystem.battery = gv(dt, ps);
             socket.write('ok'+RN);
         } else if (ps = iss(dt, 'pstn')) {
             log('n', 'i', 'Received system pstn status: '+gv(dt, ps));
-            tmpSystem['pstn'] = gv(dt, ps);
+            tmpSystem.pstn = gv(dt, ps);
             socket.write('ok'+RN);
         } else if (ps = iss(dt, 'comm')) {
             log('n', 'i', 'Received system communication status: '+gv(dt, ps));
-            tmpSystem['comm'] = gv(dt, ps);
+            tmpSystem.comm = gv(dt, ps);
             socket.write('ok'+RN);
         } else if (ps = iss(dt, 'keypad')) {
             log('n', 'i', 'Received system keypad status: '+gv(dt, ps));
-            tmpSystem['keypad'] = gv(dt, ps);
+            tmpSystem.keypad = gv(dt, ps);
             socket.write('ok'+RN);
         } else if (isc(dt, '-done-')) {
             var t = tmpSystem;
@@ -158,7 +211,7 @@ function getSystemStatus (socket, data) {
 function getZones (socket, data) {
     var allSts = ['o', 'c', 'b', 'd'];
     var zones  = data.split(RN);
-    var sts;
+    var obj, sts;
 
     _.each(zones, function(dt,i){
         if (obj = issi(dt, 'z')) {
@@ -178,7 +231,7 @@ function getZones (socket, data) {
             } else {
                 log('n', 'i', _.size(tmpZones)+' zones have updated of its status');
                 log('n', 'd', tmpZones);
-                socket.zones = socket.tmp;
+                socket.zones = tmpZones;
                 tmpZones     = {};
 
                 statusUpdate({
@@ -187,6 +240,9 @@ function getZones (socket, data) {
                     zones: socket.zones
                 });
             }
+        } else if (dt) {
+            log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
+            socket.write('e0'+RN);
         }
     });
 } // getZones
@@ -431,70 +487,14 @@ var server = net.createServer(function (socket) {
         } else if (mesg.substr(0,7) == '-hello-') { // for device checking server alive and response
             socket.write('ok'+RN);
         } else if (typeof socket.tmp == 'undefined' && !iss(dt, 'serial')) {
-            log('n', 'i', 'Probably welcome message sent from device');
+            log('n', 'i', 'Probably this is welcome message sent from device when initial connect');
             log('n', 'd', dt);
-            socket.tmp = {};
+            socket.tmp = {
+                welcome: dt.replace(RN, '')
+            };
         } else if (typeof socket.info == 'undefined') { // when device has not logged, all data sent will go here
 // AUTHORISATION
-            if (typeof socket.tmp == 'undefined') {
-                socket.tmp = {};
-            }
-            if (ps = iss(dt, 'serial')) {
-                log('n', 'i', 'Received serial: '+gv(dt, ps));
-                socket.tmp['serial'] = gv(dt, ps);
-                socket.write('ok'+RN);
-            } else if (ps = iss(dt, 'name')) {
-                log('n', 'i', 'Received name: '+gv(dt, ps));
-                socket.tmp['name'] = gv(dt, ps);
-                socket.write('ok'+RN);
-            } else if (ps = iss(dt, 'version')) {
-                log('n', 'i', 'Received version: '+gv(dt, ps));
-                socket.tmp['version'] = gv(dt, ps);
-                socket.write('ok'+RN);
-            } else if (isc(dt, '-done-')) {
-                var serial, name, version;
-
-                if (typeof socket.tmp.serial != 'undefined') {
-                    serial = socket.tmp.serial;
-                }
-                if (typeof socket.tmp.name != 'undefined') {
-                    name = socket.tmp.name;
-                }
-                if (typeof socket.tmp.version != 'undefined') {
-                    version = socket.tmp.version;
-                }
-                if (!serial || !name || !version) {
-                    log('n', 'w', 'Device has not submitted all required authorisation data');
-                    socket.write('e3'+RN);
-                    return;
-                }
-
-                Device.findOne({ serial:serial }, 'id owner clientId', function(err, data){
-                    if (err) {
-                        log('n', 'e', err);
-                        log('n', 'd', socket.tmp);
-                        socket.write('e2'+RN);
-                        return;
-                    } else if (!data || typeof data.id == 'undefined') { // unrecognized serial
-                        log('n', 'w', 'Device ID ['+socket.id+'] made an invalid access. Unrecognized serial '+socket.tmp.serial);
-                        log('n', 'd', socket.tmp);
-                        socket.write('e4'+RN);
-                        return;
-                    } else {
-                        log('n', 'i', 'Device ID ['+socket.id+'] has logged successfully');
-                        log('n', 'd', socket.tmp);
-                        log('n', 'd', data);
-                        socket.clientId = data.clientId;
-                        socket.info     = socket.tmp;
-                        socket.tmp      = {};
-                        //socket.write('ok'+RN);
-                        socket.write('alarm_status?'+RN);
-                    }
-                });
-            } else {
-                log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
-                socket.write('e0'+RN);
-            }
+            getDeviceInfo(socket, dt);
         } else if (typeof socket.status == 'undefined') {
 // GET DEVICE CURRENT STATUS
             getSystemStatus(socket, dt);
