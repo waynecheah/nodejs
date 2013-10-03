@@ -408,7 +408,7 @@ var fnDeviceLog = function(type, serial, key, val) {
 };
 var fnUserLog = function(type, client, key, val) {
     var date = new Date();
-    var log  = new Log({
+    var logs = new Log({
         date: date.toDateString(),
         time: date.toTimeString(),
         type: type,
@@ -416,12 +416,13 @@ var fnUserLog = function(type, client, key, val) {
         key: key,
         value: val
     });
-    log.save(function(err, data) {
+    logs.save(function(err, data) {
         if (err) {
             log('s', 'e', 'Event has logged failure');
-        } else {
-            log('s', 'd', data);
+            return;
         }
+        log('s', 's', 'Event has logged successfully');
+        log('s', 'd', data);
     });
 };
 

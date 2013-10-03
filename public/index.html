@@ -315,21 +315,24 @@
         <ul data-role="listview" data-divider-theme="c" data-inset="false">
           <li data-theme="c">
             <a href="#page-cam1" data-transition="slide">
-              <img data-src="holder.js/120x80/social" alt="..." class="ui-li-thumb freesize" />
+              <img src="http://cheah.homeip.net:86/snapshot.cgi?user=cheah&pwd=jumpknee123"
+               width="120" height="80" alt="..." class="ui-li-thumb freesize" />
               <h3 style="padding-left:40px;">Kitchen Camera</h3>
               <p style="padding-left:40px;">linksys WVC80N</p>
             </a>
           </li>
           <li data-theme="c">
             <a href="#page-cam2" data-transition="slide">
-              <img data-src="holder.js/120x80/social" alt="..." class="ui-li-thumb freesize" />
+              <img src="http://cheah.homeip.net:85/snapshot.cgi?user=cheah&pwd=jumpknee123"
+               width="120" height="80" alt="..." class="ui-li-thumb freesize" />
               <h3 style="padding-left:40px;">Dining Room</h3>
               <p style="padding-left:40px;">linksys WVC80N</p>
             </a>
           </li>
           <li data-theme="c">
             <a href="#page-cam3" data-transition="slide">
-              <img data-src="holder.js/120x80/social" alt="..." class="ui-li-thumb freesize" />
+              <img src="http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne"
+               width="120" height="80" alt="..." class="ui-li-thumb freesize" />
               <h3 style="padding-left:40px;">Upstairs Camera</h3>
               <p style="padding-left:40px;">linksys WVC80N</p>
             </a>
@@ -855,6 +858,17 @@
               }
           }, 1500);
       } // cancelCountdown
+
+      function resizeImage (selector, url) {
+          var canvas  = $(selector);
+          var context = canvas.getContext('2d');
+          var imgObj  = new Image();
+
+          imgObj.onload = function() {
+              context.drawImage(imgObj, 0, 0, 120, 80);
+          };
+          imgObj.src = url;
+      } // resizeImage
 
 
       var socket = io.connect('http://cheah.homeip.net:8080', {
