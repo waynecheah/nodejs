@@ -2,11 +2,12 @@
 var net    = require('net');
 var crypto = require('crypto');
 var colors = require('colors');
+var _      = require('lodash');
 
 var sockets   = [];
 var RN        = '\r\n';
 var _timer    = 0;
-var host      = '192.168.1.75';
+var host      = 'cheah.homeip.net';
 var port      = 1470;
 var serverErr = {
     e0: 'Invalid input',
@@ -221,66 +222,73 @@ socket.get = function(type, key) {
 
 log('n', 'i', 'Socket created.');
 socket.on('data', function(data) {
+    var dt = data.split(RN);
     var ps;
 
-    log('s', 'i', 'SERVER RESPONSE: '+data.replace(RN, ''));
-
-    if (isg(data, 'id')) {
-        write('serial='+g1('serial'), 'Send serial='+g1('serial'));
-        write('name='+g1('name'), 'Send name='+g1('name'));
-        write('version='+g1('version'), 'Send version='+g1('version'));
-        write('-done-', 'Send -done-', 'i', 'authorisation');
-    } else if (isg(data, 'alarm_status')) {
-        write('alarm_status='+g2('alarm_status'), 'Send alarm_status='+g2('alarm_status'), 'i', 'alarm_status');
-    } else if (ps = iss(data, 'alarm_status')) {
-        var value                 = gv(data, ps);
-        _data.status.alarm_status = value;
-        write2('alarm_status='+value, 'Receive update, system has set alarm_status='+value, 's');
-    } else if (isg(data, 'system_status')) {
-        write2('power='+g2('power'), 'Send power='+g2('power'));
-        write2('battery='+g2('battery'), 'Send battery='+g2('battery'));
-        write2('pstn='+g2('pstn'), 'Send pstn='+g2('pstn'));
-        write2('comm='+g2('comm'), 'Send comm='+g2('comm'));
-        write2('keypad='+g2('keypad'), 'Send keypad='+g2('keypad'));
-        write2('-done-', 'Send -done-', 'i', 'system_status');
-    } else if (isg(data, 'zones')) {
-        write2('z1='+g3('z1'), 'Send zone 1 opened: z1='+g3('z1'));
-        write2('z2='+g3('z2'), 'Send zone 2 closed: z2='+g3('z2'));
-        write2('z3='+g3('z3'), 'Send zone 3 bypassed: z3='+g3('z3'));
-        write2('z4='+g3('z4'), 'Send zone 4 disabled: z4='+g3('z4'));
-        write2('z5='+g3('z5'), 'Send zone 5 closed: z5='+g3('z5'));
-        write2('-done-', 'Send -done-', 'i', 'zones');
-    } else if (data.substr(0,2) == 'ok') {
-        log('n', 's', 'OK received from server');
-        if (_stage == 'authorisation') {
-            log('n', 'i', 'Gain access to the server');
-            resetTime();
-            _stage = '';
-        } else if (_stage == 'alarm_status') {
-            log('n', 'i', 'Alarm status reported to server successfully');
-            resetTime();
-            _stage = '';
-        } else if (_stage == 'system_status') {
-            log('n', 'i', 'System status reported to server successfully');
-            resetTime();
-            _stage = '';
-        } else if (_stage == 'zones') {
-            log('n', 'i', 'All zones reported to server successfully');
-            resetTime();
-            _stage = 'ready';
-        } else if (_stage == 'ready') {
+    _.each(dt, function(data,i){
+        if (!data) {
+            return;
         }
-        console.log(' ');
-    } else if (data.substr(0,1) == 'e') {
-        var no = gv(data, 1);
 
-        if (typeof serverErr['e'+no] == 'undefined') {
-            log('s', 'e', data);
-        } else {
-            log('s', 'e', '[e'+no+'] '+serverErr['e'+no]);
+        log('s', 'i', 'SERVER RESPONSE: '+data.replace(RN, ''));
+
+        if (isg(data, 'id')) {
+            write('serial='+g1('serial'), 'Send serial='+g1('serial'));
+            write('name='+g1('name'), 'Send name='+g1('name'));
+            write('version='+g1('version'), 'Send version='+g1('version'));
+            write('-done-', 'Send -done-', 'i', 'authorisation');
+        } else if (isg(data, 'alarm_status')) {
+            write('alarm_status='+g2('alarm_status'), 'Send alarm_status='+g2('alarm_status'), 'i', 'alarm_status');
+        } else if (ps = iss(data, 'alarm_status')) {
+            var value                 = gv(data, ps);
+            _data.status.alarm_status = value;
+            write2('alarm_status='+value, 'Receive update, system has set alarm_status='+value, 's');
+        } else if (isg(data, 'system_status')) {
+            write2('power='+g2('power'), 'Send power='+g2('power'));
+            write2('battery='+g2('battery'), 'Send battery='+g2('battery'));
+            write2('pstn='+g2('pstn'), 'Send pstn='+g2('pstn'));
+            write2('comm='+g2('comm'), 'Send comm='+g2('comm'));
+            write2('keypad='+g2('keypad'), 'Send keypad='+g2('keypad'));
+            write2('-done-', 'Send -done-', 'i', 'system_status');
+        } else if (isg(data, 'zones')) {
+            write2('z1='+g3('z1'), 'Send zone 1 opened: z1='+g3('z1'));
+            write2('z2='+g3('z2'), 'Send zone 2 closed: z2='+g3('z2'));
+            write2('z3='+g3('z3'), 'Send zone 3 bypassed: z3='+g3('z3'));
+            write2('z4='+g3('z4'), 'Send zone 4 disabled: z4='+g3('z4'));
+            write2('z5='+g3('z5'), 'Send zone 5 closed: z5='+g3('z5'));
+            write2('-done-', 'Send -done-', 'i', 'zones');
+        } else if (data.substr(0,2) == 'ok') {
+            log('n', 's', 'OK received from server');
+            if (_stage == 'authorisation') {
+                log('n', 'i', 'Gain access to the server');
+                resetTime();
+                _stage = '';
+            } else if (_stage == 'alarm_status') {
+                log('n', 'i', 'Alarm status reported to server successfully');
+                resetTime();
+                _stage = '';
+            } else if (_stage == 'system_status') {
+                log('n', 'i', 'System status reported to server successfully');
+                resetTime();
+                _stage = '';
+            } else if (_stage == 'zones') {
+                log('n', 'i', 'All zones reported to server successfully');
+                resetTime();
+                _stage = 'ready';
+            } else if (_stage == 'ready') {
+            }
+            console.log(' ');
+        } else if (data.substr(0,1) == 'e') {
+            var no = gv(data, 1);
+
+            if (typeof serverErr['e'+no] == 'undefined') {
+                log('s', 'e', data);
+            } else {
+                log('s', 'e', '[e'+no+'] '+serverErr['e'+no]);
+            }
+            resetTime();
         }
-        resetTime();
-    }
+    });
 }).on('connect', function() {
     log('n', 'i', 'Socket connected to server successfully!');
     write('Say hello to server. hihi~!', false);
