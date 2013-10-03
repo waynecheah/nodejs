@@ -337,6 +337,22 @@
               <p style="padding-left:40px;">linksys WVC80N</p>
             </a>
           </li>
+          <li>
+            <a href="#page-cam4" data-transition="slide">
+              <canvas width="120" height="80" class="ipcam"
+               data-url="http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne"></canvas>
+              <h3 style="padding-left:40px;">Upstairs Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
+          <li>
+            <a href="#page-cam5" data-transition="slide">
+              <canvas width="120" height="80" class="ipcam"
+               data-url="http://cheah.homeip.net:85/snapshot.cgi?user=cheah&pwd=jumpknee123"></canvas>
+              <h3 style="padding-left:40px;">Dining Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
         </ul>
       </div>
       <div data-theme="a" data-role="footer" data-position="fixed" class="footer">
@@ -859,8 +875,8 @@
           }, 1500);
       } // cancelCountdown
 
-      function resizeImage (selector, url) {
-          var canvas  = $(selector);
+      function resizeImage (canvas) {
+          var url     = canvas.attr('data-url');
           var context = canvas.getContext('2d');
           var imgObj  = new Image();
 
@@ -999,6 +1015,11 @@
       }).on('pagehide', function(){
           $('#page-how-to-arm input.passcode').val('');
           $('#page-how-to-arm div.countdown').hide();
+      });
+      $('#page-cameras').on('pageshow', function(){
+          $.each($('#page-cameras canvas.ipcam'), function(){
+              resizeImage($(this));
+          });
       });
 
 
