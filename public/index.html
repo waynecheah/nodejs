@@ -313,43 +313,35 @@
       </div>
       <div data-role="content">
         <ul data-role="listview" data-divider-theme="c" data-inset="false">
+          <li data-theme="c" class="ui-li-has-thumb">
+            <a href="#page-cam4" data-transition="slide">
+              <div class="ui-li-thumb freesize"><canvas id="ipcam1" width="120" height="80" class="ipcam" data-size="l"
+               data-url="http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne"></canvas></div>
+              <h3 style="padding-left:40px;">Outdoor Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
+          <li data-theme="c" class="ui-li-has-thumb">
+            <a href="#page-cam5" data-transition="slide">
+              <div class="ui-li-thumb freesize"><canvas id="ipcam5" width="120" height="80" class="ipcam" data-size="s"
+               data-url="http://cheah.homeip.net:85/snapshot.cgi?user=cheah&pwd=jumpknee123"></canvas></div>
+              <h3 style="padding-left:40px;">Dining Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
+          <li data-theme="c" class="ui-li-has-thumb">
+            <a href="#page-cam6" data-transition="slide">
+              <div class="ui-li-thumb freesize"><canvas id="ipcam6" width="120" height="80" class="ipcam" data-size="l"
+               data-url="http://cheah.homeip.net:86/snapshot.cgi?user=cheah&pwd=jumpknee123"></canvas></div>
+              <h3 style="padding-left:40px;">Parlor Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
           <li data-theme="c">
             <a href="#page-cam1" data-transition="slide">
               <img src="http://cheah.homeip.net:86/snapshot.cgi?user=cheah&pwd=jumpknee123"
                width="120" height="80" alt="..." class="ui-li-thumb freesize" />
               <h3 style="padding-left:40px;">Kitchen Camera</h3>
-              <p style="padding-left:40px;">linksys WVC80N</p>
-            </a>
-          </li>
-          <li data-theme="c">
-            <a href="#page-cam2" data-transition="slide">
-              <img src="http://cheah.homeip.net:85/snapshot.cgi?user=cheah&pwd=jumpknee123"
-               width="120" height="80" alt="..." class="ui-li-thumb freesize" />
-              <h3 style="padding-left:40px;">Dining Room</h3>
-              <p style="padding-left:40px;">linksys WVC80N</p>
-            </a>
-          </li>
-          <li data-theme="c">
-            <a href="#page-cam3" data-transition="slide">
-              <img src="http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne"
-               width="120" height="80" alt="..." class="ui-li-thumb freesize" />
-              <h3 style="padding-left:40px;">Upstairs Camera</h3>
-              <p style="padding-left:40px;">linksys WVC80N</p>
-            </a>
-          </li>
-          <li>
-            <a href="#page-cam4" data-transition="slide">
-              <canvas width="120" height="80" class="ipcam"
-               data-url="http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne"></canvas>
-              <h3 style="padding-left:40px;">Upstairs Camera</h3>
-              <p style="padding-left:40px;">linksys WVC80N</p>
-            </a>
-          </li>
-          <li>
-            <a href="#page-cam5" data-transition="slide">
-              <canvas width="120" height="80" class="ipcam"
-               data-url="http://cheah.homeip.net:85/snapshot.cgi?user=cheah&pwd=jumpknee123"></canvas>
-              <h3 style="padding-left:40px;">Dining Camera</h3>
               <p style="padding-left:40px;">linksys WVC80N</p>
             </a>
           </li>
@@ -875,13 +867,23 @@
           }, 1500);
       } // cancelCountdown
 
-      function resizeImage (canvas) {
-          var url     = canvas.attr('data-url');
+      function resizeImage (id, url, size) {
+        console.log(id+': '+url);
+          var canvas  = document.getElementById(id);
           var context = canvas.getContext('2d');
           var imgObj  = new Image();
+          var width, height;
+
+          if (size == 's') {
+              width  = 320;
+              height = 240;
+          } else {
+              width  = 640;
+              height = 480;
+          }
 
           imgObj.onload = function() {
-              context.drawImage(imgObj, 0, 0, 120, 80);
+              context.drawImage(imgObj, 0, 0, width, height, 0, 0, 120, 80);
           };
           imgObj.src = url;
       } // resizeImage
@@ -1018,7 +1020,10 @@
       });
       $('#page-cameras').on('pageshow', function(){
           $.each($('#page-cameras canvas.ipcam'), function(){
-              resizeImage($(this));
+              var id   = $(this).attr('id');
+              var size = $(this).attr('data-size');
+              var url  = $(this).attr('data-url');
+              resizeImage(id, url, size);
           });
       });
 
