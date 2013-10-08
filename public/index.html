@@ -314,7 +314,7 @@
       <div data-role="content">
         <ul data-role="listview" data-divider-theme="c" data-inset="false">
           <li data-theme="c" class="ui-li-has-thumb">
-            <a href="#page-cam4" data-transition="slide">
+            <a href="#page-camera" data-transition="slide">
               <div class="ui-li-thumb freesize"><canvas id="ipcam1" width="120" height="80" class="ipcam" data-size="l"
                data-url="http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne"></canvas></div>
               <h3 style="padding-left:40px;">Outdoor Camera</h3>
@@ -370,6 +370,27 @@
             </li>
           </ul>
         </div>
+      </div>
+    </div>
+
+    <!-- Camera -->
+    <div data-role="page" id="page-camera" style="background:#000;">
+      <div data-theme="b" data-role="header" data-fullscreen="true" data-position="fixed" class="header">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Camera
+        </a>
+        <h3 class="header">
+          Camera 1
+        </h3>
+        <div data-role="controlgroup" data-type="horizontal" data-mini="true" class="ui-btn-right">
+          <a href="#" data-role="button" data-theme="b">Pic</a>
+          <a href="#" data-role="button" data-theme="b">Video</a>
+        </div>
+      </div>
+      <div data-role="content">
+        <img src="http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne"
+         alt="camera" class="cam" style="width:100%" />
       </div>
     </div>
 
@@ -555,6 +576,8 @@
       var _body      = '';
       var _countDown = false;
       var _cancelArm = false;
+      var _loadCam   = false;
+      var _camLoaded = false;
       var _data      = {
           status: {
               alarm_status: 'r'
@@ -868,7 +891,6 @@
       } // cancelCountdown
 
       function resizeImage (id, url, size) {
-        console.log(id+': '+url);
           var canvas  = document.getElementById(id);
           var context = canvas.getContext('2d');
           var imgObj  = new Image();
@@ -887,6 +909,20 @@
           };
           imgObj.src = url;
       } // resizeImage
+
+      function loadCamera () {
+          var time = new Date().getTime();
+          var url  = 'http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne&'+time;
+
+          if (_camLoaded) { // only change to new image when previous image finish loaded
+              _camLoaded = false;
+              $('#page-camera img.cam').attr('src', url);
+          }
+
+          if (_loadCam) {
+              setTimeout(loadCamera, 1000);
+          }
+      } // loadCamera
 
 
       var socket = io.connect('http://cheah.homeip.net:8080', {
@@ -1026,6 +1062,12 @@
               resizeImage(id, url, size);
           });
       });
+      $('#page-camera').on('pageshow', function(){
+          _loadCam = true;
+          loadCamera();
+      }).on('pagehide', function(){
+          _loadCam = false;
+      });
 
 
       $('#page-how-to-arm input.passcode').click(function(){
@@ -1067,6 +1109,10 @@
           } else {
               $('#page-how-to-arm #code'+i).val('').focus();
           }
+      });
+
+      $('#page-camera img.cam').on('load', function(){
+        _camLoaded = true;
       });
     </script>
 </body>
