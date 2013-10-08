@@ -16,6 +16,12 @@ input.passcode {
     height: 50px;
     text-align: center;
 }
+div.cameraWrap {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    text-align: center;
+}
 #page-lights div.slider {
     margin: 0;
 }
