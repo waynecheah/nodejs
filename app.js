@@ -18,6 +18,7 @@ var host       = '192.168.1.75';
 var tmpInfo    = {};
 var tmpSystem  = {};
 var tmpZones   = {};
+var tmpLights  = {};
 var clientErr  = {};
 var serverErr  = {
     e1: 'System error',
@@ -29,7 +30,10 @@ var serverErr  = {
     e7: 'System status is not completely reported',
     e8: 'Unrecognized zone status',
     e9: 'No any zone received for update',
-    e10: 'Invalid zone number'
+    e10: 'Invalid zone number',
+    e11: 'Unrecognized light status',
+    e12: 'No any light received for update',
+    e13: 'Invalid light number'
 };
 var webErr     = {};
 
@@ -246,6 +250,46 @@ function getZones (socket, data) {
         }
     });
 } // getZones
+
+function getLights (socket, data) {
+    var allSts = ['1', '0', 't', 'p', 'b'];
+    var lights = data.split(RN);
+    var obj, sts;
+
+    _.each(lights, function(dt,i){
+        if (obj = issi(dt, 'light')) {
+            sts = gv(dt, obj.p);
+            if (allSts.indexOf(sts) < 0) {
+                log('n', 'e', 'Unrecognized light status: '+sts);
+                socket.write('e11'+RN);
+            } else {
+                log('n', 'i', 'Received Light '+obj.i+' status: '+sts);
+                tmpLights['light'+obj.i] = sts;
+                socket.write('ok'+RN);
+            }
+        } else if (isc(dt, '-done-')) {
+            if (_.size(tmpLights) == 0) {
+                log('n', 'e', 'No any light received for update');
+                socket.write('e12'+RN);
+            } else {
+                log('n', 'i', _.size(tmpLights)+' lights have updated of its status');
+                log('n', 'd', tmpLights);
+                socket.lights = tmpLights;
+                tmpLights     = {};
+
+                statusUpdate({
+                    info: socket.info,
+                    status: socket.status,
+                    zones: socket.zones,
+                    lights: socket.lights
+                });
+            }
+        } else if (dt) {
+            log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
+            socket.write('e0'+RN);
+        }
+    });
+} // getLights
 
 function statusUpdate (data) {
     if (typeof data == 'object') {
@@ -504,7 +548,8 @@ var server = net.createServer(function (socket) {
             getZones(socket, dt);
         } else if (typeof socket.zones != 'undefined') { // continue listening to device
 // READY MODE, ANY EVENT TRIGGER GOES HERE
-            var allsts = ['o', 'c', 'b', 'd'];
+            var allsts  = ['o', 'c', 'b', 'd'];
+            var allsts2 = ['1', '0', 't', 'p', 'b'];
             var sts;
 
             if (ps = iss(dt, 'alarm_status')) {
@@ -550,6 +595,20 @@ var server = net.createServer(function (socket) {
                     socket.zones['z'+obj.i] = sts;
                     socket.write('ok'+RN);
                     deviceUpdate('z'+obj.i, 'zone', sts, socket.info);
+                }
+            } else if (obj = issi(dt, 'light')) {
+                sts = gv(dt, obj.p);
+                if (allsts2.indexOf(sts) < 0) {
+                    log('n', 'e', 'Unrecognized light status: '+sts);
+                    socket.write('e11'+RN);
+                } else if (typeof socket.lights['light'+obj.i] == 'undefined') {
+                    log('n', 'e', 'Invalid light: light'+obj.i);
+                    socket.write('e13'+RN);
+                } else {
+                    log('n', 'i', 'Light '+obj.i+' status changed: '+sts);
+                    socket.lights['light'+obj.i] = sts;
+                    socket.write('ok'+RN);
+                    deviceUpdate('light'+obj.i, 'light', sts, socket.info);
                 }
             }
         } else if (mesg.substr(0,5) == 'HEAD=' || mesg.substr(0,3) == 'HID') {

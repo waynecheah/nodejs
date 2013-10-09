@@ -754,6 +754,9 @@
           notification('Zone Status', id.replace('z', 'Zone ')+' status is now changed to '+mapping[value]);
       } // updateZone
 
+      function updateLight (id, value) {
+      } // updateLight
+
       function updateSystemStatus () {
           var sts, css;
 
@@ -979,6 +982,9 @@
           } else if (d.type == 'zone' || d.type == 'zones') {
               _data.zones[d.id] = d.value;
               updateZone(d.id, d.value);
+          } else if (d.type == 'light' || d.type == 'lights') {
+              _data.lights[d.id] = d.value;
+              updateLight(d.id, d.value);
           }
       });
 
