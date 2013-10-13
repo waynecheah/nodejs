@@ -496,8 +496,8 @@ var app = connect()
 // Web Server
 //
 var webserver = http.createServer(app);
-webserver.listen(8080, host);
-log('s', 'i', 'Webserver running at http://'+host+':8080');
+webserver.listen(8081, host);
+log('s', 'i', 'Webserver running at http://'+host+':8081');
 
 
 //
@@ -914,15 +914,15 @@ var server = net.createServer(function (socket) {
     //socket.pipe(socket);
 });
 
-server.listen(1470, host);
-log('s', 'i', 'Net listening to '+host+':1470');
+server.listen(1471, host);
+log('s', 'i', 'Net listening to '+host+':1471');
 
 
 //
 // Socket.io
 //
 io = io.listen(webserver);
-log('s', 'i', 'Socket.io listening to '+host+':8080');
+log('s', 'i', 'Socket.io listening to '+host+':8081');
 io.sockets.on('connection', function(sock) {
     log('w', 'i', 'web client '+sock.id+' connected');
     websockets.push(sock); // assign websocket to global variable

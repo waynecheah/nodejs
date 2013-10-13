@@ -16,8 +16,6 @@ var websockets = [];
 var RN         = '\r\n';
 var _timer     = null;
 var host       = '192.168.1.75';
-var tmpSystem  = {};
-var tmpZones   = {};
 var clientErr  = {};
 var serverErr  = {
     e0: 'Invalid input',
@@ -28,8 +26,8 @@ var serverErr  = {
     e5: 'Invalid event log, improper format sent',
     e6: 'Save event log into database failure',
     e7: 'Reported system status found incomplete',
-    e8: 'No any zone status reported',
-    e9: '',
+    e8: 'No any partition status reported',
+    e9: 'No any zone status reported',
     e10: '',
     e11: '',
     e12: '',
@@ -79,22 +77,66 @@ var mapping = {
             2: 'Bypass',
             3: 'Trouble',
             4: 'Tamper'
+        },
+        type: {
+            0: 'N/A',
+            1: 'Delay',
+            2: 'Instant',
+            3: 'Follower',
+            4: '24hr',
+            5: 'Delay2',
+            6: 'Keyswitch'
+        }
+    },
+    emergency: {
+        type: {
+            0: 'N/A',
+            1: 'Panic',
+            2: 'Medical',
+            3: 'Fire',
+            4: 'Duress'
+        },
+        status: {
+            0: 'Ready/Restore',
+            1: 'Alarm'
         }
     },
     light: {
-        type: {
-            0: 'Disable',
-            1: 'Normal',
+        command: {
+            0: 'Off',
+            1: 'On',
             2: 'Dim',
             3: 'Toggle',
             4: 'Pulse',
             5: 'Blink',
             6: 'Delay'
         },
+        user: {
+            101: 'Keyfob',
+            102: 'Auto',
+            103: 'Remote'
+        }
+    },
+    sensor: {
+        type: {
+            0: 'Disable',
+            1: 'Normal Open',
+            2: 'Normal Close',
+            3: 'Potential'
+        },
         status: {
-            0: 'Off',
-            1: 'On',
-            2: 'Dim'
+            0: 'N/A',
+            1: 'Open',
+            2: 'Close'
+        }
+    },
+    label: {
+        item: {
+            zn: 'Zone',
+            dv: 'Device',
+            li: 'Light',
+            ss: 'Sensor',
+            us: 'User'
         }
     }
 };
@@ -227,10 +269,11 @@ function getDeviceInfo (socket, data) {
                         system: [],
                         partition: [],
                         zones: [],
-                        lights: [],
+                        emergency: [],
                         devices: [],
+                        lights: [],
                         sensors: [],
-                        emergency: []
+                        labels: []
                     };
                     socket.write('sr?'+RN); // ask device's status report
                 }
@@ -251,7 +294,7 @@ function getCurrentStatus (socket, data) {
             str  = gv(dt, ps);
             info = str.split(',');
 
-            if (info.length != 5) {
+            if (info.length != 2) {
                 log('n', 'e', 'Invalid system info, improper format sent');
                 socket.write('e5'+RN);
                 return;
@@ -277,20 +320,47 @@ function getCurrentStatus (socket, data) {
             str  = gv(dt, ps);
             info = str.split(',');
 
-            if (info.length != 3) {
+            if (info.length != 5) {
                 log('n', 'e', 'Invalid zone status, improper format sent');
                 socket.write('e5'+RN);
                 return;
             }
 
-            log('n', 'i', 'Received zone status update: Zone '+info[0]+' = '+getMap('zone', info[1], info[2]));
+            var sts = getMap('zone', info[1], info[2], info[4]);
+            log('n', 'i', 'Received zone status update: Partition '+info[3]+' Zone '+info[0]+' = '+sts);
             socket.tmp.zones.push(str);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'em')) {
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 3) {
+                log('n', 'e', 'Invalid emergency status, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+
+            log('n', 'i', 'Received emergency status update: User '+info[2]+' = '+getMap('emergency', info[1], info[2]));
+            socket.tmp.emergency.push(str);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'dv')) { // device status
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 5) {
+                log('n', 'e', 'Invalid device status, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+
+            log('n', 'i', 'Received device status update: Device '+info[0]+' = '+getMap('light', info[1], info[2], info[3]));
+            socket.tmp.devices.push(str);
             socket.write('ok'+RN);
         } else if (ps = iss(dt, 'li')) { // lights status
             str  = gv(dt, ps);
             info = str.split(',');
 
-            if (info.length != 4) {
+            if (info.length != 5) {
                 log('n', 'e', 'Invalid light status, improper format sent');
                 socket.write('e5'+RN);
                 return;
@@ -299,23 +369,31 @@ function getCurrentStatus (socket, data) {
             log('n', 'i', 'Received light status update: Light '+info[0]+' = '+getMap('light', info[1], info[2], info[3]));
             socket.tmp.lights.push(str);
             socket.write('ok'+RN);
-        } else if (ps = iss(dt, 'dv')) {
+        }  else if (ps = iss(dt, 'ss')) { // sensor status
             str  = gv(dt, ps);
             info = str.split(',');
 
-            socket.tmp.devices.push(str);
-            socket.write('ok'+RN);
-        } else if (ps = iss(dt, 'ss')) {
-            str  = gv(dt, ps);
-            info = str.split(',');
+            if (info.length != 4) {
+                log('n', 'e', 'Invalid sensor status, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
 
+            log('n', 'i', 'Received sensor status update: Sensor '+info[0]+' = '+getMap('sensor', info[1], info[2], info[3]));
             socket.tmp.sensors.push(str);
             socket.write('ok'+RN);
-        } else if (ps = iss(dt, 'em')) {
+        } else if (ps = iss(dt, 'lb')) { // label listing
             str  = gv(dt, ps);
             info = str.split(',');
 
-            socket.tmp.emergency.push(str);
+            if (info.length != 3) {
+                log('n', 'e', 'Invalid label list, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+
+            log('n', 'i', 'Received label update: '+getMap('label', info[0])+' '+info[1]+' = '+info[2]);
+            socket.tmp.labels.push(str);
             socket.write('ok'+RN);
         } else if (isc(dt, '-done-')) {
             var t = socket.tmp;
@@ -323,12 +401,16 @@ function getCurrentStatus (socket, data) {
             if (t.system.length < 5) {
                 log('n', 'w', 'Reported system status found incomplete');
                 socket.write('e7'+RN);
+            } else if (t.partition.length == 0) {
+                log('n', 'w', 'No any partition status reported');
+                socket.write('e8'+RN);
             } else if (t.zones.length == 0) {
                 log('n', 'w', 'No any zone status reported');
-                socket.write('e8'+RN);
+                socket.write('e9'+RN);
             } else {
                 log('n', 'i', 'All status have updated successfully');
-                socket.write('el?'+RN);
+                socket.data.status = socket.tmp;
+                socket.tmp         = {};
             }
         } else if (dt) {
             log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
@@ -342,38 +424,36 @@ function getEventLogs (socket, data) {
     var info, event, ps, str;
 
     _.each(logs, function(dt,i){
-        if (ps = iss(dt, 'lzn')) {
+        if (ps = iss(dt, 'lsi')) {
             str  = gv(dt, ps);
             info = str.split(',');
 
-            if (info.length != 6) {
-                log('n', 'e', 'Invalid zone event log, improper format sent');
+            if (info.length != 4) {
+                log('n', 'e', 'Invalid system info event log, improper format sent');
                 socket.write('e5'+RN);
                 return;
             }
 
             event = new Event({
-                datetime: info[5],
+                datetime: info[3],
                 device: socket.data.deviceId,
-                category: 'zone',
+                category: 'system',
                 log: dt,
-                number: info[0],
-                condition: info[1],
-                status: info[2],
-                partition: info[3],
-                type: info[4]
+                status: info[1],
+                type: info[0],
+                user: info[2]
             });
 
             event.save(function(err, data){
                 if (err) {
-                    log('s', 'e', 'Zone event has logged failure');
+                    log('s', 'e', 'System Info event has logged failure');
                     socket.write('e6'+RN);
                     return;
                 }
-                log('s', 's', 'Zone event has logged successfully');
+                log('s', 's', 'System Info event has logged successfully');
                 log('s', 'd', data);
                 socket.write('ok'+RN);
-                socket.tmp.datetime = info[5];
+                socket.tmp.datetime = info[3];
                 socket.tmp.count   += 1;
             });
         } else if (ps = iss(dt, 'lpt')) {
@@ -441,41 +521,43 @@ function getEventLogs (socket, data) {
                 socket.tmp.datetime = info[3];
                 socket.tmp.count   += 1;
             });
-        } else if (ps = iss(dt, 'lsi')) {
+        } else if (ps = iss(dt, 'lzn')) {
             str  = gv(dt, ps);
             info = str.split(',');
 
-            if (info.length != 5) {
-                log('n', 'e', 'Invalid system info event log, improper format sent');
+            if (info.length != 6) {
+                log('n', 'e', 'Invalid zone event log, improper format sent');
                 socket.write('e5'+RN);
                 return;
             }
 
             event = new Event({
-                datetime: info[3],
+                datetime: info[5],
                 device: socket.data.deviceId,
-                category: 'system',
+                category: 'zone',
                 log: dt,
-                status: info[1],
-                type: info[0],
-                user: info[2]
+                number: info[0],
+                condition: info[1],
+                status: info[2],
+                partition: info[3],
+                type: info[4]
             });
 
             event.save(function(err, data){
                 if (err) {
-                    log('s', 'e', 'System Info event has logged failure');
+                    log('s', 'e', 'Zone event has logged failure');
                     socket.write('e6'+RN);
                     return;
                 }
-                log('s', 's', 'System Info event has logged successfully');
+                log('s', 's', 'Zone event has logged successfully');
                 log('s', 'd', data);
                 socket.write('ok'+RN);
-                socket.tmp.datetime = info[3];
+                socket.tmp.datetime = info[5];
                 socket.tmp.count   += 1;
             });
         } else if (isc(dt, '-done-')) {
             var prevSync = socket.data.lastSync;
-            var lastSync = _.isUndefined(socket.tmp.datetime) ? '131013115632' : socket.tmp.datetime;
+            var lastSync = _.isUndefined(socket.tmp.datetime) ? datetime() : socket.tmp.datetime;
 
             Device.findOneAndUpdate({ serial:socket.data.info.sn }, { lastSync:lastSync }, function(err){
                 if (err) {
@@ -505,10 +587,15 @@ function getMap (category, m1, m2, m3) {
     } else if (category == 'partition') {
         return mapping.partition.status[m1]+' by user ['+mapping.partition.user[m2]+']';
     } else if (category == 'zone') {
-        return mapping.zone.condition[m1]+', '+mapping.zone.status[m2];
+        return 'Condition:'+mapping.zone.condition[m1]+' | Status:'+mapping.zone.status[m2]+' | Type:'+mapping.zone.type[m3];
     } else if (category == 'light') {
+        var val = m2 ? ' ('+m2+')' : '';
+        return mapping.light.command[m1]+val+' by user ['+mapping.light.user[m3]+']';
+    } else if (category == 'sensor') {
         var val = m3 ? ' ('+m3+')' : '';
-        return mapping.light.type[m1];+', '+mapping.light.status[m2]+val
+        return mapping.sensor.type[m1]+val+' | Status:'+mapping.sensor.status[m2];
+    } else if (category == 'label') {
+        return mapping.label.item[m1];
     }
 } // getMap
 
@@ -600,6 +687,7 @@ var server = net.createServer(function (socket) {
 
     socket.on('data', function(data) { // send from client
         var dt  = data.toString();
+        var lgt = ['lsi','lpt','lzn','lem','ldv','lli','lss'];
         var obj = {};
 
         if (isc(dt, 'quit')) { // device is asking self termination
@@ -624,7 +712,7 @@ var server = net.createServer(function (socket) {
             getDeviceInfo(socket, dt);
         } else if (_.isUndefined(socket.data.status)) { // get all current status from device
             getCurrentStatus(socket, dt);
-        } else if (_.isUndefined(socket.data.lastSync)) { // get event logs from device since last disconnected
+        } else if (lgt.indexOf(dt.substr(0,3)) >= 0) { // get event logs from device
             getEventLogs(socket, dt);
         } else {
             var x    = sockets.indexOf(socket);
