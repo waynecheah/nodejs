@@ -8,6 +8,7 @@ var fs         = require('fs');
 var crypto     = require('crypto');
 var colors     = require('colors');
 var _          = require('lodash');
+var moment     = require('moment');
 var nodemailer = require('nodemailer');
 
 var sockets    = [];
@@ -26,8 +27,8 @@ var serverErr  = {
     e4: 'Unrecognized device, serial not found in database',
     e5: 'Invalid event log, improper format sent',
     e6: 'Save event log into database failure',
-    e7: '',
-    e8: '',
+    e7: 'Reported system status found incomplete',
+    e8: 'No any zone status reported',
     e9: '',
     e10: '',
     e11: '',
@@ -50,6 +51,20 @@ var mapping = {
             0: 'Ready/Restore',
             1: 'Alarm',
             2: 'Fault'
+        }
+    },
+    partition: {
+        status: {
+            0: 'Disarmed',
+            1: 'Away',
+            2: 'Home',
+            3: 'Night'
+        },
+        user: {
+            100: 'User1',
+            101: 'Keyfob',
+            102: 'Auto', // timer
+            103: 'Remote'
         }
     },
     zone: {
@@ -126,54 +141,98 @@ function gv (data, start) { // get value
     return data.substr(start);
 } // gv
 
+function datetime () {
+    return moment().format('YYMMDDHHmmss');
+} // datetime
+
+function log (env, type, mesg) {
+    if (env == 'n') {
+        env = 'NET';
+    } else if (env == 'w') {
+        env = 'WEB';
+    } else {
+        env = 'SERVER';
+    }
+
+    if (type == 's') {
+        type = colors.green('success:');
+    } else if (type == 'i') {
+        type = colors.cyan('info:');
+    } else if (type == 'w') {
+        type = colors.yellow('warning:');
+    } else if (type == 'e') {
+        type = colors.red('error:');
+    } else if (type == 'd') {
+        type = colors.grey('debug:');
+    }
+
+    if (typeof mesg == 'object') {
+        mesg = colors.italic(colors.grey(JSON.stringify(mesg)));
+    }
+
+    console.log('  '+'['+colors.bold(colors.white(env))+'] '+colors.bold(type)+' '+mesg);
+} // log
+
+
 function getDeviceInfo (socket, data) {
     var info = data.split(RN);
     var ps;
 
     _.each(info, function(dt,i){
-        if (ps = iss(dt, 'serial')) {
+        if (ps = iss(dt, 'cn')) {
+            socket.tmp.cn = gv(dt, ps);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'sn')) {
             log('n', 'i', 'Received serial: '+gv(dt, ps));
-            socket.tmp.serial = gv(dt, ps);
+            socket.tmp.sn = gv(dt, ps);
             socket.write('ok'+RN);
-        } else if (ps = iss(dt, 'name')) {
+        } else if (ps = iss(dt, 'pn')) {
             log('n', 'i', 'Received name: '+gv(dt, ps));
-            socket.tmp.name = gv(dt, ps);
+            socket.tmp.pn = gv(dt, ps);
             socket.write('ok'+RN);
-        } else if (ps = iss(dt, 'version')) {
+        } else if (ps = iss(dt, 'vs')) {
             log('n', 'i', 'Received version: '+gv(dt, ps));
-            socket.tmp.version = gv(dt, ps);
+            socket.tmp.vs = gv(dt, ps);
             socket.write('ok'+RN);
         } else if (isc(dt, '-done-')) {
             var t = socket.tmp;
 
-            if (_.isUndefined(t.serial) || _.isUndefined(t.name) || _.isUndefined(t.version)) {
+            if (_.isUndefined(t.cn) || _.isUndefined(t.sn) || _.isUndefined(t.pn) || _.isUndefined(t.vs)) {
                 log('n', 'w', 'Device has not submitted all required authorisation data');
                 socket.write('e3'+RN);
                 return;
             }
 
-            Device.findOne({ serial:t.serial }, 'id macAdd lastSync', function(err, data){
+            Device.findOne({ serial:t.sn }, 'id macAdd lastSync', function(err, data){
                 if (err) {
                     log('n', 'e', err);
                     log('n', 'd', t);
                     socket.write('e2'+RN);
                 } else if (!data || _.isUndefined(data.id)) { // unrecognized serial
-                    log('n', 'w', 'Device ID ['+socket.id+'] made an invalid access. Unrecognized serial '+t.serial);
+                    log('n', 'w', 'Device ID ['+socket.id+'] made an invalid access. Unrecognized serial '+t.sn);
                     log('n', 'd', t);
                     socket.write('e4'+RN);
                 } else {
+                    var lastSync = _.isUndefined(data.lastSync) ? '' : data.lastSync;
+
                     log('n', 'i', 'Device ID ['+socket.id+'] has logged successfully');
                     log('n', 'd', t);
                     log('n', 'd', data);
                     socket.data = {
                         deviceId: data.id,
-                        info: t
+                        info: t,
+                        lastSync: lastSync
                     };
-                    socket.tmp  = {
-                        count: 0,
-                        lastSync: data.lastSync
+                    socket.tmp  = { // prepare variable for current status update
+                        system: [],
+                        partition: [],
+                        zones: [],
+                        lights: [],
+                        devices: [],
+                        sensors: [],
+                        emergency: []
                     };
-                    socket.write('log='+data.lastSync+RN);
+                    socket.write('sr?'+RN); // ask device's status report
                 }
             });
         } else if (dt) {
@@ -183,12 +242,107 @@ function getDeviceInfo (socket, data) {
     });
 } // getDeviceInfo
 
+function getCurrentStatus (socket, data) {
+    var sts = data.split(RN);
+    var info, ps, str;
+
+    _.each(sts, function(dt,i){
+        if (ps = iss(dt, 'si')) { // system info
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 5) {
+                log('n', 'e', 'Invalid system info, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+
+            log('n', 'i', 'Received system info update: '+getMap('system', info[0], info[1]));
+            socket.tmp.system.push(str);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'pt')) { // zones status
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 3) {
+                log('n', 'e', 'Invalid partition status, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+
+            log('n', 'i', 'Received partition status update: Partition '+info[0]+' = '+getMap('partition', info[1], info[2]));
+            socket.tmp.partition.push(str);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'zn')) { // zones status
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 3) {
+                log('n', 'e', 'Invalid zone status, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+
+            log('n', 'i', 'Received zone status update: Zone '+info[0]+' = '+getMap('zone', info[1], info[2]));
+            socket.tmp.zones.push(str);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'li')) { // lights status
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 4) {
+                log('n', 'e', 'Invalid light status, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+
+            log('n', 'i', 'Received light status update: Light '+info[0]+' = '+getMap('light', info[1], info[2], info[3]));
+            socket.tmp.lights.push(str);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'dv')) {
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            socket.tmp.devices.push(str);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'ss')) {
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            socket.tmp.sensors.push(str);
+            socket.write('ok'+RN);
+        } else if (ps = iss(dt, 'em')) {
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            socket.tmp.emergency.push(str);
+            socket.write('ok'+RN);
+        } else if (isc(dt, '-done-')) {
+            var t = socket.tmp;
+
+            if (t.system.length < 5) {
+                log('n', 'w', 'Reported system status found incomplete');
+                socket.write('e7'+RN);
+            } else if (t.zones.length == 0) {
+                log('n', 'w', 'No any zone status reported');
+                socket.write('e8'+RN);
+            } else {
+                log('n', 'i', 'All status have updated successfully');
+                socket.write('el?'+RN);
+            }
+        } else if (dt) {
+            log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
+            socket.write('e0'+RN);
+        }
+    });
+} // getCurrentStatus
+
 function getEventLogs (socket, data) {
     var logs = data.split(RN);
     var info, event, ps, str;
 
     _.each(logs, function(dt,i){
-        if (ps = iss(dt, 'zn')) {
+        if (ps = iss(dt, 'lzn')) {
             str  = gv(dt, ps);
             info = str.split(',');
 
@@ -222,7 +376,7 @@ function getEventLogs (socket, data) {
                 socket.tmp.datetime = info[5];
                 socket.tmp.count   += 1;
             });
-        } else if (ps = iss(dt, 'pt')) {
+        } else if (ps = iss(dt, 'lpt')) {
             str  = gv(dt, ps);
             info = str.split(',');
 
@@ -255,7 +409,7 @@ function getEventLogs (socket, data) {
                 socket.tmp.datetime = info[4];
                 socket.tmp.count   += 1;
             });
-        } else if (ps = iss(dt, 'em')) {
+        } else if (ps = iss(dt, 'lem')) {
             str  = gv(dt, ps);
             info = str.split(',');
 
@@ -287,7 +441,7 @@ function getEventLogs (socket, data) {
                 socket.tmp.datetime = info[3];
                 socket.tmp.count   += 1;
             });
-        } else if (ps = iss(dt, 'si')) {
+        } else if (ps = iss(dt, 'lsi')) {
             str  = gv(dt, ps);
             info = str.split(',');
 
@@ -321,8 +475,9 @@ function getEventLogs (socket, data) {
             });
         } else if (isc(dt, '-done-')) {
             var prevSync = socket.data.lastSync;
+            var lastSync = _.isUndefined(socket.tmp.datetime) ? '131013115632' : socket.tmp.datetime;
 
-            Device.findOneAndUpdate({ serial:socket.data.info.serial }, { lastSync:socket.tmp.lastSync }, function(err){
+            Device.findOneAndUpdate({ serial:socket.data.info.sn }, { lastSync:lastSync }, function(err){
                 if (err) {
                     log('n', 'e', err);
                     socket.write('e2'+RN);
@@ -332,14 +487,10 @@ function getEventLogs (socket, data) {
                 log('n', 'i', 'There are '+socket.tmp.count+' event updated since '+prevSync);
                 socket.data.lastSync = socket.tmp.datetime;
                 socket.tmp           = {
-                    system: [],
-                    zones: [],
-                    partition: [],
-                    lights: [],
-                    devices: [],
-                    sensors: []
+                    count: 0,
+                    lastSync: lastSync
                 };
-                socket.write('status?'+RN);
+                socket.write('ok'+RN);
             });
         } else if (dt) {
             log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
@@ -348,71 +499,11 @@ function getEventLogs (socket, data) {
     });
 } // getEventLogs
 
-function getCurrentStatus (socket, data) {
-    var sts = data.split(RN);
-    var info, ps, str;
-
-    _.each(sts, function(dt,i){
-        if (ps = iss(dt, 'si')) { // system info
-            str  = gv(dt, ps);
-            info = str.split(',');
-
-            if (info.length != 5) {
-                log('n', 'e', 'Invalid system info, improper format sent');
-                socket.write('e5'+RN);
-                return;
-            }
-
-            log('n', 'i', 'Received system info update: '+getMap('system', info[0], info[1]));
-            socket.tmp.system.push(str);
-            socket.write('ok'+RN);
-        } else if (ps = iss(dt, 'zn')) { // zones status
-            str  = gv(dt, ps);
-            info = str.split(',');
-
-            if (info.length != 6) {
-                log('n', 'e', 'Invalid zone status, improper format sent');
-                socket.write('e5'+RN);
-                return;
-            }
-
-            log('n', 'i', 'Received zone status update: Zone '+info[0]+' = '+getMap('zone', info[1], info[2]));
-            socket.tmp.zones.push(str);
-            socket.write('ok'+RN);
-        } else if (ps = iss(dt, 'li')) { // lights status
-            str  = gv(dt, ps);
-            info = str.split(',');
-
-            if (info.length != 6) {
-                log('n', 'e', 'Invalid light status, improper format sent');
-                socket.write('e5'+RN);
-                return;
-            }
-
-            log('n', 'i', 'Received light status update: Light '+info[0]+' = '+getMap('light', info[1], info[2], info[3]));
-            socket.tmp.lights.push(str);
-            socket.write('ok'+RN);
-        } else if (isc(dt, '-done-')) {
-            var t = socket.tmp;
-
-            if (t.system.length < 5) {
-                socket.write('e'+RN);
-            } else if (t.zones.length == 0) {
-                socket.write('e'+RN);
-            } else {
-                log('n', 'i', 'All status have updated successfully');
-                socket.write('ok'+RN);
-            }
-        } else if (dt) {
-            log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
-            socket.write('e0'+RN);
-        }
-    });
-} // getCurrentStatus
-
 function getMap (category, m1, m2, m3) {
     if (category == 'system') {
         return mapping.system.type[m1]+' = '+mapping.system.status[m2];
+    } else if (category == 'partition') {
+        return mapping.partition.status[m1]+' by user ['+mapping.partition.user[m2]+']';
     } else if (category == 'zone') {
         return mapping.zone.condition[m1]+', '+mapping.zone.status[m2];
     } else if (category == 'light') {
@@ -421,109 +512,6 @@ function getMap (category, m1, m2, m3) {
     }
 } // getMap
 
-function getSystemStatus (socket, data) {
-    var system = data.split(RN);
-    var ps;
-
-    _.each(system, function(dt,i){
-        if (ps = iss(dt, 'alarm_status')) {
-            var allSts = ['a', 'h', 'r', 'p'];
-            var status = gv(dt, ps);
-
-            if (allSts.indexOf(status) < 0) {
-                log('n', 'e', 'Unrecognized alarm status: '+status);
-                socket.write('e5'+RN);
-            } else {
-                log('n', 'i', 'Received alarm status: '+status);
-                tmpSystem.alarm_status = status;
-                socket.write('ok'+RN);
-                setTimeout(function(){
-                    socket.write('system_status?'+RN);
-                }, 50);
-            }
-        } else if (ps = iss(dt, 'power')) {
-            log('n', 'i', 'Received system power status: '+gv(dt, ps));
-            tmpSystem.power = gv(dt, ps);
-            socket.write('ok'+RN);
-        } else if (ps = iss(dt, 'battery')) {
-            log('n', 'i', 'Received system battery status: '+gv(dt, ps));
-            tmpSystem.battery = gv(dt, ps);
-            socket.write('ok'+RN);
-        } else if (ps = iss(dt, 'pstn')) {
-            log('n', 'i', 'Received system pstn status: '+gv(dt, ps));
-            tmpSystem.pstn = gv(dt, ps);
-            socket.write('ok'+RN);
-        } else if (ps = iss(dt, 'comm')) {
-            log('n', 'i', 'Received system communication status: '+gv(dt, ps));
-            tmpSystem.comm = gv(dt, ps);
-            socket.write('ok'+RN);
-        } else if (ps = iss(dt, 'keypad')) {
-            log('n', 'i', 'Received system keypad status: '+gv(dt, ps));
-            tmpSystem.keypad = gv(dt, ps);
-            socket.write('ok'+RN);
-        } else if (isc(dt, '-done-')) {
-            var t = tmpSystem;
-            if (typeof t.alarm_status == 'undefined') {
-                log('n', 'w', 'Device has not submitted alarm status');
-                socket.write('e6'+RN);
-            } else if (typeof t.power == 'undefined' || typeof t.battery == 'undefined' || typeof t.pstn == 'undefined' ||
-                typeof t.comm == 'undefined' || typeof t.keypad == 'undefined') {
-                log('n', 'e', 'Device has not submitted all system status it should have');
-                socket.write('e7'+RN);
-            } else {
-                log('n', 'i', 'Device id ['+socket.id+'] has completely updated its current alarm & system status');
-                log('n', 'd', tmpSystem);
-                socket.status = tmpSystem;
-                tmpSystem     = {};
-                socket.write('zones?'+RN);
-
-                Device.findOneAndUpdate({ serial:socket.info.serial }, { status:socket.status });
-            }
-        } else if (dt) {
-            log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
-            socket.write('e0'+RN);
-        }
-    });
-} // getSystemStatus
-
-function getZones (socket, data) {
-    var allSts = ['o', 'c', 'b', 'd'];
-    var zones  = data.split(RN);
-    var obj, sts;
-
-    _.each(zones, function(dt,i){
-        if (obj = issi(dt, 'z')) {
-            sts = gv(dt, obj.p);
-            if (allSts.indexOf(sts) < 0) {
-                log('n', 'e', 'Unrecognized zone status: '+sts);
-                socket.write('e8'+RN);
-            } else {
-                log('n', 'i', 'Received Zone '+obj.i+' status: '+sts);
-                tmpZones['z'+obj.i] = sts;
-                socket.write('ok'+RN);
-            }
-        } else if (isc(dt, '-done-')) {
-            if (_.size(tmpZones) == 0) {
-                log('n', 'e', 'No any zone received for update');
-                socket.write('e9'+RN);
-            } else {
-                log('n', 'i', _.size(tmpZones)+' zones have updated of its status');
-                log('n', 'd', tmpZones);
-                socket.zones = tmpZones;
-                tmpZones     = {};
-
-                statusUpdate({
-                    info: socket.info,
-                    status: socket.status,
-                    zones: socket.zones
-                });
-            }
-        } else if (dt) {
-            log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
-            socket.write('e0'+RN);
-        }
-    });
-} // getZones
 
 function statusUpdate (data) {
     if (typeof data == 'object') {
@@ -542,44 +530,10 @@ function deviceUpdate (id, type, value, socketInfo) {
         });
     }
 
-    if (typeof socketInfo != 'undefined' && typeof socketInfo.serial != 'undefined') {
-        fnDeviceLog(type, socketInfo.serial, id, value);
+    if (typeof socketInfo != 'undefined' && typeof socketInfo.sn != 'undefined') {
+        fnDeviceLog(type, socketInfo.sn, id, value);
     }
 } // deviceUpdate
-
-
-function datetime () {
-    var date = new Date();
-    return date.toTimeString();
-} // datetime
-
-function log (env, type, mesg) {
-    if (env == 'n') {
-        env = 'NET';
-    } else if (env == 'w') {
-        env = 'WEB';
-    } else {
-        env = 'SERVER';
-    }
-
-    if (type == 's') {
-        type = colors.green('success:');
-    } else if (type == 'i') {
-        type = colors.cyan('info:');
-    } else if (type == 'w') {
-        type = colors.yellow('warning:');
-    } else if (type == 'e') {
-        type = colors.red('error:');
-    } else if (type == 'd') {
-        type = colors.grey('debug:');
-    }
-
-    if (typeof mesg == 'object') {
-        mesg = colors.italic(colors.grey(JSON.stringify(mesg)));
-    }
-
-    console.log('  '+'['+colors.bold(colors.white(env))+'] '+colors.bold(type)+' '+mesg);
-} // log
 
 
 
@@ -610,7 +564,7 @@ var ObjectId = mongoose.Schema.Types.ObjectId;
 var Device = mongoose.model('Device', {
     name: String,
     macAdd: String,
-    serial: { type:String, index:true},
+    serial: { type:String, index:true },
     lastSync: Number,
     created: { type:Date, default:Date.now },
     modified: { type:Date, default:Date.now }
@@ -659,7 +613,7 @@ var server = net.createServer(function (socket) {
         } else if (dt.substr(0,7) == '-hello-') { // device is checking if server alive and responding
             log('n', 'i', socket.id+' says hello');
             socket.write('ok'+RN);
-        } else if (_.isUndefined(socket.tmp) && !iss(dt, 'serial')) {
+        } else if (_.isUndefined(socket.tmp) && !iss(dt, 'sn')) {
             log('n', 'i', 'Probably this is welcome message sent from device when initial connect');
             log('n', 'd', dt);
             socket.tmp = {
@@ -668,10 +622,10 @@ var server = net.createServer(function (socket) {
         } else if (_.isUndefined(socket.data.info)) { // when device has not logged, all data sent will go here
             // PROCESS OF AUTHORISATION
             getDeviceInfo(socket, dt);
-        } else if (_.isUndefined(socket.data.lastSync)) { // get event logs from device since last disconnected
-            getEventLogs(socket, dt);
         } else if (_.isUndefined(socket.data.status)) { // get all current status from device
             getCurrentStatus(socket, dt);
+        } else if (_.isUndefined(socket.data.lastSync)) { // get event logs from device since last disconnected
+            getEventLogs(socket, dt);
         } else {
             var x    = sockets.indexOf(socket);
             var id   = (x < 0) ? null : sockets[x]._handle.fd;
