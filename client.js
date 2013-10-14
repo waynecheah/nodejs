@@ -60,7 +60,7 @@ var _cmdcn = 0;
 
 function write (cmd, lg, type, stage) {
     setTimeout(function(){
-        _timer += 50;
+        _timer += 5;
 
         if (lg) {
             var t = _.isUndefined(type) ? 'i' : type;
@@ -224,7 +224,7 @@ socket.on('data', function(data) {
         } else if (isg(data, 'sr')) {
             log('n', 'i', 'Gain access to the server');
             write('si='+g2('si', 0), 'Send si='+g2('si', 0));
-            _sdcmd = 'pt';
+            _sdcmd = 'si';
             _cmdcn = 1;
         } else if (isc(data, 'ok')) {
             log('n', 's', 'OK received from server');
@@ -247,15 +247,24 @@ socket.on('data', function(data) {
             } else if (_stage == 'status_report') {
                 var f1 = false;
                 var f2 = false;
+                var sk = false; // skip next command
 
                 _.each(_data.status, function(a,c){
                     if (!f1 && c == 'done') { // end of this stage
                         write('-done-', 'Send -done-', 'i', 'ready');
 
+                        console.log(' ');
                         log('n', 'i', 'Alarm status reported to server successfully');
                     } else if (c == _sdcmd) {
                         if (!f2) {
-                            console.log('###### '+_sdcmd+' ######');
+                            if (_data.status[_sdcmd].length == 0) {
+                                console.log(' ');
+                                log('n', 'i', 'Skip empty data for command: '+_sdcmd);
+                                sk = true;
+                            } else {
+                                sk = false;
+                            }
+
                             if (_data.status[_sdcmd].length == 0 || _.isUndefined(_data.status[_sdcmd][_cmdcn])) {
                                 var ks = _.keys(_data.status);
                                 var i  = ks.indexOf(_sdcmd);
@@ -267,13 +276,10 @@ socket.on('data', function(data) {
                                 f2 = true;
                             }
                         }
-                        f1 = true;
+
+                        f1 = (sk) ? false : true;
                     }
                 });
-
-                var ks = _.keys(_data.status);
-                var i  = ks.indexOf(_sdcmd);
-                _sdcmd = ks[i+1];
             } else if (_stage == 'ready') {
             }
             console.log(' ');

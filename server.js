@@ -43,7 +43,8 @@ var mapping = {
             3: 'PSTN',
             4: 'Bell',
             5: 'Peripheral',
-            6: 'GSM'
+            6: 'GSM',
+            7: 'Comm Fail'
         },
         status: {
             0: 'Ready/Restore',
@@ -102,14 +103,19 @@ var mapping = {
         }
     },
     light: {
-        command: {
-            0: 'Off',
-            1: 'On',
+        type: {
+            0: 'Disable',
+            1: 'Normal',
             2: 'Dim',
             3: 'Toggle',
             4: 'Pulse',
             5: 'Blink',
             6: 'Delay'
+        },
+        status: {
+            0: 'Off',
+            1: 'On',
+            2: 'Dim'
         },
         user: {
             101: 'Keyfob',
@@ -340,7 +346,7 @@ function getCurrentStatus (socket, data) {
                 return;
             }
 
-            log('n', 'i', 'Received emergency status update: User '+info[2]+' = '+getMap('emergency', info[1], info[2]));
+            log('n', 'i', 'Received emergency status update: '+getMap('emergency', info[0], info[1], info[2]));
             socket.tmp.emergency.push(str);
             socket.write('ok'+RN);
         } else if (ps = iss(dt, 'dv')) { // device status
@@ -353,7 +359,7 @@ function getCurrentStatus (socket, data) {
                 return;
             }
 
-            log('n', 'i', 'Received device status update: Device '+info[0]+' = '+getMap('light', info[1], info[2], info[3]));
+            log('n', 'i', 'Received device status update: Device '+info[0]+' = '+getMap('light', info[1], info[2], info[3], info[4]));
             socket.tmp.devices.push(str);
             socket.write('ok'+RN);
         } else if (ps = iss(dt, 'li')) { // lights status
@@ -366,7 +372,7 @@ function getCurrentStatus (socket, data) {
                 return;
             }
 
-            log('n', 'i', 'Received light status update: Light '+info[0]+' = '+getMap('light', info[1], info[2], info[3]));
+            log('n', 'i', 'Received light status update: Light '+info[0]+' = '+getMap('light', info[1], info[2], info[3], info[4]));
             socket.tmp.lights.push(str);
             socket.write('ok'+RN);
         }  else if (ps = iss(dt, 'ss')) { // sensor status
@@ -624,24 +630,34 @@ function getEventLogs (socket, data) {
     });
 } // getEventLogs
 
-function getMap (category, m1, m2, m3) {
+function getMap (category, m1, m2, m3, m4) {
     if (category == 'system') {
         return mapping.system.type[m1]+' = '+mapping.system.status[m2];
     } else if (category == 'partition') {
-        return mapping.partition.status[m1]+' by user ['+mapping.partition.user[m2]+']';
-    } else if (category == 'zone') {
-        return 'Condition:'+mapping.zone.condition[m1]+' | Status:'+mapping.zone.status[m2]+' | Type:'+mapping.zone.type[m3];
-    } else if (category == 'light') {
-        var val = m2 ? ' ('+m2+')' : '';
         var usr;
 
-        if (_.isUndefined(mapping.light.user[m3])) {
-            usr = m3;
+        if (_.isUndefined(mapping.partition.user[m2])) {
+            usr = m2;
         } else {
-            usr = mapping.light.user[m3];
+            usr = mapping.partition.user[m2];
         }
 
-        return mapping.light.command[m1]+val+' by user ['+usr+']';
+        return mapping.partition.status[m1]+' by user ['+usr+']';
+    } else if (category == 'zone') {
+        return 'Condition:'+mapping.zone.condition[m1]+' | Status:'+mapping.zone.status[m2]+' | Type:'+mapping.zone.type[m3];
+    } else if (category == 'emergency') {
+        return 'Type:'+mapping.emergency.type[m1]+' | Status:'+mapping.emergency.status[m2]+' | User:'+m3;
+    } else if (category == 'light') {
+        var val = m3 ? ' ('+m3+')' : '';
+        var usr;
+
+        if (_.isUndefined(mapping.light.user[m4])) {
+            usr = m4;
+        } else {
+            usr = mapping.light.user[m4];
+        }
+
+        return 'Type:'+mapping.light.type[m1]+' | Status:'+mapping.light.status[m2]+val+' | User:'+usr;
     } else if (category == 'sensor') {
         var val = m3 ? ' ('+m3+')' : '';
         return mapping.sensor.type[m1]+val+' | Status:'+mapping.sensor.status[m2];
