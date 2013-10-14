@@ -25,7 +25,7 @@ var serverErr  = {
     e4: 'Unrecognized device, serial not found in database',
     e5: 'Invalid event log, improper format sent',
     e6: 'Save event log into database failure',
-    e7: 'Reported system status found incomplete',
+    e7: 'Reported system info found incomplete',
     e8: 'No any partition status reported',
     e9: 'No any zone status reported',
     e10: '',
@@ -408,7 +408,18 @@ function getCurrentStatus (socket, data) {
                 log('n', 'w', 'No any zone status reported');
                 socket.write('e9'+RN);
             } else {
-                log('n', 'i', 'All status have updated successfully');
+                var lastSync = datetime();
+
+                Device.findOneAndUpdate({ serial:socket.data.info.sn }, { lastSync:lastSync }, function(err){
+                    if (err) {
+                        log('n', 'e', err);
+                        socket.write('e2'+RN);
+                        return
+                    }
+                    log('n', 'i', 'Update database of it last sync date & time: '+lastSync);
+                });
+
+                log('n', 'i', 'All current status have updated successfully');
                 socket.data.status = socket.tmp;
                 socket.tmp         = {};
             }
@@ -453,28 +464,27 @@ function getEventLogs (socket, data) {
                 log('s', 's', 'System Info event has logged successfully');
                 log('s', 'd', data);
                 socket.write('ok'+RN);
-                socket.tmp.datetime = info[3];
-                socket.tmp.count   += 1;
+                socket.logs.datetime = info[3];
+                socket.logs.count   += 1;
             });
         } else if (ps = iss(dt, 'lpt')) {
             str  = gv(dt, ps);
             info = str.split(',');
 
-            if (info.length != 5) {
+            if (info.length != 4) {
                 log('n', 'e', 'Invalid partition event log, improper format sent');
                 socket.write('e5'+RN);
                 return;
             }
 
             event = new Event({
-                datetime: info[4],
+                datetime: info[3],
                 device: socket.data.deviceId,
                 category: 'partition',
                 log: dt,
                 number: info[0],
                 status: info[1],
-                user: info[2],
-                password: info[3]
+                user: info[2]
             });
 
             event.save(function(err, data){
@@ -486,40 +496,8 @@ function getEventLogs (socket, data) {
                 log('s', 's', 'Partition event has logged successfully');
                 log('s', 'd', data);
                 socket.write('ok'+RN);
-                socket.tmp.datetime = info[4];
-                socket.tmp.count   += 1;
-            });
-        } else if (ps = iss(dt, 'lem')) {
-            str  = gv(dt, ps);
-            info = str.split(',');
-
-            if (info.length != 4) {
-                log('n', 'e', 'Invalid emergency event log, improper format sent');
-                socket.write('e5'+RN);
-                return;
-            }
-
-            event = new Event({
-                datetime: info[3],
-                device: socket.data.deviceId,
-                category: 'emergency',
-                log: dt,
-                status: info[1],
-                type: info[0],
-                user: info[2]
-            });
-
-            event.save(function(err, data){
-                if (err) {
-                    log('s', 'e', 'Emergency event has logged failure');
-                    socket.write('e6'+RN);
-                    return;
-                }
-                log('s', 's', 'Emergency event has logged successfully');
-                log('s', 'd', data);
-                socket.write('ok'+RN);
-                socket.tmp.datetime = info[3];
-                socket.tmp.count   += 1;
+                socket.logs.datetime = info[3];
+                socket.logs.count   += 1;
             });
         } else if (ps = iss(dt, 'lzn')) {
             str  = gv(dt, ps);
@@ -552,12 +530,78 @@ function getEventLogs (socket, data) {
                 log('s', 's', 'Zone event has logged successfully');
                 log('s', 'd', data);
                 socket.write('ok'+RN);
-                socket.tmp.datetime = info[5];
-                socket.tmp.count   += 1;
+                socket.logs.datetime = info[5];
+                socket.logs.count   += 1;
             });
-        } else if (isc(dt, '-done-')) {
+        } else if (ps = iss(dt, 'lem')) {
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 4) {
+                log('n', 'e', 'Invalid emergency event log, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+
+            event = new Event({
+                datetime: info[3],
+                device: socket.data.deviceId,
+                category: 'emergency',
+                log: dt,
+                status: info[1],
+                type: info[0],
+                user: info[2]
+            });
+
+            event.save(function(err, data){
+                if (err) {
+                    log('s', 'e', 'Emergency event has logged failure');
+                    socket.write('e6'+RN);
+                    return;
+                }
+                log('s', 's', 'Emergency event has logged successfully');
+                log('s', 'd', data);
+                socket.write('ok'+RN);
+                socket.logs.datetime = info[3];
+                socket.logs.count   += 1;
+            });
+        } else if (ps = iss(dt, 'ldv')) {
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 6) {
+                log('n', 'e', 'Invalid device event log, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+
+            event = new Event({
+                datetime: info[5],
+                device: socket.data.deviceId,
+                category: 'device',
+                log: dt,
+                number: info[0],
+                status: info[2],
+                value: info[3],
+                type: info[1],
+                user: info[4]
+            });
+
+            event.save(function(err, data){
+                if (err) {
+                    log('s', 'e', 'Device event has logged failure');
+                    socket.write('e6'+RN);
+                    return;
+                }
+                log('s', 's', 'Device event has logged successfully');
+                log('s', 'd', data);
+                socket.write('ok'+RN);
+                socket.logs.datetime = info[3];
+                socket.logs.count   += 1;
+            });
+        } else if (isc(dt, '-done-')) { // TODO(remove): to be removed since there won't be receive a -done- here
             var prevSync = socket.data.lastSync;
-            var lastSync = _.isUndefined(socket.tmp.datetime) ? datetime() : socket.tmp.datetime;
+            var lastSync = _.isUndefined(socket.logs.datetime) ? datetime() : socket.logs.datetime;
 
             Device.findOneAndUpdate({ serial:socket.data.info.sn }, { lastSync:lastSync }, function(err){
                 if (err) {
@@ -566,13 +610,12 @@ function getEventLogs (socket, data) {
                     return
                 }
 
-                log('n', 'i', 'There are '+socket.tmp.count+' event updated since '+prevSync);
-                socket.data.lastSync = socket.tmp.datetime;
-                socket.tmp           = {
+                log('n', 'i', 'There are '+socket.logs.count+' event updated since '+prevSync);
+                socket.data.lastSync = socket.logs.datetime;
+                socket.logs          = {
                     count: 0,
                     lastSync: lastSync
                 };
-                socket.write('ok'+RN);
             });
         } else if (dt) {
             log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
@@ -590,7 +633,15 @@ function getMap (category, m1, m2, m3) {
         return 'Condition:'+mapping.zone.condition[m1]+' | Status:'+mapping.zone.status[m2]+' | Type:'+mapping.zone.type[m3];
     } else if (category == 'light') {
         var val = m2 ? ' ('+m2+')' : '';
-        return mapping.light.command[m1]+val+' by user ['+mapping.light.user[m3]+']';
+        var usr;
+
+        if (_.isUndefined(mapping.light.user[m3])) {
+            usr = m3;
+        } else {
+            usr = mapping.light.user[m3];
+        }
+
+        return mapping.light.command[m1]+val+' by user ['+usr+']';
     } else if (category == 'sensor') {
         var val = m3 ? ' ('+m3+')' : '';
         return mapping.sensor.type[m1]+val+' | Status:'+mapping.sensor.status[m2];
@@ -664,10 +715,10 @@ var Event = mongoose.model('Event', {
     number: Number,
     condition: Number,
     status: Number,
+    value: Number,
     partition: Number,
     type: Number,
-    user: String,
-    password: String
+    user: String
 });
 
 
@@ -678,7 +729,9 @@ var Event = mongoose.model('Event', {
 var server = net.createServer(function (socket) {
     socket.id   = socket._handle.fd;
     socket.data = {};
-    socket.tmp  = {};
+    socket.logs = {
+        count: 0
+    };
 
     log('n', 'i', 'Client '+socket.id+' connected');
     sockets.push(socket); // assign socket to global variable
@@ -714,7 +767,7 @@ var server = net.createServer(function (socket) {
             getCurrentStatus(socket, dt);
         } else if (lgt.indexOf(dt.substr(0,3)) >= 0) { // get event logs from device
             getEventLogs(socket, dt);
-        } else {
+        } else { // don't try to make funny thing to server
             var x    = sockets.indexOf(socket);
             var id   = (x < 0) ? null : sockets[x]._handle.fd;
             var name = (id) ? 'Client '+id : 'Unknown client';
