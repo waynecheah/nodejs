@@ -438,7 +438,7 @@ function getCurrentStatus (socket, data) {
 
 function getEventLogs (socket, data) {
     var logs = data.split(RN);
-    var info, event, ps, str;
+    var cond, info, event, ps, str;
 
     _.each(logs, function(dt,i){
         if (ps = iss(dt, 'lsi')) {
@@ -451,7 +451,12 @@ function getEventLogs (socket, data) {
                 return;
             }
 
-            event = new Event({
+            cond  = {
+                datetime: info[3],
+                device: socket.data.deviceId,
+                category: 'system'
+            };
+            event = {
                 datetime: info[3],
                 device: socket.data.deviceId,
                 category: 'system',
@@ -459,13 +464,13 @@ function getEventLogs (socket, data) {
                 status: info[1],
                 type: info[0],
                 user: info[2]
-            });
+            };
 
-            event.save(function(err, data){
+            Event.findOneAndUpdate(cond, event, { upsert:true }, function(err, data){
                 if (err) {
                     log('s', 'e', 'System Info event has logged failure');
                     socket.write('e6'+RN);
-                    return;
+                    return
                 }
                 log('s', 's', 'System Info event has logged successfully');
                 log('s', 'd', data);
@@ -483,7 +488,12 @@ function getEventLogs (socket, data) {
                 return;
             }
 
-            event = new Event({
+            cond  = {
+                datetime: info[3],
+                device: socket.data.deviceId,
+                category: 'partition'
+            };
+            event = {
                 datetime: info[3],
                 device: socket.data.deviceId,
                 category: 'partition',
@@ -491,9 +501,9 @@ function getEventLogs (socket, data) {
                 number: info[0],
                 status: info[1],
                 user: info[2]
-            });
+            };
 
-            event.save(function(err, data){
+            Event.findOneAndUpdate(cond, event, { upsert:true }, function(err, data){
                 if (err) {
                     log('s', 'e', 'Partition event has logged failure');
                     socket.write('e6'+RN);
@@ -515,7 +525,12 @@ function getEventLogs (socket, data) {
                 return;
             }
 
-            event = new Event({
+            cond  = {
+                datetime: info[5],
+                device: socket.data.deviceId,
+                category: 'zone'
+            };
+            event = {
                 datetime: info[5],
                 device: socket.data.deviceId,
                 category: 'zone',
@@ -525,9 +540,9 @@ function getEventLogs (socket, data) {
                 status: info[2],
                 partition: info[3],
                 type: info[4]
-            });
+            };
 
-            event.save(function(err, data){
+            Event.findOneAndUpdate(cond, event, { upsert:true }, function(err, data){
                 if (err) {
                     log('s', 'e', 'Zone event has logged failure');
                     socket.write('e6'+RN);
@@ -549,7 +564,12 @@ function getEventLogs (socket, data) {
                 return;
             }
 
-            event = new Event({
+            cond  = {
+                datetime: info[3],
+                device: socket.data.deviceId,
+                category: 'emergency'
+            };
+            event = {
                 datetime: info[3],
                 device: socket.data.deviceId,
                 category: 'emergency',
@@ -557,9 +577,9 @@ function getEventLogs (socket, data) {
                 status: info[1],
                 type: info[0],
                 user: info[2]
-            });
+            };
 
-            event.save(function(err, data){
+            Event.findOneAndUpdate(cond, event, { upsert:true }, function(err, data){
                 if (err) {
                     log('s', 'e', 'Emergency event has logged failure');
                     socket.write('e6'+RN);
@@ -581,6 +601,11 @@ function getEventLogs (socket, data) {
                 return;
             }
 
+            cond  = {
+                datetime: info[5],
+                device: socket.data.deviceId,
+                category: 'device'
+            };
             event = new Event({
                 datetime: info[5],
                 device: socket.data.deviceId,
@@ -736,6 +761,36 @@ var Event = mongoose.model('Event', {
     type: Number,
     user: String
 });
+
+
+
+//
+// Connect middleware
+//
+var app = connect()
+    .use(connect.favicon())
+    .use(connect.logger('dev'))
+    .use(connect.static('public', { index:'index.htm' }))
+    .use(connect.directory('public'))
+    .use(connect.cookieParser())
+    .use(connect.session({ secret: 'session secret at here' }))
+    .use(function(req, res){
+        fs.readFile(__dirname + '/index.htm', function(err, data){
+            if (err) {
+                res.writeHead(500, { 'Content-Type':'text/plain' });
+                return res.end('Error');
+            }
+            res.writeHead(200, { 'Content-Type':'text/html' });
+            res.end(data);
+        });
+    });
+
+//
+// Web Server
+//
+var webserver = http.createServer(app);
+webserver.listen(8080, host);
+log('s', 'i', 'Webserver running at http://'+host+':8080');
 
 
 

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>
+    Home Security and Automation
+  </title>
+  <meta name="description" content="here is the description of the mobile app">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+  <link href="http://fonts.googleapis.com/css?family=PT+Sans+Narrow:400,700" rel='stylesheet' />
+
+  <link rel="stylesheet" href="http://code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.css" />
+  <link rel="stylesheet" href="css/mmenu.css" />
+  <link rel="stylesheet" href="css/mmenu-positioning.css" />
+  <link rel="stylesheet" href="css/bootstrap.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+</head>
+<body>
+<!--[if lt IE 7]>
+<p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
+<![endif]-->
+
+<!-- Add your site or application content here -->
+
+  <div>
+    <nav id="location">
+      <ul>
+        <li class="Label"><img src="img/logo.jpg" style="margin:5px 0 6px;" /></li>
+        <li class="Label group">Location List</li>
+        <li class="mm-selected">
+          <em class="Counter"></em>
+          <span>Home</span>
+          <ul>
+            <li>
+              <em class="Counter"></em>
+              <span>Partition 1</span>
+              <ul>
+                <li><a href="#page-security" data-tab="zn1">Zone 1</a></li>
+                <li><a href="#page-security" data-tab="zn2">Zone 2</a></li>
+                <li><a href="#page-security" data-tab="zn3">Zone 3</a></li>
+                <li><a href="#page-security" data-tab="zn4">Zone 4</a></li>
+                <li><a href="#page-security" data-tab="zn5">Zone 5</a></li>
+              </ul>
+            </li>
+            <li>
+              <em class="Counter"></em>
+              <span>Partition 2</span>
+              <ul>
+                <li><a href="#page-security" data-tab="zn6">Zone 6</a></li>
+                <li><a href="#page-security" data-tab="zn7">Zone 7</a></li>
+                <li><a href="#page-security" data-tab="zn8">Zone 8</a></li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <em class="Counter"></em>
+          <span>Office</span>
+          <ul>
+            <li><a href="#page-security" data-tab="zn1">Zone 1</a></li>
+            <li><a href="#page-security" data-tab="zn2">Zone 2</a></li>
+            <li><a href="#page-security" data-tab="zn3">Zone 3</a></li>
+          </ul>
+        </li>
+        <li><a href="#home">Shop</a></li>
+      </ul>
+    </nav>
+
+    <nav id="main-menu">
+      <ul>
+        <li class="Selected"><a href="#home">Home</a></li>
+        <li><a href="#page-security">Security</a></li>
+        <li>
+          <em class="Counter">3</em>
+          <a href="#page-cameras">Cameras</a>
+        </li>
+        <li><a href="#page-system-status">System Status</a></li>
+        <li>
+          <em class="Counter">2</em>
+          <a href="#page-lights">Lights</a>
+        </li>
+        <li class="Label">
+          <a href="#page-history">History</a>
+          <ul>
+            <li><a href="#page-history" data-tab="alarm">Alarm</a></li>
+            <li><a href="#page-history" data-tab="arm">Arm</a></li>
+            <li><a href="#page-history" data-tab="zone">Zone</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+
+    <div>
+    <!-- Sign In -->
+    <div data-role="page" id="sign-in">
+      <div id="signin" data-theme="b" data-role="header" data-position="fixed" class="signin">
+        <h3>
+          Sign In
+        </h3>
+      </div>
+      <div data-role="content">
+        <div data-role="fieldcontain">
+          <label for="username">
+            Username
+          </label>
+          <input name="username" id="username" placeholder="username" value="" type="text" data-mini="true">
+        </div>
+        <div data-role="fieldcontain">
+          <label for="password">
+            Password
+          </label>
+          <input name="password" id="password" placeholder="password" value="" type="password" data-mini="true">
+        </div>
+        <div data-role="fieldcontain">
+          <label for="save-password">
+            Save Password
+          </label>
+          <select name="toggleswitch1" id="save-password" data-theme="" data-role="slider" data-mini="true">
+            <option value="off">
+              No
+            </option>
+            <option value="on">
+              Yes
+            </option>
+          </select>
+        </div>
+      </div>
+      <div data-theme="d" data-role="footer" data-position="fixed">
+        <div class="ui-grid-a">
+          <div class="ui-block-a">&nbsp;</div>
+          <div class="ui-block-b" style="text-align:right; padding-right:1em;">
+            <a id="login" data-role="button" data-inline="true" data-transition="flip" href="#home" data-icon="check" data-iconpos="left">
+              Login
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Home -->
+    <div data-role="page" id="home">
+      <div data-theme="c" data-role="header" data-position="fixed" class="header">
+        <h3 class="companyName">
+          Home Security and Automation
+        </h3>
+        <a href="#location" data-icon="grid" data-iconpos="notext">Area</a>
+        <a href="#main-menu" data-icon="bars" data-iconpos="notext">Menu</a>
+      </div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="c" data-inset="false">
+          <li data-theme="c">
+            <a href="#page-security" data-transition="slide" style="padding-bottom:7px;">
+              <img src="img/lock.png" alt="..." class="ui-li-thumb" />
+              <div class="ui-grid-b">
+                <div class="ui-block-a" style="padding-top:9px;"><h3>Security</h3></div>
+                <div class="ui-block-b" style="padding-top:9px; text-align:right;">
+                  <p>Status</p>
+                  <p>Troubles</p>
+                  <p>Connection</p>
+                </div>
+                <div class="ui-block-c" style="padding-top:9px;">
+                  <p>: <strong class="status text-default">Disconnected</strong></p>
+                  <p>: <strong class="troubles text-default">N/A</strong></p>
+                  <p>: <strong class="connection text-default">Disconnected</strong></p>
+                </div>
+              </div>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page-cameras" data-transition="slide">
+              <img src="img/camera.png" alt="..." class="ui-li-thumb" />
+              <div class="ui-grid-a">
+                <div class="ui-block-a" style="padding-top:9px;"><h3>Cameras</h3></div>
+                <div class="ui-block-b" style="line-height:45px; padding-top:13px; text-align:right;"><p>Available</p></div>
+              </div>
+              <span class="ui-li-count">3</span>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page-system-status" data-transition="slide">
+              <img src="img/thermostats.png" alt="..." class="ui-li-thumb" />
+              <div style="padding:9px 0;"><h3>System Status</h3></div>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page-lights" data-transition="slide">
+              <img src="img/light.png" alt="..." class="ui-li-thumb" />
+              <div class="ui-grid-a">
+                <div class="ui-block-a" style="padding-top:9px;"><h3>Lights</h3></div>
+                <div class="ui-block-b" style="line-height:45px; padding-top:13px; text-align:right;"><p>Available</p></div>
+              </div>
+              <span class="ui-li-count">2</span>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page-history" data-transition="slide">
+              <img src="img/history.png" alt="..." class="ui-li-thumb" />
+              <div style="padding:9px 0;"><h3>History</h3></div>
+            </a>
+          </li>
+        </ul>
+
+        <div class="gainPermissions" style="display:none; margin-top:35px;">
+          <button data-role="button" data-transition="none" href="#">
+            <span class="txt">Set notification permissions for this App</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- Security -->
+    <div data-role="page" id="page-security" data-render="0">
+      <div data-theme="b" data-role="header" data-position="fixed">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Back
+        </a>
+        <h3 class="header">
+          Security
+        </h3>
+        <a href="#main-menu" data-icon="bars" data-iconpos="notext">Menu</a>
+      </div>
+      <div data-role="content">
+        <div class="armBtnWrap" style="display:none;">
+          <a data-role="button" data-transition="slideup" class="armBtn">
+            <span class="glyphicon"></span> <span class="armTxt">Disarmed - Press to Arm</span>
+          </a>
+        </div>
+        <h2 class="grey normal">Home Security Zones</h2>
+        <ul data-role="listview" data-divider-theme="d" data-inset="false"></ul>
+      </div>
+    </div>
+
+    <!-- Alert Opened Zones -->
+    <div data-role="page" id="dialog-alert-opened-zones">
+      <div data-role="header">
+        <h2>Opened Zones Detected</h2>
+      </div>
+      <div data-role="content">
+        <h3>Unable to proceed arm when opened zones detected. You may bypass this zones to continue arm.</h3>
+        <a href="#page-security" data-role="button" data-rel="back" data-theme="b" class="">Ok, i get it</a>
+      </div>
+    </div>
+
+    <!-- How to Arm -->
+    <div data-role="page" id="page-how-to-arm">
+      <div data-theme="e" data-role="header" data-position="fixed">
+        <a href="#home" data-role="button" data-inline="true" data-direction="reverse" data-rel="back"
+           data-theme="c" data-icon="delete" data-iconpos="left" class="ui-btn-left back cancelArm">
+          Cancel
+        </a>
+        <h3 class="header">
+          Confirm Arm
+        </h3>
+      </div>
+      <div data-role="content">
+        <div class="armTypeWrap">
+          <h3 class="text-muted">Choose How To Arm</h3>
+          <div class="center">
+            <div data-role="controlgroup" data-mini="true" data-type="horizontal">
+              <a href="#" data-role="button" data-alarm="h" class="armType">Arm Stay</a>
+              <a href="#" data-role="button" data-alarm="a" class="armType ui-btn-active">Arm Away</a>
+              <a href="#" data-role="button" data-alarm="h" class="armType">Arm Night</a>
+            </div>
+          </div>
+        </div>
+        <h4 class="text-muted armCodeTxt">Enter Keypad Code To Arm</h4>
+        <div class="ui-grid-c" style="padding-left:5px;">
+          <div class="ui-block-a">
+            <div data-role="fieldcontain">
+              <input name="code1" id="code1" data-no="1" type="tel" data-mini="true" class="passcode">
+            </div>
+          </div>
+          <div class="ui-block-b">
+            <div data-role="fieldcontain">
+              <input name="code2" id="code2" data-no="2" type="tel" data-mini="true" class="passcode">
+            </div>
+          </div>
+          <div class="ui-block-c">
+            <div data-role="fieldcontain">
+              <input name="code3" id="code3" data-no="3" type="tel" data-mini="true" class="passcode">
+            </div>
+          </div>
+          <div class="ui-block-d">
+            <div data-role="fieldcontain">
+              <input name="code4" id="code4" data-no="4" type="tel" data-mini="true" class="passcode">
+            </div>
+          </div>
+        </div>
+        <div class="countdown" style="display:none; margin-top:30px;">
+          <div class="progress">
+            <div class="progress-bar progress-bar-success" style="width:100%;"
+             role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+              <span class="sr-only">Arm in 10 Seconds</span>
+            </div>
+          </div>
+          <button data-role="button" data-icon="delete" data-iconpos="left" data-theme="e" class="cancelArm" >Cancel Arm</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- System Status -->
+    <div data-role="page" id="page-system-status">
+      <div data-theme="b" data-role="header" data-position="fixed">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Back
+        </a>
+        <h3 class="header">
+          System Status
+        </h3>
+        <a href="#main-menu" data-icon="bars" data-iconpos="notext">Menu</a>
+      </div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="d" data-inset="true">
+          <li data-theme="d">Power
+            <span class="ui-li-aside normal power">N/A</span>
+          </li>
+          <li data-theme="d">Battery
+            <span class="ui-li-aside normal battery">N/A</span>
+          </li>
+          <li data-theme="d">PSTN
+            <span class="ui-li-aside normal pstn">N/A</span>
+          </li>
+          <li data-theme="d">Comm
+            <span class="ui-li-aside normal comm">N/A</span>
+          </li>
+          <li data-theme="d">Keypad
+            <span class="ui-li-aside normal keypad">N/A</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+
+    <!-- Cameras -->
+    <div data-role="page" id="page-cameras">
+      <div data-theme="b" data-role="header" data-position="fixed" class="header">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Back
+        </a>
+        <h3 class="header">
+          Cameras
+        </h3>
+        <a href="#main-menu" data-icon="bars" data-iconpos="notext">Menu</a>
+      </div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="c" data-inset="false">
+          <li data-theme="c" class="ui-li-has-thumb">
+            <a href="#page-camera" data-transition="slide">
+              <div class="ui-li-thumb freesize"><canvas id="ipcam1" width="120" height="80" class="ipcam" data-size="l"
+               data-url="http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne"></canvas></div>
+              <h3 style="padding-left:40px;">Outdoor Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
+          <li data-theme="c" class="ui-li-has-thumb">
+            <a href="#page-cam5" data-transition="slide">
+              <div class="ui-li-thumb freesize"><canvas id="ipcam5" width="120" height="80" class="ipcam" data-size="s"
+               data-url="http://cheah.homeip.net:85/snapshot.cgi?user=cheah&pwd=jumpknee123"></canvas></div>
+              <h3 style="padding-left:40px;">Dining Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
+          <li data-theme="c" class="ui-li-has-thumb">
+            <a href="#page-cam6" data-transition="slide">
+              <div class="ui-li-thumb freesize"><canvas id="ipcam6" width="120" height="80" class="ipcam" data-size="l"
+               data-url="http://cheah.homeip.net:86/snapshot.cgi?user=cheah&pwd=jumpknee123"></canvas></div>
+              <h3 style="padding-left:40px;">Parlor Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page-cam1" data-transition="slide">
+              <img src="http://cheah.homeip.net:86/snapshot.cgi?user=cheah&pwd=jumpknee123"
+               width="120" height="80" alt="..." class="ui-li-thumb freesize" />
+              <h3 style="padding-left:40px;">Kitchen Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Camera -->
+    <div data-role="page" id="page-camera" style="background:#000;">
+      <div data-theme="b" data-role="header" data-fullscreen="true" data-position="fixed" class="header">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Cameras
+        </a>
+        <h3 class="header">
+          Camera 1
+        </h3>
+        <div data-role="controlgroup" data-type="horizontal" data-mini="true" class="ui-btn-right">
+          <a href="#" data-role="button" data-theme="b">Pic</a>
+          <a href="#" data-role="button" data-theme="b">Video</a>
+        </div>
+      </div>
+      <div data-role="content">
+        <div class="cameraWrap" style="margin-top:-240px;">
+          <img src="http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne"
+           alt="camera" class="cam" />
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Lights -->
+    <div data-role="page" id="page-lights">
+      <div data-theme="b" data-role="header" data-position="fixed" class="header">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Back
+        </a>
+        <h3 class="header">
+          Lights
+        </h3>
+        <a href="#main-menu" data-icon="bars" data-iconpos="notext">Menu</a>
+      </div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="c" data-inset="false">
+          <li data-theme="c">
+            <div class="row">
+              <div class="bs col-xs-2 col-sm-1">
+                <img data-src="holder.js/55x100/industrial" alt="..." class="ui-li-thumb freesize2" />
+              </div>
+              <div class="bs col-xs-10 col-sm-11">
+                <div class="row">
+                  <div class="bs col-xs-8">
+                    <h3 class="listTitle" style="line-height:41px;">Dimmable Light</h3>
+                  </div>
+                  <div class="bs col-xs-4">
+                    <div data-role="fieldcontain" style="text-align:right;">
+                      <select name="lightSwitch1" id="lightSwitch1" data-role="slider">
+                        <option value="off">
+                          Off
+                        </option>
+                        <option value="on" selected>
+                          On
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="bs col-xs-12">
+                    <div data-role="fieldcontain" class="slider">
+                      <input id="light1" type="range" name="light1" value="50" min="0" max="100" data-highlight="true">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+          <li data-theme="c">
+            <div class="row">
+              <div class="bs col-xs-2 col-sm-1">
+                <img data-src="holder.js/55x100/industrial" alt="..." class="ui-li-thumb freesize2" />
+              </div>
+              <div class="bs col-xs-10 col-sm-11">
+                <div class="row">
+                  <div class="bs col-xs-8">
+                    <h3 class="listTitle" style="line-height:91px;">On/Off Light</h3>
+                  </div>
+                  <div class="bs col-xs-4">
+                    <div data-role="fieldcontain" class="right" style="padding-top:20px;">
+                      <select name="lightSwitch2" id="lightSwitch2" data-role="slider">
+                        <option value="off">
+                          Off
+                        </option>
+                        <option value="on">
+                          On
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+
+    <!-- History -->
+    <div data-role="page" id="page-history">
+      <div data-theme="b" data-role="header" data-position="fixed">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Back
+        </a>
+        <h3 class="header">
+          History
+        </h3>
+        <a href="#main-menu" data-icon="bars" data-iconpos="notext">Menu</a>
+      </div>
+      <div data-role="content">
+        <div class="center">
+          <div data-role="controlgroup" data-type="horizontal">
+            <a href="#" data-role="button" class="ui-btn-active">All</a>
+            <a href="#" data-role="button">Alarm</a>
+            <a href="#" data-role="button">Arm</a>
+            <a href="#" data-role="button">Zone</a>
+          </div>
+        </div>
+        <h2 class="grey center normal">January 12, 2013</h2>
+        <ul data-role="listview" data-divider-theme="d" data-inset="false">
+          <li data-theme="c">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <div class="ui-grid-a">
+                <div class="ui-block-a">
+                  <h3 class="listTitle">Event</h3>
+                  <p>Camera 1 (1 image)</p>
+                </div>
+                <div class="ui-block-b" style="line-height:45px; padding-top:13px; text-align:right;"><p>6:06 PM</p></div>
+              </div>
+            </a>
+          </li>
+          <li data-theme="d">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Kitchen door</h3>
+              <p>communication restored</p>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Kitchen door</h3>
+              <p>communication failure</p>
+            </a>
+          </li>
+          <li data-theme="d">
+            <a href="#page1" data-transition="slide">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Zone door</h3>
+              <p>communication failure</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    </div>
+
+  </div>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+  <script>window.jQuery || document.write('<script src="js/jquery-1.10.2.min.js"><\/script>')</script>
+  <script src="//code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/hammer.js/1.0.5/jquery.hammer.min.js"></script>
+  <script src="js/jquery.mmenu.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.0/holder.min.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>

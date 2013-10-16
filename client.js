@@ -254,7 +254,7 @@ socket.on('data', function(data) {
                         write('-done-', 'Send -done-', 'i', 'ready');
 
                         console.log(' ');
-                        log('n', 'i', 'Alarm status reported to server successfully');
+                        log('n', 'i', 'All current status have reported to server successfully');
                     } else if (c == _sdcmd) {
                         if (!f2) {
                             if (_data.status[_sdcmd].length == 0) {

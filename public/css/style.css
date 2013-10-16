@@ -55,3 +55,12 @@ div.cameraWrap {
 .grey {
     color: #808080;
 }
+
+
+.mm-menu li.mm-label {
+    text-transform: none;
+}
+.mm-menu li.group {
+    font-size: 18px;
+    line-height: 40px;
+}
