@@ -27,17 +27,6 @@ function loggedSuccess () {
     });
 } // loggedSuccess
 
-function resetMessage (second) {
-    if (typeof second == 'undefined') {
-        second = 3000;
-    }
-    setTimeout(function(){
-        $('div.alert').fadeOut(function(){
-            $(this).attr('class', 'alert').html('');
-        });
-    }, second);
-} // resetMessage
-
 function updateTroubles (id) {
     var troubles = 0;
     var total    = 0;
@@ -197,6 +186,7 @@ function updateSystemStatus () {
         }
     });
 } // updateSystemStatus
+
 
 function notification (title, content, timeclose) {
     if (typeof window.webkitNotifications == 'undefined') {
@@ -374,18 +364,21 @@ socket.on('disconnect', function(){
 socket.on('reconnect', function(){
     notification('Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000);
 });
-socket.on('InitialUpdates', function(data){
+
+socket.on('DeviceInformation', function(data){
     if (typeof data.info != 'undefined') {
         _data = data;
-
-        $('.status').removeClass('text-danger text-default').addClass('text-success').html(data.info.name+' connected')
-        $('#page-security div.armBtnWrap').show();
-        updateTroubles();
-        updateAlarmStatus(false);
-        updateZones();
-        updateSystemStatus();
     }
+
+    $('.status').removeClass('text-danger text-default').addClass('text-success').html(data.info.pn+' connected')
+    $('#page-security div.armBtnWrap').show();
+
+    /*updateSystemStatus();
+    updateTroubles();
+    updateAlarmStatus(false);
+    updateZones();*/
 });
+
 socket.on('Offline', function(data){
     $('#page-security div.armBtnWrap').hide();
     $('.troubles').removeClass('text-success text-default').addClass('text-danger').html('N/A');

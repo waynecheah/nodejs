@@ -692,6 +692,21 @@ function getMap (category, m1, m2, m3, m4) {
 } // getMap
 
 
+function emitDeviceInfo (websocket) {
+    if (_.isUndefined(sockets[0])) { // device not online
+        // TODO(mongodb): Get device's last status update from database
+        return;
+    }
+
+    var sk = sockets[0].data;
+
+    websocket.emit('DeviceInformation', {
+        deviceId: sk.deviceId,
+        info: sk.info,
+        status: sk.status
+    });
+} // emitDeviceInfo
+
 function statusUpdate (data) {
     if (typeof data == 'object') {
         for (var i=0; i<websockets.length; i++) {
@@ -864,3 +879,20 @@ var server = net.createServer(function (socket) {
 
 server.listen(1470, host);
 log('s', 'i', 'Net listening to '+host+':1470');
+
+
+
+//
+// Socket.io
+//
+io = io.listen(webserver);
+log('s', 'i', 'Socket.io listening to '+host+':8080');
+io.sockets.on('connection', function(websocket) {
+    log('w', 'i', 'web client '+websocket.id+' connected');
+    websockets.push(websocket); // assign websocket to global variable
+
+    emitDeviceInfo(websocket);
+});
+
+
+exports.sockets = sockets;
