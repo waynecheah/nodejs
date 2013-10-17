@@ -423,6 +423,10 @@ function getCurrentStatus (socket, data) {
                         return
                     }
                     log('n', 'i', 'Update database of it last sync date & time: '+lastSync);
+
+                    _.each(websockets, function(websocket){
+                        emitDeviceInfo(websocket);
+                    });
                 });
 
                 log('n', 'i', 'All current status have updated successfully');
@@ -693,12 +697,20 @@ function getMap (category, m1, m2, m3, m4) {
 
 
 function emitDeviceInfo (websocket) {
+    var sk;
+
     if (_.isUndefined(sockets[0])) { // device not online
         // TODO(mongodb): Get device's last status update from database
-        return;
+        sk = {
+            deviceId: null,
+            info: null,
+            status: {
+                system: null
+            }
+        };
+    } else {
+        sk = sockets[0].data;
     }
-
-    var sk = sockets[0].data;
 
     websocket.emit('DeviceInformation', {
         deviceId: sk.deviceId,
@@ -870,10 +882,10 @@ var server = net.createServer(function (socket) {
 
         sockets.splice(i, 1);
 
-        /*/ TODO(system): notify offline status to user who connected to it
+        // TODO(system): notify offline status to user who connected to it
         for (var i=0; i<websockets.length; i++) {
             websockets[i].emit('Offline');
-        }*/
+        }
     });
 });
 
@@ -891,7 +903,7 @@ io.sockets.on('connection', function(websocket) {
     log('w', 'i', 'web client '+websocket.id+' connected');
     websockets.push(websocket); // assign websocket to global variable
 
-    emitDeviceInfo(websocket);
+    emitDeviceInfo(websocket); // get device information
 });
 
 

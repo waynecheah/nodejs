@@ -10,6 +10,119 @@ var _data      = {
     }
 };
 
+var _mapping = {
+    system: {
+        type: {
+            0: 'N/A',
+            1: 'AC',
+            2: 'Battery',
+            3: 'PSTN',
+            4: 'Bell',
+            5: 'Peripheral',
+            6: 'GSM',
+            7: 'Comm Fail'
+        },
+        status: {
+            0: 'Ready/Restore',
+            1: 'Alarm',
+            2: 'Fault'
+        }
+    },
+    partition: {
+        status: {
+            0: 'Disarmed',
+            1: 'Away',
+            2: 'Home',
+            3: 'Night'
+        },
+        user: {
+            100: 'User1',
+            101: 'Keyfob',
+            102: 'Auto', // timer
+            103: 'Remote'
+        }
+    },
+    zone: {
+        condition: {
+            0: 'Disable',
+            1: 'Open',
+            2: 'Close'
+        },
+        status: {
+            0: 'Ready/Restore',
+            1: 'Alarm',
+            2: 'Bypass',
+            3: 'Trouble',
+            4: 'Tamper'
+        },
+        type: {
+            0: 'N/A',
+            1: 'Delay',
+            2: 'Instant',
+            3: 'Follower',
+            4: '24hr',
+            5: 'Delay2',
+            6: 'Keyswitch'
+        }
+    },
+    emergency: {
+        type: {
+            0: 'N/A',
+            1: 'Panic',
+            2: 'Medical',
+            3: 'Fire',
+            4: 'Duress'
+        },
+        status: {
+            0: 'Ready/Restore',
+            1: 'Alarm'
+        }
+    },
+    light: {
+        type: {
+            0: 'Disable',
+            1: 'Normal',
+            2: 'Dim',
+            3: 'Toggle',
+            4: 'Pulse',
+            5: 'Blink',
+            6: 'Delay'
+        },
+        status: {
+            0: 'Off',
+            1: 'On',
+            2: 'Dim'
+        },
+        user: {
+            101: 'Keyfob',
+            102: 'Auto',
+            103: 'Remote'
+        }
+    },
+    sensor: {
+        type: {
+            0: 'Disable',
+            1: 'Normal Open',
+            2: 'Normal Close',
+            3: 'Potential'
+        },
+        status: {
+            0: 'N/A',
+            1: 'Open',
+            2: 'Close'
+        }
+    },
+    label: {
+        item: {
+            zn: 'Zone',
+            dv: 'Device',
+            li: 'Light',
+            ss: 'Sensor',
+            us: 'User'
+        }
+    }
+};
+
 function loggedSuccess () {
     var deviceCls = '';
     if (typeof _data.root == 'undefined') {
@@ -27,41 +140,6 @@ function loggedSuccess () {
     });
 } // loggedSuccess
 
-function updateTroubles (id) {
-    var troubles = 0;
-    var total    = 0;
-
-    $.each(_data.status, function(k, v){
-        if (k != 'alarm_status') {
-            total++;
-            if (v == 0) {
-                troubles++
-            }
-        }
-    });
-
-    if (troubles) {
-        $('.troubles').removeClass('text-success text-default').addClass('text-danger').html('Problem '+troubles+'/'+total);
-    } else {
-        $('.troubles').removeClass('text-danger text-default').addClass('text-success').html('OK '+troubles+'/'+total);
-    }
-
-    if (typeof id != 'undefined') {
-        var sts, css;
-
-        if (_data.status[id] == 1) {
-            sts = 'OK';
-            css = 'text-success';
-        } else {
-            sts = 'Failure';
-            css = 'text-danger';
-        }
-
-        $('#page-system-status').find('span.'+id).html(sts).removeClass('text-success text-danger').addClass(css);
-        notification('System Status', 'System status of '+id+' is now changed to '+sts);
-    }
-} // updateTroubles
-
 function updateAlarmStatus (alert) {
     var rdr = $('#page-security').attr('data-render');
     var thm = 'b';
@@ -72,19 +150,31 @@ function updateAlarmStatus (alert) {
         sts = 'Armed Away';
         $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
         $('#page-security a.armBtn span.armTxt').html('Armed Away - Press to Disamed');
+
+        $('div.header span.icon-locked').attr('class', 'icon-locked text-success').show();
+        $('div.header span.icon-exclamation').hide();
     } else if (_data.status.alarm_status == 'h') {
         thm = 'e';
         sts = 'Armed Home';
         $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
         $('#page-security a.armBtn span.armTxt').html('Armed Home - Press to Disamed');
+
+        $('div.header span.icon-locked').attr('class', 'icon-locked text-success').show();
+        $('div.header span.icon-exclamation').hide();
     } else if (_data.status.alarm_status == 'r') {
         sts = 'Disarmed';
         $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
         $('#page-security a.armBtn span.armTxt').html('Disarmed - Press to Arm');
+
+        $('div.header span.icon-locked').attr('class', 'icon-locked text-warning').show();
+        $('div.header span.icon-exclamation').hide();
     } else if (_data.status.alarm_status == 'p') {
         sts = 'Panic';
         $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
         $('#page-security a.armBtn span.armTxt').html('Panic - Press to Arm');
+
+        $('div.header span.icon-locked').hide();
+        $('div.header span.icon-exclamation').attr('class', 'icon-locked text-danger').show();
     }
 
     $('#page-security a.armBtn').attr('data-status', _data.status.alarm_status);
@@ -103,7 +193,6 @@ function updateAlarmStatus (alert) {
 } // updateAlarmStatus
 
 function updateZones () {
-    var rendered = $('#page-security').attr('data-render');
     var listview = '';
     var mapping  = {
         o: 'Opened',
@@ -140,7 +229,7 @@ function updateZones () {
     });
     Holder.run();
 
-    if (rendered == '1') {
+    if ($('#page-security.ui-page').length) { // page already rendered
         $('#page-security ul[data-role=listview]').listview('refresh');
     }
 } // updateZones
@@ -170,25 +259,8 @@ function updateZone (id, value) {
 function updateLight (id, value) {
 } // updateLight
 
-function updateSystemStatus () {
-    var sts, css;
 
-    $.each(_data.status, function(k, v){
-        if (k != 'alarm_status') {
-            if (v == 1) {
-                sts = 'OK';
-                css = 'text-success';
-            } else {
-                sts = 'Failure';
-                css = 'text-danger';
-            }
-            $('#page-system-status').find('span.'+k).html(sts).removeClass('text-success text-danger').addClass(css);
-        }
-    });
-} // updateSystemStatus
-
-
-function updateOnlineStatus () {
+function updateAppOnlineStatus () {
     if (navigator.onLine) {
         $('div.header span.icon-world').attr('class', 'icon-world text-success');
     } else {
@@ -198,9 +270,9 @@ function updateOnlineStatus () {
         $('div.header span.icon-locked').attr('class', 'icon-locked text-muted').show();
         $('div.header span.icon-heart').attr('class', 'icon-heart text-muted').show();
         $('div.header span.icon-exclamation').hide();
-        $('div.header span.icon.sos').hide();
+        $('div.header span.icon-sos').hide();
     }
-} // updateOnlineStatus
+} // updateAppOnlineStatus
 
 function notification (title, content, timeclose) {
     if (typeof window.webkitNotifications == 'undefined') {
@@ -235,6 +307,99 @@ function permissionCheck () {
         setTimeout(permissionCheck, 1000);
     }
 } // permissionCheck
+
+function updateDeviceStatus (data) {
+    if (data.deviceId) { // device is online
+        $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-success');
+        $('.status').removeClass('text-danger text-default').addClass('text-success').html(data.info.pn+' connected');
+        $('#page-security div.armBtnWrap').show();
+    } else {
+        $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-danger');
+    }
+
+    updateTroubles();
+    updateSystemStatus();
+} // updateDeviceStatus
+
+function updateSystemStatus () {
+    var css, info, sts, type;
+    var html  = '';
+    var alarm = 0;
+    var fault = 0;
+
+    if (_.isNull(_data.status.system)) { // system info unavailable
+        return;
+    }
+
+    _.each(_data.status.system, function(str){
+        info = str.split(',');
+        type = info[0];
+        sts  = parseInt(info[1]);
+
+        if (sts == 0) {
+            css = ' text-success';
+        } else if (sts == 1) {
+            css = ' text-danger';
+            alarm++;
+        } else {
+            css = ' text-warning';
+            fault++;
+        }
+
+        type = _mapping.system.type[type];
+        sts  = _mapping.system.status[sts];
+
+        html += '<li data-theme="d">'+type+'<span data-type="'+info[0]+'" class="ui-li-aside normal'+css+'">'+sts+'</span></li>';
+    });
+
+    $('#page-system-status ul[data-role=listview]').html(html);
+
+    if ($('#page-system-status.ui-page').length) { // page already rendered
+        $('#page-system-status ul[data-role=listview]').listview('refresh');
+    }
+
+    if (alarm) {
+        $('div.header span.icon-heart').hide();
+        $('div.header span.icon-sos').attr('class', 'icon-sos text-danger').show();
+    } else if (fault) {
+        $('div.header span.icon-heart').hide();
+        $('div.header span.icon-sos').attr('class', 'icon-sos text-warning').show();
+    } else {
+        $('div.header span.icon-sos').hide();
+        $('div.header span.icon-heart').attr('class', 'icon-heart text-success').show();
+    }
+} // updateSystemStatus
+
+function updateTroubles ()  {
+    var info, sts;
+    var trouble = 0;
+    var total   = 0;
+    var css     = ' text-warning';
+
+    if (_.isNull(_data.status.system)) { // system info unavailable
+        return;
+    }
+
+    _.each(_data.status.system, function(str){
+        info = str.split(',');
+        sts  = parseInt(info[1]);
+
+        if (sts > 0) {
+            if (sts == 1) {
+                css = ' text-danger';
+            }
+            trouble++;
+        }
+
+        total++;
+    });
+
+    if (trouble) {
+        $('.troubles').attr('class','troubles'+css).html('Problem '+trouble+'/'+total);
+    } else {
+        $('.troubles').removeClass('text-danger text-default').addClass('text-success').html(total+' ready/restore');
+    }
+} // updateTroubles
 
 function armCountdown (sec) {
     var cls = null;
@@ -358,7 +523,7 @@ function loadCamera () {
 } // loadCamera
 
 
-var socket = io.connect('http://cheah.homeip.net:8081', {
+var socket = io.connect('http://cheah.homeip.net:8080', {
     'max reconnection attempts': 100
 });
 
@@ -381,7 +546,7 @@ socket.on('disconnect', function(){
     $('div.header span.icon-locked').attr('class', 'icon-locked text-muted').show();
     $('div.header span.icon-heart').attr('class', 'icon-heart text-muted').show();
     $('div.header span.icon-exclamation').hide();
-    $('div.header span.icon.sos').hide();
+    $('div.header span.icon-sos').hide();
     notification('Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000);
 });
 socket.on('reconnect', function(){
@@ -390,22 +555,13 @@ socket.on('reconnect', function(){
 });
 
 socket.on('DeviceInformation', function(data){
-    if (typeof data.info != 'undefined') {
-        _data = data;
-    }
-
-    $('.status').removeClass('text-danger text-default').addClass('text-success').html(data.info.pn+' connected')
-    $('#page-security div.armBtnWrap').show();
-
-    /*updateSystemStatus();
-    updateTroubles();
-    updateAlarmStatus(false);
-    updateZones();*/
+    _data = data;
+    updateDeviceStatus(data);
 });
-
 socket.on('Offline', function(data){
     $('#page-security div.armBtnWrap').hide();
-    $('.troubles').removeClass('text-success text-default').addClass('text-danger').html('N/A');
+    $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-danger');
+
     $('.status').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
     notification('Panel Offline', 'Your panel is detected offline now, this may due to internet connection problem.', 10000);
 });
@@ -441,7 +597,6 @@ $('#home').on('pagecreate', function(){
     }
 });
 $('#page-security').on('pagecreate', function(){
-    $(this).attr('data-render', '1');
     $('#page-security a.armBtn').click(function(){
         var sts = _data.status.alarm_status;
 
@@ -580,7 +735,7 @@ $(function() {
         slidingSubmenus: false
     });
 
-    updateOnlineStatus();
-    window.addEventListener('online',  updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
+    updateAppOnlineStatus();
+    window.addEventListener('online',  updateAppOnlineStatus);
+    window.addEventListener('offline', updateAppOnlineStatus);
 });
