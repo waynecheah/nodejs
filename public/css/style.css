@@ -70,6 +70,12 @@ h3.headerTitle {
     font-size: 18px;
     line-height: 40px;
 }
+.mm-menu li.mm-active > a.mm-subopen {
+    background: transparent;
+}
+.mm-menu li.mm-active > a, .mm-menu li.mm-active > span {
+    background: rgba( 0, 0, 0, 0.2 );
+}
 
 div.header a.icon-block-menu, div.header a.icon-three-points {
     color: #999;
@@ -87,6 +93,9 @@ div.header a.icon-three-points {
 table.iconWrap {
     min-width: 94px;
     height: 55px;
+}
+table.iconWrap tr td:first-child {
+    padding-top: 6px;
 }
 table.iconWrap span {
     font-size: 28px;

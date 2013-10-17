@@ -523,7 +523,7 @@ function loadCamera () {
 } // loadCamera
 
 
-var socket = io.connect('http://cheah.homeip.net:8080', {
+var socket = io.connect('http://'+document.domain+':'+window.location.port, {
     'max reconnection attempts': 100
 });
 
@@ -585,7 +585,15 @@ socket.on('DeviceUpdate', function(d){
     }
 });
 
-$('#home').on('pagecreate', function(){
+
+
+$('#home').on('pagebeforecreate', function(){
+    $.mobile.defaultPageTransition = 'pop';
+}).on('pageshow', function(){
+    $.mobile.defaultPageTransition = 'slide';
+    $('nav#main-menu ul li').removeClass('mm-selected');
+    $('nav#main-menu ul li:first').addClass('mm-selected');
+}).on('pagecreate', function(){
     if (typeof window.webkitNotifications != 'undefined' && window.webkitNotifications.checkPermission()) {
         $('div.gainPermissions').show();
         $('div.gainPermissions').click(function(){
@@ -596,6 +604,7 @@ $('#home').on('pagecreate', function(){
         $('div.gainPermissions').remove();
     }
 });
+
 $('#page-security').on('pagecreate', function(){
     $('#page-security a.armBtn').click(function(){
         var sts = _data.status.alarm_status;
@@ -627,10 +636,13 @@ $('#page-security').on('pagecreate', function(){
             $.mobile.changePage('#page-how-to-arm');
         }
     });
-});
-$('#page-security').on('pagehide', function(){
+}).on('pageshow', function(){
+    $('nav#main-menu ul li').removeClass('mm-selected');
+    $('nav#main-menu ul li.security').addClass('mm-selected');
+}).on('pagehide', function(){
     $('#page-security ul[data-role=listview] div.bypass').hide();
 });
+
 $('#page-how-to-arm').on('pagecreate', function(){
     $('#page-how-to-arm .cancelArm').click(function(){
         var isBackBtn = $(this).hasClass('back');
@@ -641,8 +653,7 @@ $('#page-how-to-arm').on('pagecreate', function(){
         $(this).addClass('ui-btn-active');
         $('#page-how-to-arm #code1').focus();
     });
-});
-$('#page-how-to-arm').on('pageshow', function(){
+}).on('pageshow', function(){
     var sts = _data.status.alarm_status;
     if (sts == 'a' || sts == 'h') {
         $('#page-how-to-arm h3.header').html('Confirm Disarmed');
@@ -655,10 +666,51 @@ $('#page-how-to-arm').on('pageshow', function(){
     }
     $('#page-how-to-arm #code1').focus();
 }).on('pagehide', function(){
-        $('#page-how-to-arm input.passcode').val('');
-        $('#page-how-to-arm div.countdown').hide();
+    $('#page-how-to-arm input.passcode').val('');
+    $('#page-how-to-arm div.countdown').hide();
+});
+
+$('#page-cameras').on('pagebeforecreate', function(){
+    var html = '';
+    var attr = 'width="120" height="80" class="ipcam"';
+    var cams = [{
+        page: 'page-camera',
+        id: 'ipcam1',
+        size: 'l',
+        url: 'http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne',
+        label: 'Outdoor Camera',
+        model: 'EasyN H6-837'
+    }, {
+        page: 'page-camera5',
+        id: 'ipcam5',
+        size: 's',
+        url: 'http://cheah.homeip.net:85/snapshot.cgi?user=cheah&pwd=jumpknee123',
+        label: 'Dining Camera',
+        model: 'Wansview NC541'
+    }, {
+        page: 'page-camera6',
+        id: 'ipcam6',
+        size: 'l',
+        url: 'http://cheah.homeip.net:86/snapshot.cgi?user=cheah&pwd=jumpknee123',
+        label: 'Parlor Camera',
+        model: 'ICam+ i918w'
+    }];
+
+    _.each(cams, function(o){
+        html += '<li data-theme="c" class="ui-li-has-thumb">' +
+                  '<a href="#'+o.page+'" data-transition="slide">' +
+                    '<div class="ui-li-thumb freesize">' +
+                      '<canvas id="'+o.id+'" data-size="'+o.size+'" data-url="'+o.url+'" '+attr+'></canvas>' +
+                    '</div><h3 style="padding-left:40px;">'+o.label+'</h3>' +
+                    '<p style="padding-left:40px;">'+o.model+'</p>' +
+                  '</a>' +
+                '</li>';
     });
-$('#page-cameras').on('pageshow', function(){
+
+    $('#page-cameras ul[data-role=listview]').html(html);
+}).on('pageshow', function(){
+    $('nav#main-menu ul li').removeClass('mm-selected');
+    $('nav#main-menu ul li.cameras').addClass('mm-selected');
     $.each($('#page-cameras canvas.ipcam'), function(){
         var id   = $(this).attr('id');
         var size = $(this).attr('data-size');
@@ -666,12 +718,27 @@ $('#page-cameras').on('pageshow', function(){
         resizeImage(id, url, size);
     });
 });
-$('#page-camera').on('pageshow', function(){
+
+$('#page-camera').on('pagebeforecreate', function(){
+    var url = 'http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne';
+    $('#page-camera div.cameraWrap img.cam').attr('src', url);
+}).on('pageshow', function(){
     _loadCam = true;
     loadCamera();
 }).on('pagehide', function(){
-        _loadCam = false;
-    });
+    _loadCam = false;
+});
+
+$('#page-system-status').on('pageshow', function(){
+    $('nav#main-menu ul li').removeClass('mm-selected');
+    $('nav#main-menu ul li.system-status').addClass('mm-selected');
+});
+
+$('#page-lights').on('pageshow', function(){
+    $('nav#main-menu ul li').removeClass('mm-selected');
+    $('nav#main-menu ul li.lights').addClass('mm-selected');
+});
+
 
 
 $('#page-how-to-arm input.passcode').click(function(){
@@ -720,6 +787,8 @@ $('#page-camera img.cam').on('load', function(){
 });
 
 $(function() {
+    $.mobile.defaultPageTransition = 'slide';
+
     $('nav#location').mmenu({
         dragOpen: {
             open: true
@@ -734,6 +803,16 @@ $(function() {
         zposition: 'front',
         slidingSubmenus: false
     });
+
+    $(window).resize(function(){
+        if ($(this).width()<598) {
+            $('div.header div.iconWrap').css('padding-right', '5px');
+            $('div.header table.iconWrap').css('min-width', '94px');
+        } else {
+            $('div.header div.iconWrap').css('padding-right', '15px');
+            $('div.header table.iconWrap').css('min-width', '158px');
+        }
+    }).trigger('resize');
 
     updateAppOnlineStatus();
     window.addEventListener('online',  updateAppOnlineStatus);

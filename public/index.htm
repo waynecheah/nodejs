@@ -36,7 +36,7 @@
       <ul>
         <li class="Label"><img src="img/logo.jpg" style="margin:5px 0 6px;" /></li>
         <li class="Label group">Location List</li>
-        <li class="mm-selected">
+        <li class="mm-active">
           <em class="Counter"></em>
           <span>Home</span>
           <ul>
@@ -78,17 +78,17 @@
     <nav id="main-menu">
       <ul>
         <li class="Selected"><a href="#home">Home</a></li>
-        <li><a href="#page-security">Security</a></li>
-        <li>
+        <li class="security"><a href="#page-security" data-transition="slide">Security</a></li>
+        <li class="cameras">
           <em class="Counter">3</em>
-          <a href="#page-cameras">Cameras</a>
+          <a href="#page-cameras" data-transition="slide">Cameras</a>
         </li>
-        <li><a href="#page-system-status">System Status</a></li>
-        <li>
+        <li class="system-status"><a href="#page-system-status">System Status</a></li>
+        <li class="lights">
           <em class="Counter">2</em>
           <a href="#page-lights">Lights</a>
         </li>
-        <li class="Label">
+        <li class="Label history">
           <a href="#page-history">History</a>
           <ul>
             <li><a href="#page-history" data-tab="alarm">Alarm</a></li>
@@ -160,7 +160,7 @@
           <div class="pull-right">
             <a href="#main-menu" class="icon-three-points"></a>
           </div>
-          <div class="col-xs-2 col-sm-4 pull-right">
+          <div class="iconWrap col-xs-2 col-sm-4 pull-right">
             <table class="iconWrap" align="right">
               <tr>
                 <td align="right" valign="middle">
@@ -365,30 +365,6 @@
       </div>
       <div data-role="content">
         <ul data-role="listview" data-divider-theme="c" data-inset="false">
-          <li data-theme="c" class="ui-li-has-thumb">
-            <a href="#page-camera" data-transition="slide">
-              <div class="ui-li-thumb freesize"><canvas id="ipcam1" width="120" height="80" class="ipcam" data-size="l"
-               data-url="http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne"></canvas></div>
-              <h3 style="padding-left:40px;">Outdoor Camera</h3>
-              <p style="padding-left:40px;">linksys WVC80N</p>
-            </a>
-          </li>
-          <li data-theme="c" class="ui-li-has-thumb">
-            <a href="#page-cam5" data-transition="slide">
-              <div class="ui-li-thumb freesize"><canvas id="ipcam5" width="120" height="80" class="ipcam" data-size="s"
-               data-url="http://cheah.homeip.net:85/snapshot.cgi?user=cheah&pwd=jumpknee123"></canvas></div>
-              <h3 style="padding-left:40px;">Dining Camera</h3>
-              <p style="padding-left:40px;">linksys WVC80N</p>
-            </a>
-          </li>
-          <li data-theme="c" class="ui-li-has-thumb">
-            <a href="#page-cam6" data-transition="slide">
-              <div class="ui-li-thumb freesize"><canvas id="ipcam6" width="120" height="80" class="ipcam" data-size="l"
-               data-url="http://cheah.homeip.net:86/snapshot.cgi?user=cheah&pwd=jumpknee123"></canvas></div>
-              <h3 style="padding-left:40px;">Parlor Camera</h3>
-              <p style="padding-left:40px;">linksys WVC80N</p>
-            </a>
-          </li>
           <li data-theme="c">
             <a href="#page-cam1" data-transition="slide">
               <img src="http://cheah.homeip.net:86/snapshot.cgi?user=cheah&pwd=jumpknee123"
@@ -417,10 +393,7 @@
         </div>
       </div>
       <div data-role="content">
-        <div class="cameraWrap" style="margin-top:-240px;">
-          <img src="http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne"
-           alt="camera" class="cam" />
-        </div>
+        <div class="cameraWrap" style="margin-top:-240px;"><img src="" alt="camera" class="cam" /></div>
       </div>
     </div>
 
