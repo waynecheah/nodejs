@@ -188,6 +188,20 @@ function updateSystemStatus () {
 } // updateSystemStatus
 
 
+function updateOnlineStatus () {
+    if (navigator.onLine) {
+        $('div.header span.icon-world').attr('class', 'icon-world text-success');
+    } else {
+        $('div.header span.icon-world').attr('class', 'icon-world text-danger');
+        $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-muted');
+        $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-muted');
+        $('div.header span.icon-locked').attr('class', 'icon-locked text-muted').show();
+        $('div.header span.icon-heart').attr('class', 'icon-heart text-muted').show();
+        $('div.header span.icon-exclamation').hide();
+        $('div.header span.icon.sos').hide();
+    }
+} // updateOnlineStatus
+
 function notification (title, content, timeclose) {
     if (typeof window.webkitNotifications == 'undefined') {
         return;
@@ -350,19 +364,29 @@ var socket = io.connect('http://cheah.homeip.net:8081', {
 
 socket.on('connect', function(){
     $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
+    $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-success');
 });
 socket.on('connecting', function(){
     $('.connection').removeClass('text-danger text-success').addClass('text-default').html('Connecting..');
+    $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-warning');
 });
 socket.on('disconnect', function(){
     $('#page-security div.armBtnWrap').hide();
     $('.troubles').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
     $('.status').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
     $('.connection').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
+
+    $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-danger');
+    $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-warning');
+    $('div.header span.icon-locked').attr('class', 'icon-locked text-muted').show();
+    $('div.header span.icon-heart').attr('class', 'icon-heart text-muted').show();
+    $('div.header span.icon-exclamation').hide();
+    $('div.header span.icon.sos').hide();
     notification('Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000);
 });
 socket.on('reconnect', function(){
     notification('Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000);
+    $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-success');
 });
 
 socket.on('DeviceInformation', function(data){
@@ -555,4 +579,8 @@ $(function() {
         zposition: 'front',
         slidingSubmenus: false
     });
+
+    updateOnlineStatus();
+    window.addEventListener('online',  updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
 });

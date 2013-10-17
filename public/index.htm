@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="css/mmenu.css" />
   <link rel="stylesheet" href="css/mmenu-positioning.css" />
   <link rel="stylesheet" href="css/bootstrap.css" />
+  <link rel="stylesheet" href="css/icons.css" />
   <link rel="stylesheet" href="css/style.css" />
   <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 </head>
@@ -98,7 +99,7 @@
       </ul>
     </nav>
 
-    <div>
+
     <!-- Sign In -->
     <div data-role="page" id="sign-in">
       <div id="signin" data-theme="b" data-role="header" data-position="fixed" class="signin">
@@ -149,22 +150,34 @@
     <!-- Home -->
     <div data-role="page" id="home">
       <div data-theme="c" data-role="header" data-position="fixed" class="header">
-        <h3 class="companyName">
-          Home Security and Automation
-        </h3>
-        <a href="#location" data-icon="grid" data-iconpos="notext">Area</a>
-        <a href="#main-menu" data-icon="bars" data-iconpos="notext">Menu</a>
-      </div>
-      <div data-role="content">
-        <div class="ui-grid-b" style="margin:-15px -15px 15px;">
-          <div class="ui-block-a">
-            <div class="ui-bar ui-bar-e center" style="line-height:38px;">Device Status: <span class="text-warning">Disconnected</span></div>
+        <div class="row">
+          <div class="pull-left">
+            <a href="#location" class="icon-block-menu"></a>
           </div>
-          <div class="ui-block-c">
-            <div class="ui-bar ui-bar-e center" style="line-height:38px;">Connection: <span class="text-success">Connected</span></div>
+          <div class="col-xs-6 col-sm-4" style="padding:0;">
+            <h3 class="headerTitle">Home Security and Automation</h3>
+          </div>
+          <div class="pull-right">
+            <a href="#main-menu" class="icon-three-points"></a>
+          </div>
+          <div class="col-xs-2 col-sm-4 pull-right">
+            <table class="iconWrap" align="right">
+              <tr>
+                <td align="right" valign="middle">
+                  <span class="icon-world text-muted"></span>
+                  <span class="icon-hdd-net text-muted"></span>
+                  <span class="icon-hdd-raid text-muted"></span>
+                  <span class="icon-locked text-muted"></span>
+                  <span class="icon-exclamation text-muted" style="display:none;"></span>
+                  <span class="icon-heart text-muted"></span>
+                  <span class="icon-sos text-muted" style="display:none;"></span>
+                </td>
+              </tr>
+            </table>
           </div>
         </div>
-
+      </div>
+      <div data-role="content">
         <ul data-role="listview" data-divider-theme="c" data-inset="false">
           <li data-theme="c">
             <a href="#page-security" data-transition="slide" style="padding-bottom:7px;">
@@ -563,10 +576,10 @@
         </ul>
       </div>
     </div>
-    </div>
 
   </div>
 
+<!--[if lte IE 7]><script src="js/lte-ie7.js"></script><![endif]-->
   <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
   <script>window.jQuery || document.write('<script src="js/jquery-1.10.2.min.js"><\/script>')</script>
   <script src="//code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>

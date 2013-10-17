@@ -57,10 +57,37 @@ div.cameraWrap {
 }
 
 
+h3.headerTitle {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: auto;
+}
+
 .mm-menu li.mm-label {
     text-transform: none;
 }
 .mm-menu li.group {
     font-size: 18px;
     line-height: 40px;
+}
+
+div.header a.icon-block-menu, div.header a.icon-three-points {
+    color: #999;
+    line-height: 55px;
+    font-size: 32px;
+}
+div.header a.icon-block-menu {
+    padding-left: 22px;
+    padding-right: 8px;
+}
+div.header a.icon-three-points {
+    padding-right: 22px;
+    padding-left: 8px;
+}
+table.iconWrap {
+    min-width: 94px;
+    height: 55px;
+}
+table.iconWrap span {
+    font-size: 28px;
 }
