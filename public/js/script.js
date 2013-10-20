@@ -183,7 +183,6 @@ function updateAlarmStatus (alert) {
         //$('#page-security a.armBtn').button('refresh');
         $('#page-security a.armBtn').buttonMarkup({ theme:thm });
     } else {
-        console.log('not render '+rdr);
         $('#page-security a.armBtn').attr('data-theme', thm);
     }
 
@@ -319,6 +318,7 @@ function updateDeviceStatus (data) {
 
     updateTroubles();
     updateSystemStatus();
+    updateLights();
 } // updateDeviceStatus
 
 function updateSystemStatus () {
@@ -327,7 +327,7 @@ function updateSystemStatus () {
     var alarm = 0;
     var fault = 0;
 
-    if (_.isNull(_data.status.system)) { // system info unavailable
+    if (_.isUndefined(_data.status.system) || _.isNull(_data.status.system)) { // system info unavailable
         return;
     }
 
@@ -521,6 +521,69 @@ function loadCamera () {
         setTimeout(loadCamera, 1000);
     }
 } // loadCamera
+
+function updateLights () {
+    var info, no, type, status, value, user, tpl;
+    var html1 = $('#light-list').html();
+    var html2 = $('#dim-light-list').html();
+
+    if (_.isUndefined(_data.status.lights) || _.isNull(_data.status.lights)) { // lights status unavailable
+        return;
+    }
+
+    $('#page-lights ul[data-role=listview]').html('');
+
+    _.each(_data.status.lights, function(str){
+        info   = str.split(',');
+        no     = info[0];
+        type   = parseInt(info[1]);
+        status = parseInt(info[2]);
+        value  = parseInt(info[3]);
+        user   = info[4];
+
+        if (type == 2) { // dimabled light
+            tpl = $(html2);
+        } else {
+            tpl = $(html1);
+        }
+
+        if (status == 0) {
+            status = 'off';
+            type   = ' ('+_mapping.light.type[type]+')';
+        } else if (status == 1) {
+            status = 'on';
+            type   = ' ('+_mapping.light.type[type]+')';
+        } else { // dimabled light
+            if (value == 0) {
+                status = 'off';
+            } else {
+                status = 'on';
+                value  = Math.round((value/255) * 100);
+            }
+            type = '';
+
+            tpl.find('div.slider input[type=range]').attr({
+                id: 'light'+no,
+                value: value
+            });
+        }
+
+        tpl.find('li').attr('data-id', 'li'+no);
+        tpl.find('h3.listTitle').append(type);
+        tpl.find('select[data-role=slider]').attr('id', 'lightSwitch'+no);
+        tpl.find('select[data-role=slider]').val(status); // light on/off
+        tpl.appendTo('#page-lights ul[data-role=listview]');
+    });
+
+    $('#home span.ui-li-count').html(_data.status.lights.length);
+
+    if ($('#page-lights.ui-page').length) { // page already rendered
+        $('#page-lights select[data-role=slider]').slider('refresh');
+        $('#page-lights input[type=range]').slider('refresh');
+        $('#page-lights ul[data-role=listview]').listview('refresh');
+    }
+    Holder.run();
+} // updateLights
 
 
 var socket = io.connect('http://'+document.domain+':'+window.location.port, {

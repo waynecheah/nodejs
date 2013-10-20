@@ -220,7 +220,7 @@
                 <div class="ui-block-a" style="padding-top:9px;"><h3>Lights</h3></div>
                 <div class="ui-block-b" style="line-height:45px; padding-top:13px; text-align:right;"><p>Available</p></div>
               </div>
-              <span class="ui-li-count">2</span>
+              <span class="ui-li-count">0</span>
             </a>
           </li>
           <li data-theme="c">
@@ -400,76 +400,36 @@
 
     <!-- Lights -->
     <div data-role="page" id="page-lights">
-      <div data-theme="b" data-role="header" data-position="fixed" class="header">
-        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back" data-transition="slidefade"
-           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
-          Back
-        </a>
-        <h3 class="header">
-          Lights
-        </h3>
-        <a href="#main-menu" data-icon="bars" data-iconpos="notext">Menu</a>
+      <div data-theme="c" data-role="header" data-position="fixed" class="header">
+        <div class="row">
+          <div class="pull-left">
+            <a href="#location" class="icon-block-menu"></a>
+          </div>
+          <div class="col-xs-5 col-sm-4" style="padding:0;">
+            <h3 class="headerTitle">Lights</h3>
+          </div>
+          <div class="pull-right">
+            <a href="#main-menu" class="icon-three-points"></a>
+          </div>
+          <div class="iconWrap col-xs-2 col-sm-4 pull-right">
+            <table class="iconWrap" align="right">
+              <tr>
+                <td align="right" valign="middle">
+                  <span class="icon-world text-muted"></span>
+                  <span class="icon-hdd-net text-muted"></span>
+                  <span class="icon-hdd-raid text-muted"></span>
+                  <span class="icon-locked text-muted"></span>
+                  <span class="icon-exclamation text-muted" style="display:none;"></span>
+                  <span class="icon-heart text-muted"></span>
+                  <span class="icon-sos text-muted" style="display:none;"></span>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
       </div>
       <div data-role="content">
-        <ul data-role="listview" data-divider-theme="c" data-inset="false">
-          <li data-theme="c">
-            <div class="row">
-              <div class="bs col-xs-2 col-sm-1">
-                <img data-src="holder.js/55x100/industrial" alt="..." class="ui-li-thumb freesize2" />
-              </div>
-              <div class="bs col-xs-10 col-sm-11">
-                <div class="row">
-                  <div class="bs col-xs-8">
-                    <h3 class="listTitle" style="line-height:41px;">Dimmable Light</h3>
-                  </div>
-                  <div class="bs col-xs-4">
-                    <div data-role="fieldcontain" style="text-align:right;">
-                      <select name="lightSwitch1" id="lightSwitch1" data-role="slider">
-                        <option value="off">
-                          Off
-                        </option>
-                        <option value="on" selected>
-                          On
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="bs col-xs-12">
-                    <div data-role="fieldcontain" class="slider">
-                      <input id="light1" type="range" name="light1" value="50" min="0" max="100" data-highlight="true">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </li>
-          <li data-theme="c">
-            <div class="row">
-              <div class="bs col-xs-2 col-sm-1">
-                <img data-src="holder.js/55x100/industrial" alt="..." class="ui-li-thumb freesize2" />
-              </div>
-              <div class="bs col-xs-10 col-sm-11">
-                <div class="row">
-                  <div class="bs col-xs-8">
-                    <h3 class="listTitle" style="line-height:91px;">On/Off Light</h3>
-                  </div>
-                  <div class="bs col-xs-4">
-                    <div data-role="fieldcontain" class="right" style="padding-top:20px;">
-                      <select name="lightSwitch2" id="lightSwitch2" data-role="slider">
-                        <option value="off">
-                          Off
-                        </option>
-                        <option value="on">
-                          On
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </li>
-        </ul>
+        <ul data-role="listview" data-divider-theme="c" data-inset="false"></ul>
       </div>
     </div>
 
@@ -547,4 +507,63 @@
   <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.0/holder.min.js"></script>
   <script src="js/script.js"></script>
 </body>
+
+<template id="light-list">
+  <li data-theme="c">
+    <div class="row">
+      <div class="bs col-xs-2 col-sm-1">
+        <img data-src="holder.js/55x100/industrial" alt="..." class="ui-li-thumb freesize2" />
+      </div>
+      <div class="bs col-xs-10 col-sm-11">
+        <div class="row">
+          <div class="bs col-xs-8">
+            <h3 class="listTitle" style="line-height:91px;">On/Off Light</h3>
+          </div>
+          <div class="bs col-xs-4">
+            <div data-role="fieldcontain" class="right" style="padding-top:20px;">
+              <select name="lightSwitch" id="lightSwitch" data-role="slider">
+                <option value="off">Off</option>
+                <option value="on">On</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </li>
+</template>
+<template id="dim-light-list">
+  <li data-theme="c">
+    <div class="row">
+      <div class="bs col-xs-2 col-sm-1">
+        <img data-src="holder.js/55x100/industrial" alt="..." class="ui-li-thumb freesize2" />
+      </div>
+      <div class="bs col-xs-10 col-sm-11">
+        <div class="row">
+          <div class="bs col-xs-8">
+            <h3 class="listTitle" style="line-height:41px;">Dimmable Light</h3>
+          </div>
+          <div class="bs col-xs-4">
+            <div data-role="fieldcontain" style="text-align:right;">
+              <select name="lightSwitch" id="lightSwitch" data-role="slider">
+                <option value="off">
+                  Off
+                </option>
+                <option value="on">
+                  On
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="bs col-xs-12">
+            <div data-role="fieldcontain" class="slider">
+              <input id="light" type="range" name="light" value="0" min="0" max="100" data-highlight="true">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </li>
+</template>
+
 </html>
