@@ -870,6 +870,7 @@ var server = net.createServer(function (socket) {
 
     socket.on('data', function(data) { // send from client
         var dt  = data.toString();
+        var stt = ['si','pt','zn','em','dv','li','ss'];
         var lgt = ['lsi','lpt','lzn','lem','ldv','lli','lss'];
         var obj = {};
 
@@ -894,9 +895,14 @@ var server = net.createServer(function (socket) {
             // PROCESS OF AUTHORISATION
             getDeviceInfo(socket, dt);
         } else if (_.isUndefined(socket.data.status)) { // get all current status from device
+            // PROCESS OF ALL STATUS UPDATE
             getCurrentStatus(socket, dt);
-        } else if (lgt.indexOf(dt.substr(0,3)) >= 0) { // get event logs from device
+        } else if (lgt.indexOf(dt.substr(0,3)) >= 0) { // receive event logs from device
+            // EVENT LOG RECEIVED WILL UPDATE SERVER DATABASE
             getEventLogs(socket, dt);
+        } else if (stt.indexOf(dt.substr(0,2)) >= 0) { // receive status update from device
+            // SOME STATUS HAS CHANGED ON DEVICE, APP MIGHT NEED TO REFRESH WITH THE UPDATE
+            socket.write('ok'+RN);
         } else if (isc(dt, 'ok')) { // device reply receive of previous sent command
             reportedOkay(socket);
         } else { // don't try to make funny thing to server

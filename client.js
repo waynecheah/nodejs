@@ -283,8 +283,12 @@ socket.on('data', function(data) {
 
                 if (inf[0] == info[0]) {
                     var command = [info[0], inf[1], info[1], info[2], '103'];
-                    _data.status.li[i] = command.join(',');
-                    write('li='+command.join(',')+RN);
+                    var liCmd   = command.join(',');
+
+                    _data.status.li[i] = liCmd;
+
+                    log('n', 'i', 'Inform server light updated successfuly: li='+liCmd);
+                    write('li='+liCmd+RN);
                 }
             });
         } else if (isc(data, 'ok')) {
