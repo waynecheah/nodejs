@@ -902,6 +902,7 @@ var server = net.createServer(function (socket) {
             getEventLogs(socket, dt);
         } else if (stt.indexOf(dt.substr(0,2)) >= 0) { // receive status update from device
             // SOME STATUS HAS CHANGED ON DEVICE, APP MIGHT NEED TO REFRESH WITH THE UPDATE
+            log('n', 'i', 'Server reply "ok" for the status update');
             socket.write('ok'+RN);
         } else if (isc(dt, 'ok')) { // device reply receive of previous sent command
             reportedOkay(socket);
