@@ -32,17 +32,17 @@
 <!-- Add your site or application content here -->
 
   <div>
-    <nav id="location">
+    <nav id="location" class="sidepanel">
       <ul>
         <li class="Label"><img src="img/logo.jpg" style="margin:5px 0 6px;" /></li>
         <li class="Label group">Location List</li>
-        <li class="mm-active">
-          <em class="Counter"></em>
+        <li class="location mm-active">
+          <em class="Counter">4</em>
           <span>Home</span>
           <ul>
             <li>
-              <em class="Counter"></em>
-              <span>Partition 1</span>
+              <em class="Counter">5</em>
+              <span>Alarm Partition 1</span>
               <ul>
                 <li><a href="#page-security" data-tab="zn1">Zone 1</a></li>
                 <li><a href="#page-security" data-tab="zn2">Zone 2</a></li>
@@ -52,18 +52,26 @@
               </ul>
             </li>
             <li>
-              <em class="Counter"></em>
-              <span>Partition 2</span>
+              <em class="Counter">3</em>
+              <span>Alarm Partition 2</span>
               <ul>
                 <li><a href="#page-security" data-tab="zn6">Zone 6</a></li>
                 <li><a href="#page-security" data-tab="zn7">Zone 7</a></li>
                 <li><a href="#page-security" data-tab="zn8">Zone 8</a></li>
               </ul>
             </li>
+            <li class="cameras">
+              <em class="Counter">3</em>
+              <a href="#page-cameras" data-transition="slide">Cameras</a>
+            </li>
+            <li class="lights">
+              <em class="Counter">0</em>
+              <a href="#page-lights">Lights</a>
+            </li>
           </ul>
         </li>
-        <li>
-          <em class="Counter"></em>
+        <li class="location">
+          <em class="Counter">3</em>
           <span>Office</span>
           <ul>
             <li><a href="#page-security" data-tab="zn1">Zone 1</a></li>
@@ -71,11 +79,14 @@
             <li><a href="#page-security" data-tab="zn3">Zone 3</a></li>
           </ul>
         </li>
-        <li><a href="#home">Shop</a></li>
+        <li class="location">
+          <span>Shop</span>
+          <ul></ul>
+        </li>
       </ul>
     </nav>
 
-    <nav id="main-menu">
+    <nav id="main-menu" class="sidepanel">
       <ul>
         <li class="Selected"><a href="#home">Home</a></li>
         <li class="security"><a href="#page-security" data-transition="slide">Security</a></li>
@@ -85,7 +96,7 @@
         </li>
         <li class="system-status"><a href="#page-system-status">System Status</a></li>
         <li class="lights">
-          <em class="Counter">2</em>
+          <em class="Counter">0</em>
           <a href="#page-lights">Lights</a>
         </li>
         <li class="Label history">
@@ -555,9 +566,10 @@
               </select>
             </div>
           </div>
-          <div class="bs col-xs-12">
-            <div data-role="fieldcontain" class="slider">
-              <input id="light" type="range" name="light" value="0" min="0" max="100" data-highlight="true">
+          <div class="bs clearfix col-xs-12">
+            <div data-role="fieldcontain" class="slider ui-hide-label">
+              <label for="light"> </label>
+              <input type="range" id="light" name="light" value="0" min="0" max="100" data-highlight="true">
             </div>
           </div>
         </div>

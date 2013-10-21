@@ -741,6 +741,37 @@ function deviceUpdate (id, type, value, socketInfo) {
     }
 } // deviceUpdate
 
+function appUpdate (type, data) {
+    var cmd;
+
+    if (type == 'light') {
+        cmd = 'li='+data.no+','+data.cmd+','+data.val;
+
+        _.each(sockets, function(s){
+            s.app.lastCommand = 'light';
+            s.app.light       = 'server sent';
+            s.write(cmd+RN);
+        });
+    }
+
+    log('w', 'i', 'App update ['+type+'], command: '+cmd);
+    log('w', 'd', data);
+} // appUpdate
+
+function reportedOkay (socket) {
+    var cmd = socket.app.lastCommand;
+
+    if (!cmd) {
+        log('n', 'e', 'Last command is empty');
+    } else if (_.isUndefined(socket.app[cmd])) {
+        log('n', 'e', 'Last command ['+cmd+'] not found');
+    } else {
+        log('n', 'i', 'Last command ['+cmd+'] has received by device');
+        socket.app[cmd]        = 'device received';
+        socket.app.lastCommand = null;
+    }
+} // reportedOkay
+
 
 
 _.each(process.argv, function(v, i){
@@ -826,6 +857,7 @@ log('s', 'i', 'Webserver running at http://'+host+':8080');
 //
 var server = net.createServer(function (socket) {
     socket.id   = socket._handle.fd;
+    socket.app  = {};
     socket.data = {};
     socket.logs = {
         count: 0
@@ -865,6 +897,8 @@ var server = net.createServer(function (socket) {
             getCurrentStatus(socket, dt);
         } else if (lgt.indexOf(dt.substr(0,3)) >= 0) { // get event logs from device
             getEventLogs(socket, dt);
+        } else if (isc(dt, 'ok')) { // device reply receive of previous sent command
+            reportedOkay(socket);
         } else { // don't try to make funny thing to server
             var x    = sockets.indexOf(socket);
             var id   = (x < 0) ? null : sockets[x]._handle.fd;
@@ -904,6 +938,10 @@ io.sockets.on('connection', function(websocket) {
     websockets.push(websocket); // assign websocket to global variable
 
     emitDeviceInfo(websocket); // get device information
+
+    websocket.on('app update', function(type, data){
+        appUpdate(type, data);
+    });
 });
 
 

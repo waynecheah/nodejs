@@ -9,6 +9,10 @@ var RN        = '\r\n';
 var _timer    = 0;
 var host      = 'cheah.homeip.net';
 var port      = 1470;
+var clientErr  = {
+    e0: 'Invalid input',
+    e3: 'Invalid light status update, improper format sent'
+};
 var serverErr  = {
     e0: 'Invalid input',
     e1: 'System error',
@@ -24,6 +28,42 @@ var serverErr  = {
     e11: '',
     e12: '',
     e13: ''
+};
+var mapping = {
+    partition: {
+        command: {
+            0: 'Disarm',
+            1: 'Away',
+            2: 'Home',
+            3: 'Night'
+        }
+    },
+    zone: {
+        command: {
+            0: 'Disable',
+            1: 'Bypass'
+        }
+    },
+    light: {
+        command: {
+            0: 'Off',
+            1: 'On',
+            2: 'Dim',
+            3: 'Toggle',
+            4: 'Pulse',
+            5: 'Blink',
+            6: 'Delay'
+        }
+    },
+    label: {
+        item: {
+            zn: 'Zone',
+            dv: 'Device',
+            li: 'Light',
+            ss: 'Sensor',
+            us: 'User'
+        }
+    }
 };
 var _data  = {
     info: {
@@ -145,10 +185,9 @@ function encryption (data, key, iv, format) {
     return cipher.update(data, 'utf8', format);
 } // encryption
 
-function datetime () {
-    var date = new Date();
-    return date.toTimeString();
-} // datetime
+function lightUpdate () {
+
+} // lightUpdate
 
 function log (env, type, mesg) {
     if (env == 'n') {
@@ -209,7 +248,7 @@ socket.get = function(type, key) {
 log('n', 'i', 'Socket created.');
 socket.on('data', function(data) {
     var dt = data.split(RN);
-    var ps;
+    var info, ps, str;
 
     _.each(dt, function(data,i){
         if (!data) { // empty data
@@ -226,6 +265,28 @@ socket.on('data', function(data) {
             write('si='+g2('si', 0), 'Send si='+g2('si', 0));
             _sdcmd = 'si';
             _cmdcn = 1;
+        } else if (ps = iss(data, 'li')) {
+            str  = gv(data, ps);
+            info = str.split(',');
+
+            if (info.length != 3) {
+                log('n', 'e', 'Invalid light status update, improper format sent');
+                write('e3'+RN);
+                return;
+            }
+
+            log('n', 'i', 'Received light status update: Light '+info[0]+' = '+mapping.light.command[info[1]]+' value('+info[2]+')');
+            write('ok'+RN);
+
+            _.each(_data.status.li, function(str, i){
+                inf = str.split(',');
+
+                if (inf[0] == info[0]) {
+                    var command = [info[0], inf[1], info[1], info[2], '103'];
+                    _data.status.li[i] = command.join(',');
+                    write('li='+command.join(',')+RN);
+                }
+            });
         } else if (isc(data, 'ok')) {
             log('n', 's', 'OK received from server');
 

@@ -543,11 +543,36 @@ function updateLights () {
 
         if (type == 2) { // dimabled light
             tpl = $(html2);
+
+            if (status == 0) {
+                status = 'off';
+                tpl.find('div.slider input[type=range]').attr('disabled', true);
+            } else {
+                status = 'on';
+            }
+
+            type  = '';
+            value = Math.round((value/255) * 100);
+
+            tpl.find('div.slider label').attr('for', 'light'+no);
+            tpl.find('div.slider input[type=range]').attr({
+                id: 'light'+no,
+                value: value,
+                'data-no': no
+            });
         } else {
             tpl = $(html1);
+
+            if (status == 0) {
+                status = 'off';
+                type   = ' ('+_mapping.light.type[type]+')';
+            } else if (status == 1) {
+                status = 'on';
+                type   = ' ('+_mapping.light.type[type]+')';
+            }
         }
 
-        if (status == 0) {
+        /*if (status == 0) {
             status = 'off';
             type   = ' ('+_mapping.light.type[type]+')';
         } else if (status == 1) {
@@ -562,28 +587,71 @@ function updateLights () {
             }
             type = '';
 
+            tpl.find('div.slider label').attr('for', 'light'+no);
             tpl.find('div.slider input[type=range]').attr({
                 id: 'light'+no,
-                value: value
+                value: value,
+                'data-no': no
             });
-        }
+
+            if (status == 'off') {
+                tpl.find('div.slider input[type=range]').attr('disabled', 'disabled');
+            }
+        }*/
 
         tpl.find('li').attr('data-id', 'li'+no);
         tpl.find('h3.listTitle').append(type);
-        tpl.find('select[data-role=slider]').attr('id', 'lightSwitch'+no);
+        tpl.find('select[data-role=slider]').attr({
+            id: 'lightSwitch'+no,
+            'data-no': no
+        });
         tpl.find('select[data-role=slider]').val(status); // light on/off
         tpl.appendTo('#page-lights ul[data-role=listview]');
     });
 
     $('#home span.ui-li-count').html(_data.status.lights.length);
+    $('li.lights em.mm-counter').html(_data.status.lights.length);
 
     if ($('#page-lights.ui-page').length) { // page already rendered
-        $('#page-lights select[data-role=slider]').slider('refresh');
-        $('#page-lights input[type=range]').slider('refresh');
+        $('#page-lights').trigger('create');
         $('#page-lights ul[data-role=listview]').listview('refresh');
     }
+
+    $('#page-lights select[data-role=slider]').on('slidestop', function(event) {
+        var no      = $('#'+event.target.id).attr('data-no');
+        var command = (event.target.value == 'off') ? 0 : 1;
+        var value   = '-';
+
+        if (command == 0) {
+            $('#'+event.target.id).parents('li').find('div.slider input').slider('disable').addClass('ui-disabled');
+        } else {
+            $('#'+event.target.id).parents('li').find('div.slider input').slider('enable').removeAttr('disabled').removeClass('ui-disabled');
+        }
+
+        if ($('#'+event.target.id).parents('li').find('div.slider input').length) {
+            value = $('#'+event.target.id).parents('li').find('div.slider input').val();
+            value = Math.round((value/100) * 255);
+        }
+
+        emitLightUpdate(no, command, value);
+    });
+    $('#page-lights div.slider').on('slidestop', function(event) {
+        var no  = $('#'+event.target.id).attr('data-no');
+        var val = $('#'+event.target.id).val();
+        val     = Math.round((val/100) * 255);
+
+        emitLightUpdate(no, 2, val);
+    });
     Holder.run();
 } // updateLights
+
+function emitLightUpdate (no, command, value) {
+    socket.emit('app update', 'light', {
+        no: no,
+        cmd: command,
+        val: value
+    });
+} // emitLightUpdate
 
 
 var socket = io.connect('http://'+document.domain+':'+window.location.port, {
@@ -654,8 +722,9 @@ $('#home').on('pagebeforecreate', function(){
     $.mobile.defaultPageTransition = 'pop';
 }).on('pageshow', function(){
     $.mobile.defaultPageTransition = 'slide';
-    $('nav#main-menu ul li').removeClass('mm-selected');
-    $('nav#main-menu ul li:first').addClass('mm-selected');
+    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+    $('nav.sidepanel ul li:first').addClass('mm-selected');
+    $('nav.sidepanel li.location:first').addClass('mm-active');
 }).on('pagecreate', function(){
     if (typeof window.webkitNotifications != 'undefined' && window.webkitNotifications.checkPermission()) {
         $('div.gainPermissions').show();
@@ -700,8 +769,8 @@ $('#page-security').on('pagecreate', function(){
         }
     });
 }).on('pageshow', function(){
-    $('nav#main-menu ul li').removeClass('mm-selected');
-    $('nav#main-menu ul li.security').addClass('mm-selected');
+    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+    $('nav.sidepanel ul li.security').addClass('mm-selected');
 }).on('pagehide', function(){
     $('#page-security ul[data-role=listview] div.bypass').hide();
 });
@@ -772,8 +841,8 @@ $('#page-cameras').on('pagebeforecreate', function(){
 
     $('#page-cameras ul[data-role=listview]').html(html);
 }).on('pageshow', function(){
-    $('nav#main-menu ul li').removeClass('mm-selected');
-    $('nav#main-menu ul li.cameras').addClass('mm-selected');
+    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+    $('nav.sidepanel ul li.cameras').addClass('mm-selected');
     $.each($('#page-cameras canvas.ipcam'), function(){
         var id   = $(this).attr('id');
         var size = $(this).attr('data-size');
@@ -793,13 +862,13 @@ $('#page-camera').on('pagebeforecreate', function(){
 });
 
 $('#page-system-status').on('pageshow', function(){
-    $('nav#main-menu ul li').removeClass('mm-selected');
-    $('nav#main-menu ul li.system-status').addClass('mm-selected');
+    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+    $('nav.sidepanel ul li.system-status').addClass('mm-selected');
 });
 
 $('#page-lights').on('pageshow', function(){
-    $('nav#main-menu ul li').removeClass('mm-selected');
-    $('nav#main-menu ul li.lights').addClass('mm-selected');
+    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+    $('nav.sidepanel ul li.lights').addClass('mm-selected');
 });
 
 
@@ -853,9 +922,11 @@ $(function() {
     $.mobile.defaultPageTransition = 'slide';
 
     $('nav#location').mmenu({
+        counters: false,
         dragOpen: {
             open: true
-        }
+        },
+        slidingSubmenus: false
     });
     $('nav#main-menu').mmenu({
         counters: false,
@@ -865,6 +936,10 @@ $(function() {
         position: 'right',
         zposition: 'front',
         slidingSubmenus: false
+    });
+    $('nav.sidepanel li.location a').click(function(){
+        $('nav.sidepanel li.location').removeClass('mm-active');
+        $(this).parent('li').addClass('mm-active');
     });
 
     $(window).resize(function(){
