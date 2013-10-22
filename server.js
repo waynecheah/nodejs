@@ -11,6 +11,7 @@ var _          = require('lodash');
 var moment     = require('moment');
 var nodemailer = require('nodemailer');
 
+var environment = _.isUndefined(process.env.NODE_ENV) ? 'development' : process.env.NODE_ENV;
 var sockets    = [];
 var websockets = [];
 var RN         = '\r\n';
@@ -898,9 +899,10 @@ var Event = mongoose.model('Event', {
 //
 // Connect middleware
 //
+var lgr = (environment == 'development') ? 'dev' : function(tokens, req, res){ /* write to logfile */ };
 var app = connect()
     .use(connect.favicon())
-    .use(connect.logger('dev'))
+    .use(connect.logger(lgr))
     .use(connect.static('public', { index:'index.htm' }))
     .use(connect.directory('public'))
     .use(connect.cookieParser())
@@ -1011,6 +1013,25 @@ log('s', 'i', 'Net listening to '+host+':1470');
 // Socket.io
 //
 io = io.listen(webserver);
+io.configure('production', function(){
+    io.enable('browser client minification');
+    io.enable('browser client etag');
+    io.enable('browser client gzip');
+    io.set('log level', 1); // 0: error, 1: warn, 2: info, 3: debug
+
+    io.set('transports', [
+        'websocket',
+        'flashsocket',
+        'htmlfile',
+        'xhr-polling',
+        'jsonp-polling'
+    ]);
+});
+io.configure('development', function(){
+    io.set('log level', 2);
+    io.set('transports', ['websocket']);
+});
+
 log('s', 'i', 'Socket.io listening to '+host+':8080');
 io.sockets.on('connection', function(websocket) {
     log('w', 'i', 'web client '+websocket.id+' connected');
@@ -1018,7 +1039,7 @@ io.sockets.on('connection', function(websocket) {
 
     emitDeviceInfo(websocket); // get device information
 
-    socket.on('disconnect', function () {
+    websocket.on('disconnect', function () {
         var i = websockets.indexOf(websocket);
         log('w', 'i', 'web client '+websocket.id+' has disconnected');
         websockets.splice(i, 1);
