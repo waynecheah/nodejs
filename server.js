@@ -1029,7 +1029,6 @@ io.sockets.on('connection', function(websocket) {
         appUpdate(type, data);
     });
 });
-// TODO(IMPORTANT): do something when websocket disconnected
 
 
 exports.sockets = sockets;
