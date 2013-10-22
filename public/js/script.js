@@ -631,6 +631,7 @@ function updateLights () {
         if ($('#'+event.target.id).parents('li').find('div.slider input').length) {
             value = $('#'+event.target.id).parents('li').find('div.slider input').val();
             value = Math.round((value/100) * 255);
+            value = pad(value, 3);
         }
 
         emitLightUpdate(no, command, value);
@@ -639,6 +640,7 @@ function updateLights () {
         var no  = $('#'+event.target.id).attr('data-no');
         var val = $('#'+event.target.id).val();
         val     = Math.round((val/100) * 255);
+        val     = pad(val, 3);
 
         emitLightUpdate(no, 2, val);
     });
@@ -652,6 +654,17 @@ function emitLightUpdate (no, command, value) {
         val: value
     });
 } // emitLightUpdate
+
+
+function pad (number, length) {
+    var str = '' + number;
+
+    while (str.length < length) {
+        str = '0' + str;
+    }
+
+    return str;
+} // pad
 
 
 var socket = io.connect('http://'+document.domain+':'+window.location.port, {
@@ -707,12 +720,21 @@ socket.on('DeviceUpdate', function(d){
         } else {
             updateTroubles(d.id);
         }
-    } else if (d.type == 'zone' || d.type == 'zones') {
+    } else if (d.type == 'zone') {
         _data.zones[d.id] = d.value;
         updateZone(d.id, d.value);
-    } else if (d.type == 'light' || d.type == 'lights') {
-        _data.lights[d.id] = d.value;
-        updateLight(d.id, d.value);
+    } else if (d.type == 'light') {
+        var info = d.value.split(',');
+        var inf;
+
+        _.each(_data.status.lights, function(val, i){
+            inf = val.split(',');
+            if (inf[0] == info[0]) {
+                _data.status.lights[i] = d.value;
+            }
+        });
+
+        //updateLight(info);
     }
 });
 

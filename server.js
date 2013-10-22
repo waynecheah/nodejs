@@ -659,6 +659,69 @@ function getEventLogs (socket, data) {
     });
 } // getEventLogs
 
+function getDeviceUpdate (socket, data) {
+    var updates = data.split(RN);
+    var info, ps, str;
+
+    _.each(updates, function(dt,i){
+        if (ps = iss(dt, 'si')) {
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 2) {
+                log('n', 'e', 'Invalid system info update, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+        } else if (ps = iss(dt, 'pt')) {
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 3) {
+                log('n', 'e', 'Invalid partition update, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+        } else if (ps = iss(dt, 'zn')) {
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 5) {
+                log('n', 'e', 'Invalid zone update, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+        } else if (ps = iss(dt, 'em')) {
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 3) {
+                log('n', 'e', 'Invalid emergency update, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+        } else if (ps = iss(dt, 'li')) {
+            str  = gv(dt, ps);
+            info = str.split(',');
+
+            if (info.length != 5) {
+                log('n', 'e', 'Invalid light update, improper format sent');
+                socket.write('e5'+RN);
+                return;
+            }
+
+            emitDeviceUpdate(socket.info.sn, 'light', str);
+        } else if (dt) {
+            log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
+            socket.write('e0'+RN);
+            return;
+        }
+
+        log('n', 'i', 'Server reply "ok" for the status update');
+        socket.write('ok'+RN);
+    });
+} // getDeviceUpdate
+
 function getMap (category, m1, m2, m3, m4) {
     if (category == 'system') {
         return mapping.system.type[m1]+' = '+mapping.system.status[m2];
@@ -718,6 +781,16 @@ function emitDeviceInfo (websocket) {
         status: sk.status
     });
 } // emitDeviceInfo
+
+function emitDeviceUpdate (serial, type, value) {
+    _.each(websockets, function(websocket){
+        // TODO(users): filter by users who has rights to get the update
+        websocket.emit('DeviceUpdate', {
+            type: type,
+            value: value
+        });
+    });
+} // emitDeviceUpdate
 
 function statusUpdate (data) {
     if (typeof data == 'object') {
@@ -902,8 +975,7 @@ var server = net.createServer(function (socket) {
             getEventLogs(socket, dt);
         } else if (stt.indexOf(dt.substr(0,2)) >= 0) { // receive status update from device
             // SOME STATUS HAS CHANGED ON DEVICE, APP MIGHT NEED TO REFRESH WITH THE UPDATE
-            log('n', 'i', 'Server reply "ok" for the status update');
-            socket.write('ok'+RN);
+            getDeviceUpdate(socket, dt);
         } else if (isc(dt, 'ok')) { // device reply receive of previous sent command
             reportedOkay(socket);
         } else { // don't try to make funny thing to server
@@ -917,7 +989,7 @@ var server = net.createServer(function (socket) {
     });
     socket.on('end', function() {
         i = sockets.indexOf(socket);
-        log('n', 'i', 'client '+socket.id+' disconnected');
+        log('n', 'i', 'client '+socket.id+' has disconnected');
 
         delete socket.data;
 
@@ -946,10 +1018,18 @@ io.sockets.on('connection', function(websocket) {
 
     emitDeviceInfo(websocket); // get device information
 
+    socket.on('disconnect', function () {
+        var i = websockets.indexOf(websocket);
+        log('w', 'i', 'web client '+websocket.id+' has disconnected');
+        websockets.splice(i, 1);
+
+        io.sockets.emit('user disconnected');
+    });
     websocket.on('app update', function(type, data){
         appUpdate(type, data);
     });
 });
+// TODO(IMPORTANT): do something when websocket disconnected
 
 
 exports.sockets = sockets;
