@@ -17,7 +17,10 @@ var websockets = [];
 var RN         = '\r\n';
 var _timer     = null;
 var host       = '192.168.1.75';
-var clientErr  = {};
+var clientErr  = {
+    e0: 'Invalid input',
+    e3: 'Invalid light status update, improper format sent'
+};
 var serverErr  = {
     e0: 'Invalid input',
     e1: 'System error',
@@ -662,9 +665,11 @@ function getEventLogs (socket, data) {
 
 function getDeviceUpdate (socket, data) {
     var updates = data.split(RN);
-    var info, ps, str;
+    var info, ps, str, success;
 
     _.each(updates, function(dt,i){
+        success = false;
+
         if (ps = iss(dt, 'si')) {
             str  = gv(dt, ps);
             info = str.split(',');
@@ -675,7 +680,8 @@ function getDeviceUpdate (socket, data) {
                 return;
             }
 
-            emitDeviceUpdate(socket.info.sn, 'system', str);
+            success = true;
+            emitDeviceUpdate(socket.data.info.sn, 'system', str);
         } else if (ps = iss(dt, 'pt')) {
             str  = gv(dt, ps);
             info = str.split(',');
@@ -694,6 +700,9 @@ function getDeviceUpdate (socket, data) {
                 socket.write('e5'+RN);
                 return;
             }
+
+            success = true;
+            emitDeviceUpdate(socket.data.info.sn, 'zones', str);
         } else if (ps = iss(dt, 'em')) {
             str  = gv(dt, ps);
             info = str.split(',');
@@ -713,6 +722,7 @@ function getDeviceUpdate (socket, data) {
                 return;
             }
 
+            success = true;
             emitDeviceUpdate(socket.data.info.sn, 'lights', str);
         } else if (dt) {
             log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
@@ -720,8 +730,10 @@ function getDeviceUpdate (socket, data) {
             return;
         }
 
-        log('n', 'i', 'Server reply "ok" to device for the status update');
-        socket.write('ok'+RN);
+        if (success) {
+            log('n', 'i', 'Server reply "ok" to device for the status update:- '+dt);
+            socket.write('ok'+RN);
+        }
     });
 } // getDeviceUpdate
 
@@ -852,9 +864,10 @@ function reportedOkay (socket, data) {
         socket.app.lastCommand = null;
     }
 
+    // TODO(code structure): This line is not done in proper, think a better way to do it later
     var info = data.split(RN);
 
-    _.each(info, function(dt, i){
+    _.each(info, function(dt){
         if (isc(dt, 'ok')) {
         } else if (lgt.indexOf(dt.substr(0,3)) >= 0) { // receive event logs from device
             // EVENT LOG RECEIVED WILL UPDATE SERVER DATABASE

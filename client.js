@@ -7,7 +7,7 @@ var _      = require('lodash');
 var sockets   = [];
 var RN        = '\r\n';
 var _timer    = 0;
-var host      = 'cheah.homeip.net';
+var host      = '127.0.0.1';
 var port      = 1470;
 var clientErr  = {
     e0: 'Invalid input',
@@ -241,8 +241,8 @@ socket.setEncoding('utf8');
 socket.cmd = function(dt){
     socket.write(dt+RN);
 };
-socket.get = function(type, key) {
-    log('n', 'i', _data[type][key]);
+socket.get = function(type, item) {
+    log('n', 'd', _data[type][item]);
 };
 
 log('n', 'i', 'Socket created.');
