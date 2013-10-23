@@ -9,8 +9,8 @@ var _data      = {
         alarm_status: 'r'
     }
 };
-
-var _mapping = {
+var _timer     = {};
+var _mapping   = {
     system: {
         type: {
             0: 'N/A',
@@ -255,9 +255,6 @@ function updateZone (id, value) {
     notification('Zone Status', id.replace('z', 'Zone ')+' status is now changed to '+mapping[value]);
 } // updateZone
 
-function updateLight (id, value) {
-} // updateLight
-
 
 function updateAppOnlineStatus () {
     if (navigator.onLine) {
@@ -306,6 +303,14 @@ function permissionCheck () {
         setTimeout(permissionCheck, 1000);
     }
 } // permissionCheck
+
+function appUpdateFailureTimer (type, cancelUpdate) {
+    _timer[type] = setTimeout(function(){
+        console.log('Update of ['+type+'] failure..');
+        cancelUpdate();
+    }, 5000);
+} // appUpdateFailureTimer
+
 
 function updateDeviceStatus (data) {
     if (data.deviceId) { // device is online
@@ -572,34 +577,7 @@ function updateLights () {
             }
         }
 
-        /*if (status == 0) {
-            status = 'off';
-            type   = ' ('+_mapping.light.type[type]+')';
-        } else if (status == 1) {
-            status = 'on';
-            type   = ' ('+_mapping.light.type[type]+')';
-        } else { // dimabled light
-            if (value == 0) {
-                status = 'off';
-            } else {
-                status = 'on';
-                value  = Math.round((value/255) * 100);
-            }
-            type = '';
-
-            tpl.find('div.slider label').attr('for', 'light'+no);
-            tpl.find('div.slider input[type=range]').attr({
-                id: 'light'+no,
-                value: value,
-                'data-no': no
-            });
-
-            if (status == 'off') {
-                tpl.find('div.slider input[type=range]').attr('disabled', 'disabled');
-            }
-        }*/
-
-        tpl.find('li').attr('data-id', 'li'+no);
+        tpl.attr('data-id', 'li'+no);
         tpl.find('h3.listTitle').append(type);
         tpl.find('select[data-role=slider]').attr({
             id: 'lightSwitch'+no,
@@ -617,12 +595,12 @@ function updateLights () {
         $('#page-lights ul[data-role=listview]').listview('refresh');
     }
 
-    $('#page-lights select[data-role=slider]').on('slidestop', function(event) {
+    $('#page-lights select[data-role=slider]').on('slidestop', function(event) { // On/Off
         var no      = $('#'+event.target.id).attr('data-no');
         var command = (event.target.value == 'off') ? 0 : 1;
         var value   = '-';
 
-        if (command == 0) {
+        if (command == 0) { // disable dimming when light is turn off
             $('#'+event.target.id).parents('li').find('div.slider input').slider('disable').addClass('ui-disabled');
         } else {
             $('#'+event.target.id).parents('li').find('div.slider input').slider('enable').removeAttr('disabled').removeClass('ui-disabled');
@@ -636,7 +614,7 @@ function updateLights () {
 
         emitLightUpdate(no, command, value);
     });
-    $('#page-lights div.slider').on('slidestop', function(event) {
+    $('#page-lights div.slider').on('slidestop', function(event) { // Dimmer
         var no  = $('#'+event.target.id).attr('data-no');
         var val = $('#'+event.target.id).val();
         val     = Math.round((val/100) * 255);
@@ -653,6 +631,9 @@ function emitLightUpdate (no, command, value) {
         cmd: command,
         val: value
     });
+    $('#page-lights li[data-id=li'+no+'] select[data-role=slider]').slider('disable');
+    $('#page-lights li[data-id=li'+no+']').find('div.slider input').slider('disable').addClass('ui-disabled');
+    appUpdateFailureTimer('lights', updateLights);
 } // emitLightUpdate
 
 
@@ -710,31 +691,27 @@ socket.on('Offline', function(data){
     notification('Panel Offline', 'Your panel is detected offline now, this may due to internet connection problem.', 10000);
 });
 socket.on('DeviceUpdate', function(d){
-    if (d.type == 'info') {
-        _data.info[d.id] = d.value;
-    } else if (d.type == 'status') {
-        _data.status[d.id] = d.value;
+    var newVal, curVal;
 
-        if (d.id == 'alarm_status') {
-            updateAlarmStatus(true);
-        } else {
-            updateTroubles(d.id);
+    if (!_.isUndefined(_timer[d.type])) { // app update process got response successfully, clear updateFailure's timer
+        clearTimeout(_timer[d.type]);
+        delete _timer[d.type];
+    }
+
+    _.each(_data.status[d.type], function(val, i){
+        newVal = d.value.split(',');
+        curVal = val.split(',');
+        if (newVal[0] == curVal[0]) {
+            _data.status[d.type][i] = d.value;
         }
-    } else if (d.type == 'zone') {
-        _data.zones[d.id] = d.value;
-        updateZone(d.id, d.value);
-    } else if (d.type == 'light') {
-        var info = d.value.split(',');
-        var inf;
+    });
 
-        _.each(_data.status.lights, function(val, i){
-            inf = val.split(',');
-            if (inf[0] == info[0]) {
-                _data.status.lights[i] = d.value;
-            }
-        });
-
-        //updateLight(info);
+    if (d.type == 'system') {
+        updateTroubles();
+        updateSystemStatus();
+    } else if (d.type == 'partition') {
+    } else if (d.type == 'lights') {
+        updateLights();
     }
 });
 

@@ -674,6 +674,8 @@ function getDeviceUpdate (socket, data) {
                 socket.write('e5'+RN);
                 return;
             }
+
+            emitDeviceUpdate(socket.info.sn, 'system', str);
         } else if (ps = iss(dt, 'pt')) {
             str  = gv(dt, ps);
             info = str.split(',');
@@ -711,14 +713,14 @@ function getDeviceUpdate (socket, data) {
                 return;
             }
 
-            emitDeviceUpdate(socket.info.sn, 'light', str);
+            emitDeviceUpdate(socket.data.info.sn, 'lights', str);
         } else if (dt) {
             log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
             socket.write('e0'+RN);
             return;
         }
 
-        log('n', 'i', 'Server reply "ok" for the status update');
+        log('n', 'i', 'Server reply "ok" to device for the status update');
         socket.write('ok'+RN);
     });
 } // getDeviceUpdate
@@ -786,6 +788,9 @@ function emitDeviceInfo (websocket) {
 function emitDeviceUpdate (serial, type, value) {
     _.each(websockets, function(websocket){
         // TODO(users): filter by users who has rights to get the update
+        if (serial) {}
+
+        log('n', 'i', 'Emit device update to APP. Type: '+type+' | Value: '+value);
         websocket.emit('DeviceUpdate', {
             type: type,
             value: value
@@ -832,7 +837,9 @@ function appUpdate (type, data) {
     log('w', 'd', data);
 } // appUpdate
 
-function reportedOkay (socket) {
+function reportedOkay (socket, data) {
+    var stt = ['si','pt','zn','em','dv','li','ss'];
+    var lgt = ['lsi','lpt','lzn','lem','ldv','lli','lss'];
     var cmd = socket.app.lastCommand;
 
     if (!cmd) {
@@ -844,6 +851,19 @@ function reportedOkay (socket) {
         socket.app[cmd]        = 'device received';
         socket.app.lastCommand = null;
     }
+
+    var info = data.split(RN);
+
+    _.each(info, function(dt, i){
+        if (isc(dt, 'ok')) {
+        } else if (lgt.indexOf(dt.substr(0,3)) >= 0) { // receive event logs from device
+            // EVENT LOG RECEIVED WILL UPDATE SERVER DATABASE
+            getEventLogs(socket, dt);
+        } else if (stt.indexOf(dt.substr(0,2)) >= 0) { // receive status update from device
+            // SOME STATUS HAS CHANGED ON DEVICE, APP MIGHT NEED TO REFRESH WITH THE UPDATE
+            getDeviceUpdate(socket, dt);
+        }
+    });
 } // reportedOkay
 
 
@@ -979,7 +999,7 @@ var server = net.createServer(function (socket) {
             // SOME STATUS HAS CHANGED ON DEVICE, APP MIGHT NEED TO REFRESH WITH THE UPDATE
             getDeviceUpdate(socket, dt);
         } else if (isc(dt, 'ok')) { // device reply receive of previous sent command
-            reportedOkay(socket);
+            reportedOkay(socket, dt);
         } else { // don't try to make funny thing to server
             var x    = sockets.indexOf(socket);
             var id   = (x < 0) ? null : sockets[x]._handle.fd;
