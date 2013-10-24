@@ -719,6 +719,28 @@ socket.on('DeviceUpdate', function(d){
 
 $('#home').on('pagebeforecreate', function(){
     $.mobile.defaultPageTransition = 'pop';
+
+    $('nav#location').mmenu({
+        counters: false,
+        dragOpen: {
+            open: true,
+            pageNode: '.dragOpenMenu'
+        },
+        slidingSubmenus: false
+    });
+    $('nav#main-menu').mmenu({
+        counters: false,
+        dragOpen: {
+            open: true
+        },
+        position: 'right',
+        zposition: 'front',
+        slidingSubmenus: false
+    });
+    $('nav.sidepanel li.location a').click(function(){
+        $('nav.sidepanel li.location').removeClass('mm-active');
+        $(this).parent('li').addClass('mm-active');
+    });
 }).on('pageshow', function(){
     $.mobile.defaultPageTransition = 'slide';
     $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
@@ -919,27 +941,6 @@ $('#page-camera img.cam').on('load', function(){
 
 $(function() {
     $.mobile.defaultPageTransition = 'slide';
-
-    $('nav#location').mmenu({
-        counters: false,
-        dragOpen: {
-            open: true
-        },
-        slidingSubmenus: false
-    });
-    $('nav#main-menu').mmenu({
-        counters: false,
-        dragOpen: {
-            open: true
-        },
-        position: 'right',
-        zposition: 'front',
-        slidingSubmenus: false
-    });
-    $('nav.sidepanel li.location a').click(function(){
-        $('nav.sidepanel li.location').removeClass('mm-active');
-        $(this).parent('li').addClass('mm-active');
-    });
 
     $(window).resize(function(){
         if ($(this).width()<598) {
