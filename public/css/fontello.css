@@ -1,0 +1,60 @@
+@font-face {
+  font-family: 'fontello';
+  src: url('../fonts/fontello.eot?5049733');
+  src: url('../fonts/fontello.eot?5049733#iefix') format('embedded-opentype'),
+       url('../fonts/fontello.woff?5049733') format('woff'),
+       url('../fonts/fontello.ttf?5049733') format('truetype'),
+       url('../fonts/fontello.svg?5049733#fontello') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+/* Chrome hack: SVG is rendered more smooth in Windozze. 100% magic, uncomment if you need it. */
+/* Note, that will break hinting! In other OS-es font will be not as sharp as it could be */
+/*
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  @font-face {
+    font-family: 'fontello';
+    src: url('../fonts/fontello.svg?5049733#fontello') format('svg');
+  }
+}
+*/
+ 
+ [class^="ico-"]:before, [class*=" ico-"]:before {
+  font-family: "fontello";
+  font-style: normal;
+  font-weight: normal;
+  speak: none;
+ 
+  display: inline-block;
+  text-decoration: inherit;
+  width: 1em;
+  margin-right: .2em;
+  text-align: center;
+ 
+  /* For safety - reset parent styles, that can break glyph codes*/
+  font-variant: normal;
+  text-transform: none;
+     
+  /* fix buttons height, for twitter bootstrap */
+  line-height: 1em;
+ 
+  /* Animation center compensation - margins should be symmetric */
+  /* remove if not needed */
+  margin-left: .2em;
+
+  /* Uncomment for 3D effect */
+  /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+}
+ 
+.ico-bell:before { content: '\e801'; } /* '' */
+.ico-shop:before { content: '\e808'; } /* '' */
+.ico-home-outline:before { content: '\e807'; } /* '' */
+.ico-lightbulb-1:before { content: '\e802'; } /* '' */
+.ico-heart:before { content: '\e809'; } /* '' */
+.ico-videocam:before { content: '\e805'; } /* '' */
+.ico-info:before { content: '\e80c'; } /* '' */
+.ico-lock:before { content: '\e800'; } /* '' */
+.ico-cog:before { content: '\e80a'; } /* '' */
+.ico-calendar:before { content: '\e803'; } /* '' */
+.ico-sound:before { content: '\e80b'; } /* '' */
+.ico-camera:before { content: '\e804'; } /* '' */

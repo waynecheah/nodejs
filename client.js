@@ -7,7 +7,7 @@ var _      = require('lodash');
 var sockets   = [];
 var RN        = '\r\n';
 var _timer    = 0;
-var host      = '127.0.0.1';
+var host      = 'cheah.homeip.net';
 var port      = 1470;
 var clientErr  = {
     e0: 'Invalid input',

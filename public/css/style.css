@@ -80,6 +80,20 @@ h3.headerTitle {
     background: rgba( 0, 0, 0, 0.2 );
 }
 
+.icon80 {
+    font-size: 60px;
+}
+li.iconThumb a.ui-link-inherit {
+    padding: 0 !important;
+}
+li.iconThumb div.ui-li-thumb {
+    position: static;
+    padding: 1px;
+}
+li.iconThumb div.ui-li-content {
+    padding: 20px 0 0 8px;
+}
+
 div.header a.icon-block-menu, div.header a.icon-three-points {
     color: #999;
     line-height: 55px;

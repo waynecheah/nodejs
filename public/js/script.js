@@ -191,48 +191,6 @@ function updateAlarmStatus (alert) {
     }
 } // updateAlarmStatus
 
-function updateZones () {
-    var listview = '';
-    var mapping  = {
-        o: 'Opened',
-        c: 'Closed',
-        b: 'Bypassed',
-        d: 'Disabled'
-    };
-
-    $.each(_data.zones, function(k, v){
-        var s1 = '';
-        var s2 = '';
-
-        if (v == 'o') {
-            s1 = ' selected';
-            s2 = '';
-        } else if (v == 'b') {
-            s1 = '';
-            s2 = ' selected';
-        }
-
-        listview += '<li data-theme="c" class="'+k+'"><img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
-            '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p><span class="ui-li-aside">' +
-            '<div data-role="fieldcontain" data-status="'+v+'" class="bypass" style="display:none;">' +
-            '<select name="'+k+'" id="bp'+k+'" data-theme="d" data-role="slider">' +
-            '<option value="o"'+s1+'>Open</option><option value="b"'+s2+'>Bypass</option></select>' +
-            '</div></span></li>';
-    });
-
-    $('#page-security ul[data-role=listview]').html(listview);
-    $('#page-security ul[data-role=listview] li select[data-role=slider]').on('slidestop', function(e, ui){
-        var obj = {};
-        obj[$(e.target).attr('name')] = $(e.target).val();
-        socket.emit('app update', 'zones', obj);
-    });
-    Holder.run();
-
-    if ($('#page-security.ui-page').length) { // page already rendered
-        $('#page-security ul[data-role=listview]').listview('refresh');
-    }
-} // updateZones
-
 function updateZone (id, value) {
     var mapping = {
         o: 'Opened',
@@ -256,19 +214,6 @@ function updateZone (id, value) {
 } // updateZone
 
 
-function updateAppOnlineStatus () {
-    if (navigator.onLine) {
-        $('div.header span.icon-world').attr('class', 'icon-world text-success');
-    } else {
-        $('div.header span.icon-world').attr('class', 'icon-world text-danger');
-        $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-muted');
-        $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-muted');
-        $('div.header span.icon-locked').attr('class', 'icon-locked text-muted').show();
-        $('div.header span.icon-heart').attr('class', 'icon-heart text-muted').show();
-        $('div.header span.icon-exclamation').hide();
-        $('div.header span.icon-sos').hide();
-    }
-} // updateAppOnlineStatus
 
 function notification (title, content, timeclose) {
     if (typeof window.webkitNotifications == 'undefined') {
@@ -304,6 +249,26 @@ function permissionCheck () {
     }
 } // permissionCheck
 
+function cloneHeader (page, title) {
+    $('#home div.row').clone(true).appendTo('#page-'+page+' div[data-role=header]');
+    $('#page-'+page+' div.header').attr('data-theme', 'c');
+    $('#page-'+page+' h3.headerTitle').html(title);
+} // cloneHeader
+
+function updateAppOnlineStatus () {
+    if (navigator.onLine) {
+        $('div.header span.icon-world').attr('class', 'icon-world text-success');
+    } else {
+        $('div.header span.icon-world').attr('class', 'icon-world text-danger');
+        $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-muted');
+        $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-muted');
+        $('div.header span.icon-locked').attr('class', 'icon-locked text-muted').show();
+        $('div.header span.icon-heart').attr('class', 'icon-heart text-muted').show();
+        $('div.header span.icon-exclamation').hide();
+        $('div.header span.icon-sos').hide();
+    }
+} // updateAppOnlineStatus
+
 function appUpdateFailureTimer (type, cancelUpdate) {
     _timer[type] = setTimeout(function(){
         console.log('Update of ['+type+'] failure..');
@@ -321,10 +286,53 @@ function updateDeviceStatus (data) {
         $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-danger');
     }
 
+    //updateZones();
     updateTroubles();
     updateSystemStatus();
     updateLights();
 } // updateDeviceStatus
+
+function updateZones () {
+    var listview = '';
+    var mapping  = {
+        o: 'Opened',
+        c: 'Closed',
+        b: 'Bypassed',
+        d: 'Disabled'
+    };
+
+    $.each(_data.zones, function(k, v){
+        var s1 = '';
+        var s2 = '';
+
+        if (v == 'o') {
+            s1 = ' selected';
+            s2 = '';
+        } else if (v == 'b') {
+            s1 = '';
+            s2 = ' selected';
+        }
+
+        listview += '<li data-theme="c" class="'+k+'"><img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
+                    '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p><span class="ui-li-aside">' +
+                    '<div data-role="fieldcontain" data-status="'+v+'" class="bypass" style="display:none;">' +
+                    '<select name="'+k+'" id="bp'+k+'" data-theme="d" data-role="slider">' +
+                    '<option value="o"'+s1+'>Open</option><option value="b"'+s2+'>Bypass</option></select>' +
+                    '</div></span></li>';
+    });
+
+    $('#page-security ul[data-role=listview]').html(listview);
+    $('#page-security ul[data-role=listview] li select[data-role=slider]').on('slidestop', function(e, ui){
+        var obj = {};
+        obj[$(e.target).attr('name')] = $(e.target).val();
+        socket.emit('app update', 'zones', obj);
+    });
+    Holder.run();
+
+    if ($('#page-security.ui-page').length) { // page already rendered
+        $('#page-security ul[data-role=listview]').listview('refresh');
+    }
+} // updateZones
 
 function updateSystemStatus () {
     var css, info, sts, type;
@@ -716,17 +724,32 @@ socket.on('DeviceUpdate', function(d){
 });
 
 
+var positionHeaderFn = function(){
+    var top = $('div.mm-page').scrollTop();
+
+    $('div.header').css({
+        position: 'absolute',
+        top: top+'px',
+        left: '0'
+    });
+};
 
 $('#home').on('pagebeforecreate', function(){
     $.mobile.defaultPageTransition = 'pop';
 
     $('nav#location').mmenu({
+        classes: 'mm-light',
         counters: false,
         dragOpen: {
-            open: true,
-            pageNode: '.dragOpenMenu'
+            open: true
         },
         slidingSubmenus: false
+    }).on('opening.mm', positionHeaderFn).on('closed.mm', function(){
+        $('div.header').css({
+            position: 'fixed',
+            top: 0,
+            left: 0
+        });
     });
     $('nav#main-menu').mmenu({
         counters: false,
@@ -735,7 +758,7 @@ $('#home').on('pagebeforecreate', function(){
         },
         position: 'right',
         zposition: 'front',
-        slidingSubmenus: false
+            slidingSubmenus: false
     });
     $('nav.sidepanel li.location a').click(function(){
         $('nav.sidepanel li.location').removeClass('mm-active');
@@ -747,6 +770,30 @@ $('#home').on('pagebeforecreate', function(){
     $('nav.sidepanel ul li:first').addClass('mm-selected');
     $('nav.sidepanel li.location:first').addClass('mm-active');
 }).on('pagecreate', function(){
+    var startX = 0;
+    var valid  = false;
+    $('div.mm-page').on('dragright', function(e){
+        if (startX == 0) {
+            startX = e.gesture.center.pageX;
+            if (startX < 150) {
+                valid = true;
+            }
+        } else if (valid) {
+            if (e.gesture.center.pageX - startX >= 40) {
+                valid = false;
+                positionHeaderFn();
+            }
+        }
+    }).on('dragend', function(){
+        startX = 0;
+    });
+
+    $('a.changePage').click(function(){
+        var href = $(this).attr('href');
+        $.mobile.changePage(href);
+    });
+
+
     if (typeof window.webkitNotifications != 'undefined' && window.webkitNotifications.checkPermission()) {
         $('div.gainPermissions').show();
         $('div.gainPermissions').click(function(){
@@ -759,6 +806,7 @@ $('#home').on('pagebeforecreate', function(){
 });
 
 $('#page-security').on('pagecreate', function(){
+    cloneHeader('security', 'Security');
     $('#page-security a.armBtn').click(function(){
         var sts = _data.status.alarm_status;
 
@@ -861,6 +909,8 @@ $('#page-cameras').on('pagebeforecreate', function(){
     });
 
     $('#page-cameras ul[data-role=listview]').html(html);
+
+    cloneHeader('cameras', 'Cameras');
 }).on('pageshow', function(){
     $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
     $('nav.sidepanel ul li.cameras').addClass('mm-selected');
@@ -882,7 +932,9 @@ $('#page-camera').on('pagebeforecreate', function(){
     _loadCam = false;
 });
 
-$('#page-system-status').on('pageshow', function(){
+$('#page-system-status').on('pagecreate', function(){
+    cloneHeader('system-status', 'System Status');
+}).on('pageshow', function(){
     $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
     $('nav.sidepanel ul li.system-status').addClass('mm-selected');
 });
@@ -890,6 +942,11 @@ $('#page-system-status').on('pageshow', function(){
 $('#page-lights').on('pageshow', function(){
     $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
     $('nav.sidepanel ul li.lights').addClass('mm-selected');
+});
+
+$('#page-history').on('pagecreate', function(){
+    $('#home div.row').clone(true).appendTo('#page-history div[data-role=header]');
+    $('#page-history h3.headerTitle').html('Event Logs');
 });
 
 
