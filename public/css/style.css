@@ -25,6 +25,10 @@ div.cameraWrap {
     width: 100%;
     text-align: center;
 }
+
+#page-security div.ui-slider-switch {
+    width: 105px;
+}
 #page-lights div.slider {
     margin: 0;
 }
@@ -57,6 +61,22 @@ div.cameraWrap {
 }
 .grey {
     color: #808080;
+}
+.p5 {
+    padding: 5px;
+}
+.pl5 {
+    padding-left: 5px;
+}
+.s12 {
+    font-size: 12px;
+    font-weight: normal;
+}
+.whiteBg {
+    background-color: #fff;
+}
+.noTxtShadow {
+    text-shadow: none;
 }
 
 
@@ -106,6 +126,12 @@ div.header a.icon-block-menu {
 div.header a.icon-three-points {
     padding-right: 22px;
     padding-left: 8px;
+}
+span.zoneStatus {
+    padding: 5px;
+    background-color: rgba(255,255,255,0.7);
+    text-shadow: none;
+    border-radius: 12px;
 }
 table.iconWrap {
     min-width: 94px;

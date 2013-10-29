@@ -1,16 +1,17 @@
-var _client    = '';
-var _body      = '';
-var _countDown = false;
-var _cancelArm = false;
-var _loadCam   = false;
-var _camLoaded = false;
-var _data      = {
+var _client     = '';
+var _body       = '';
+var _countDown  = false;
+var _cancelArm  = false;
+var _loadCam    = false;
+var _camLoaded  = false;
+var _data       = {
     status: {
         alarm_status: 'r'
     }
 };
-var _timer     = {};
-var _mapping   = {
+var _transition = 'turn';
+var _timer      = {};
+var _mapping    = {
     system: {
         type: {
             0: 'N/A',
@@ -23,7 +24,7 @@ var _mapping   = {
             7: 'Comm Fail'
         },
         status: {
-            0: 'Ready/Restore',
+            0: 'OK',
             1: 'Alarm',
             2: 'Fault'
         }
@@ -49,7 +50,7 @@ var _mapping   = {
             2: 'Close'
         },
         status: {
-            0: 'Ready/Restore',
+            0: 'OK',
             1: 'Alarm',
             2: 'Bypass',
             3: 'Trouble',
@@ -286,50 +287,83 @@ function updateDeviceStatus (data) {
         $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-danger');
     }
 
-    //updateZones();
+    updateZones();
     updateTroubles();
     updateSystemStatus();
     updateLights();
 } // updateDeviceStatus
 
 function updateZones () {
+    var cls, con, info, id, no, s1, s2, stt, thm, ty;
     var listview = '';
-    var mapping  = {
-        o: 'Opened',
-        c: 'Closed',
-        b: 'Bypassed',
-        d: 'Disabled'
-    };
 
-    $.each(_data.zones, function(k, v){
-        var s1 = '';
-        var s2 = '';
+    _.each(_data.status.zones, function(str){
+        info = str.split(',');
 
-        if (v == 'o') {
-            s1 = ' selected';
-            s2 = '';
-        } else if (v == 'b') {
-            s1 = '';
-            s2 = ' selected';
+        no = info[0];
+        id = 'zn'+no;
+        s1 = ' selected';
+        s2 = '';
+        ty = parseInt(info[4]);
+
+        con = parseInt(info[1]);
+        con = _mapping.zone.condition[con];
+        stt = parseInt(info[2]);
+        thm = 'c';
+
+        if (info[1] == '0') { // disable
+            thm = 'a';
+        } else if (info[1] == '1') { // zone detect opened
+            if (info[2] == '2') { // it's bypassed zone
+                s1 = '';
+                s2 = ' selected';
+                thm = 'b'
+            } else {
+                thm = 'e';
+            }
         }
 
-        listview += '<li data-theme="c" class="'+k+'"><img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
-                    '<h3>'+k.replace('z','Zone ')+'</h3><p>'+mapping[v]+'</p><span class="ui-li-aside">' +
-                    '<div data-role="fieldcontain" data-status="'+v+'" class="bypass" style="display:none;">' +
-                    '<select name="'+k+'" id="bp'+k+'" data-theme="d" data-role="slider">' +
-                    '<option value="o"'+s1+'>Open</option><option value="b"'+s2+'>Bypass</option></select>' +
+        if (stt > 0) {
+            if (stt == 1) { // alarm
+                cls = 'danger';
+            } else if (stt == 2) { // bypass
+                cls = 'success';
+            } else if (stt == 3) { // trouble
+                cls = 'muted';
+            } else if (stt == 4) { // tamper
+                cls = 'warning';
+            }
+
+            stt  = _mapping.zone.status[stt];
+            con += '<span class="p5"> - </span><span class="text-'+cls+' zoneStatus">'+stt+'</span>';
+        }
+
+        if (ty > 0) {
+            ty = _mapping.zone.type[ty];
+            ty = '('+ty+')';
+        } else {
+            ty = '';
+        }
+
+        listview += '<li data-theme="'+thm+'" class="'+id+'"><img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
+                    '<h3>Zone '+no+' <span class="pl5 s12">'+ty+'</span></h3><p>'+con+'</p><span class="ui-li-aside">' +
+                    '<div data-role="fieldcontain" data-status="'+info[2]+'" class="bypass" style="display:none;">' +
+                    '<select name="'+id+'" id="bp'+no+'" data-theme="d" data-role="slider">' +
+                    '<option value="0"'+s1+'>Open</option><option value="1"'+s2+'>Bypass</option></select>' +
                     '</div></span></li>';
     });
 
     $('#page-security ul[data-role=listview]').html(listview);
-    $('#page-security ul[data-role=listview] li select[data-role=slider]').on('slidestop', function(e, ui){
-        var obj = {};
-        obj[$(e.target).attr('name')] = $(e.target).val();
-        socket.emit('app update', 'zones', obj);
+    $('#page-security ul[data-role=listview] li select[data-role=slider]').on('slidestop', function(e){
+        socket.emit('app update', 'zone', {
+            no: no,
+            cmd: $(e.target).val()
+        });
     });
     Holder.run();
 
     if ($('#page-security.ui-page').length) { // page already rendered
+        $('#page-security').trigger('create');
         $('#page-security ul[data-role=listview]').listview('refresh');
     }
 } // updateZones
@@ -735,7 +769,7 @@ var positionHeaderFn = function(){
 };
 
 $('#home').on('pagebeforecreate', function(){
-    $.mobile.defaultPageTransition = 'pop';
+    $.mobile.defaultPageTransition = 'pop'; // after logged use pop transition
 
     $('nav#location').mmenu({
         classes: 'mm-light',
@@ -765,7 +799,7 @@ $('#home').on('pagebeforecreate', function(){
         $(this).parent('li').addClass('mm-active');
     });
 }).on('pageshow', function(){
-    $.mobile.defaultPageTransition = 'slide';
+    $.mobile.defaultPageTransition = _transition;
     $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
     $('nav.sidepanel ul li:first').addClass('mm-selected');
     $('nav.sidepanel li.location:first').addClass('mm-active');
@@ -808,22 +842,29 @@ $('#home').on('pagebeforecreate', function(){
 $('#page-security').on('pagecreate', function(){
     cloneHeader('security', 'Security');
     $('#page-security a.armBtn').click(function(){
-        var sts = _data.status.alarm_status;
+        var id, inf;
+        var pts  = _data.status.partition;
+        var info = pts[0].split(',');
 
-        if (sts == 'r') {
+        $.mobile.defaultPageTransition = 'slideup'; // arm page use slideup transition
+
+        if (info[1] == '0') { // partition alarm: disarmed
             var opened = false;
-            $.each(_data.zones, function(k, v){
-                if (v == 'o' || v == 'b') {
-                    if (v == 'o') {
+
+            _.each(_data.status.zones, function(str){
+                inf = str.split(',');
+                id  = 'zn'+inf[0];
+
+                if (inf[1] == '1') { // zone condition: open
+                    if (inf[2] == '0') { // zone status: ready
                         opened = true;
                     }
-                    setTimeout(function(){
-                        $('#page-security ul[data-role=listview] li.'+k+' div.bypass').show();
-                    }, 1000);
+                    $('#page-security ul[data-role=listview] li.'+id+' div.bypass').show();
                 } else {
-                    $('#page-security ul[data-role=listview] li.'+k+' div.bypass').hide();
+                    $('#page-security ul[data-role=listview] li.'+id+' div.bypass').hide();
                 }
             });
+
             if (opened) {
                 $.mobile.changePage('#dialog-alert-opened-zones', {
                     role: 'dialog'
@@ -836,6 +877,8 @@ $('#page-security').on('pagecreate', function(){
         } else {
             $.mobile.changePage('#page-how-to-arm');
         }
+
+        $.mobile.defaultPageTransition = _transition;
     });
 }).on('pageshow', function(){
     $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
@@ -856,6 +899,7 @@ $('#page-how-to-arm').on('pagecreate', function(){
     });
 }).on('pageshow', function(){
     var sts = _data.status.alarm_status;
+
     if (sts == 'a' || sts == 'h') {
         $('#page-how-to-arm h3.header').html('Confirm Disarmed');
         $('#page-how-to-arm h4.armCodeTxt').html('Enter Keypad Code To Disarmed');
@@ -997,7 +1041,7 @@ $('#page-camera img.cam').on('load', function(){
 });
 
 $(function() {
-    $.mobile.defaultPageTransition = 'slide';
+    $.mobile.defaultPageTransition = _transition;
 
     $(window).resize(function(){
         if ($(this).width()<598) {
