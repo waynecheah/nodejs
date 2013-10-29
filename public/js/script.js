@@ -250,6 +250,38 @@ function permissionCheck () {
     }
 } // permissionCheck
 
+function initSidePanel () {
+    $('nav#location').mmenu({
+        classes: 'mm-light',
+        counters: false,
+        dragOpen: {
+            open: true
+        },
+        slidingSubmenus: false
+    }).on('opening.mm', absPositionHeader).on('closed.mm', function(){
+        $('div.header').css({
+            position: 'fixed',
+            top: 0,
+            left: 0
+        });
+    });
+
+    $('nav.sidepanel li.location a').click(function(){
+        $('nav.sidepanel li.location').removeClass('mm-active');
+        $(this).parent('li').addClass('mm-active');
+    });
+} // initSidePanel
+
+function absPositionHeader () {
+    var top = $('div.mm-page').scrollTop();
+
+    $('div.header').css({
+        position: 'absolute',
+        top: top+'px',
+        left: '0'
+    });
+} // absPositionHeader
+
 function cloneHeader (page, title) {
     $('#home div.row').clone(true).appendTo('#page-'+page+' div[data-role=header]');
     $('#page-'+page+' div.header').attr('data-theme', 'c');
@@ -294,8 +326,10 @@ function updateDeviceStatus (data) {
 } // updateDeviceStatus
 
 function updateZones () {
-    var cls, con, info, id, no, s1, s2, stt, thm, ty;
+    var cls, con, info, id, no, pt, s1, s2, stt, thm, ty;
+    var pts      = {};
     var listview = '';
+    var liHtml   = '';
 
     _.each(_data.status.zones, function(str){
         info = str.split(',');
@@ -304,6 +338,7 @@ function updateZones () {
         id = 'zn'+no;
         s1 = ' selected';
         s2 = '';
+        pt = info[3];
         ty = parseInt(info[4]);
 
         con = parseInt(info[1]);
@@ -345,19 +380,42 @@ function updateZones () {
             ty = '';
         }
 
+        if (_.isUndefined(pts[pt])) {
+            pts[pt] = [no];
+        } else {
+            pts[pt].push(no);
+        }
+
         listview += '<li data-theme="'+thm+'" class="'+id+'"><img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
                     '<h3>Zone '+no+' <span class="pl5 s12">'+ty+'</span></h3><p>'+con+'</p><span class="ui-li-aside">' +
                     '<div data-role="fieldcontain" data-status="'+info[2]+'" class="bypass" style="display:none;">' +
-                    '<select name="'+id+'" id="bp'+no+'" data-theme="d" data-role="slider">' +
+                    '<select name="'+id+'" id="bp'+no+'" data-no="'+no+'" data-theme="d" data-role="slider">' +
                     '<option value="0"'+s1+'>Open</option><option value="1"'+s2+'>Bypass</option></select>' +
                     '</div></span></li>';
     });
 
     $('#page-security ul[data-role=listview]').html(listview);
-    $('#page-security ul[data-role=listview] li select[data-role=slider]').on('slidestop', function(e){
+    $('#page-security ul[data-role=listview] li select[data-role=slider]').on('slidestop', function(e, ui){
+        var info;
+        var no  = $(e.target).attr('data-no');
+        var cmd = $(e.target).val();
+
+        if (cmd == '1') {
+            $('li.zn'+no+' p.ui-li-desc').html('Open<span class="p5"> - </span><span class="text-success zoneStatus">Bypass</span>');
+        } else {
+            $('li.zn'+no+' p.ui-li-desc').html('Open');
+        }
+
+        _.each(_data.status.zones, function(str,i){
+            info = str.split(',');
+            if (info[0] == no) {
+                info[2] = (cmd == '1') ? 2 : 0;
+                _data.status.zones[i] = info.join(',');
+            }
+        });
         socket.emit('app update', 'zone', {
             no: no,
-            cmd: $(e.target).val()
+            cmd: cmd
         });
     });
     Holder.run();
@@ -366,6 +424,19 @@ function updateZones () {
         $('#page-security').trigger('create');
         $('#page-security ul[data-role=listview]').listview('refresh');
     }
+
+
+    if (_.keys(pts).length == 1) {
+        liHtml = '<li><em class="mm-counter">'+pts['1'].length+'</em><a href="#page-security" class="ico-bell"> Alarm</a></li>';
+    } else {
+        _.each(pts, function(zones, i){
+            liHtml += '<li><em class="mm-counter">'+zones.length+'</em><a href="#page-security/p'+i+'" class="ico-bell">' +
+                      ' Alarm Partition '+i+'</a></li>';
+        });
+    }
+
+    $('#location ul.sn').prepend(liHtml);
+    initSidePanel();
 } // updateZones
 
 function updateSystemStatus () {
@@ -758,33 +829,11 @@ socket.on('DeviceUpdate', function(d){
 });
 
 
-var positionHeaderFn = function(){
-    var top = $('div.mm-page').scrollTop();
-
-    $('div.header').css({
-        position: 'absolute',
-        top: top+'px',
-        left: '0'
-    });
-};
-
+// HOME PAGE //
 $('#home').on('pagebeforecreate', function(){
     $.mobile.defaultPageTransition = 'pop'; // after logged use pop transition
 
-    $('nav#location').mmenu({
-        classes: 'mm-light',
-        counters: false,
-        dragOpen: {
-            open: true
-        },
-        slidingSubmenus: false
-    }).on('opening.mm', positionHeaderFn).on('closed.mm', function(){
-        $('div.header').css({
-            position: 'fixed',
-            top: 0,
-            left: 0
-        });
-    });
+    initSidePanel();
     $('nav#main-menu').mmenu({
         counters: false,
         dragOpen: {
@@ -794,15 +843,6 @@ $('#home').on('pagebeforecreate', function(){
         zposition: 'front',
             slidingSubmenus: false
     });
-    $('nav.sidepanel li.location a').click(function(){
-        $('nav.sidepanel li.location').removeClass('mm-active');
-        $(this).parent('li').addClass('mm-active');
-    });
-}).on('pageshow', function(){
-    $.mobile.defaultPageTransition = _transition;
-    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
-    $('nav.sidepanel ul li:first').addClass('mm-selected');
-    $('nav.sidepanel li.location:first').addClass('mm-active');
 }).on('pagecreate', function(){
     var startX = 0;
     var valid  = false;
@@ -815,7 +855,7 @@ $('#home').on('pagebeforecreate', function(){
         } else if (valid) {
             if (e.gesture.center.pageX - startX >= 40) {
                 valid = false;
-                positionHeaderFn();
+                absPositionHeader();
             }
         }
     }).on('dragend', function(){
@@ -837,8 +877,14 @@ $('#home').on('pagebeforecreate', function(){
     } else { // either browser not support Notification or it already gained permission
         $('div.gainPermissions').remove();
     }
+}).on('pageshow', function(){
+    $.mobile.defaultPageTransition = _transition;
+    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+    $('nav.sidepanel ul li:first').addClass('mm-selected');
+    $('nav.sidepanel li.location:first').addClass('mm-active');
 });
 
+// SECURITY PAGE //
 $('#page-security').on('pagecreate', function(){
     cloneHeader('security', 'Security');
     $('#page-security a.armBtn').click(function(){
@@ -866,11 +912,11 @@ $('#page-security').on('pagecreate', function(){
             });
 
             if (opened) {
+                $('body').addClass('ui-overlay-a');
                 $.mobile.changePage('#dialog-alert-opened-zones', {
-                    role: 'dialog'
+                    role: 'dialog',
+                    transition: 'slidedown'
                 });
-                $('#dialog-alert-opened-zones').dialog('option', 'closeBtn', 'none');
-                $('#dialog-alert-opened-zones').dialog('option', 'overlayTheme', 'a');
             } else {
                 $.mobile.changePage('#page-how-to-arm');
             }
@@ -881,12 +927,17 @@ $('#page-security').on('pagecreate', function(){
         $.mobile.defaultPageTransition = _transition;
     });
 }).on('pageshow', function(){
+    $('body').removeClass('ui-overlay-a');
     $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
     $('nav.sidepanel ul li.security').addClass('mm-selected');
 }).on('pagehide', function(){
-    $('#page-security ul[data-role=listview] div.bypass').hide();
+    var url = jQuery.mobile.path.get();
+    if (url != 'page-how-to-arm' && url.indexOf('&ui-state=dialog') == -1) {
+        $('#page-security ul[data-role=listview] div.bypass').hide();
+    }
 });
 
+// HOW TO ARM PAGE //
 $('#page-how-to-arm').on('pagecreate', function(){
     $('#page-how-to-arm .cancelArm').click(function(){
         var isBackBtn = $(this).hasClass('back');
@@ -915,6 +966,7 @@ $('#page-how-to-arm').on('pagecreate', function(){
     $('#page-how-to-arm div.countdown').hide();
 });
 
+// CAMERAS PAGE //
 $('#page-cameras').on('pagebeforecreate', function(){
     var html = '';
     var attr = 'width="120" height="80" class="ipcam"';
@@ -966,6 +1018,7 @@ $('#page-cameras').on('pagebeforecreate', function(){
     });
 });
 
+// CAMERA PAGE //
 $('#page-camera').on('pagebeforecreate', function(){
     var url = 'http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne';
     $('#page-camera div.cameraWrap img.cam').attr('src', url);
@@ -976,6 +1029,7 @@ $('#page-camera').on('pagebeforecreate', function(){
     _loadCam = false;
 });
 
+// SYSTEM STATUS PAGE //
 $('#page-system-status').on('pagecreate', function(){
     cloneHeader('system-status', 'System Status');
 }).on('pageshow', function(){
@@ -983,11 +1037,13 @@ $('#page-system-status').on('pagecreate', function(){
     $('nav.sidepanel ul li.system-status').addClass('mm-selected');
 });
 
+// LIGHTS PAGE //
 $('#page-lights').on('pageshow', function(){
     $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
     $('nav.sidepanel ul li.lights').addClass('mm-selected');
 });
 
+// EVENT LOGS //
 $('#page-history').on('pagecreate', function(){
     $('#home div.row').clone(true).appendTo('#page-history div[data-role=header]');
     $('#page-history h3.headerTitle').html('Event Logs');

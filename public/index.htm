@@ -27,7 +27,7 @@
 <![endif]-->
   <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 </head>
-<body>
+<body class="ui-mobile-viewport">
 <!--[if lt IE 7]>
 <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
 <![endif]-->
@@ -42,15 +42,7 @@
         <li class="location mm-active">
           <em class="Counter">4</em>
           <a href="#home" class="changePage ico-home-outline"> Home</a>
-          <ul>
-            <li>
-              <em class="Counter">5</em>
-              <a href="#page-security/p1" class="ico-bell"> Alarm Partition 1</a>
-            </li>
-            <li>
-              <em class="Counter">3</em>
-              <a href="#page-security/p2" class="ico-bell"> Alarm Partition 2</a>
-            </li>
+          <ul class="sn">
             <li class="cameras">
               <em class="Counter">3</em>
               <a href="#page-cameras" class="changePage ico-camera"> Cameras</a>
@@ -268,13 +260,13 @@
     </div>
 
     <!-- Alert Opened Zones -->
-    <div data-role="page" id="dialog-alert-opened-zones">
-      <div data-role="header">
+    <div data-role="page" id="dialog-alert-opened-zones" data-close-btn="none">
+      <div data-role="header" data-theme="b">
         <h2>Opened Zones Detected</h2>
       </div>
       <div data-role="content">
         <h3>Unable to proceed arm when opened zones detected. You may bypass this zones to continue arm.</h3>
-        <a href="#page-security" data-role="button" data-rel="back" data-theme="b" class="">Ok, i get it</a>
+        <a href="#page-security" data-role="button" data-rel="back" data-theme="c" class="">Ok, i get it</a>
       </div>
     </div>
 
