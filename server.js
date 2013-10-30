@@ -847,7 +847,7 @@ function appUpdate (type, data) {
         cmd = 'pt='+data.no+','+data.cmd+','+data.password;
         _.each(sockets, function(s){
             s.app.lastCommand = 'partition';
-            s.app.light       = 'server sent';
+            s.app.partition   = 'server sent';
             s.write(cmd+RN);
         });
     }
