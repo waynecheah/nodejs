@@ -691,6 +691,9 @@ function getDeviceUpdate (socket, data) {
                 socket.write('e5'+RN);
                 return;
             }
+
+            success = true;
+            emitDeviceUpdate(socket.data.info.sn, 'partition', str);
         } else if (ps = iss(dt, 'zn')) {
             str  = gv(dt, ps);
             info = str.split(',');
