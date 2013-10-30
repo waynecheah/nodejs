@@ -843,6 +843,13 @@ function appUpdate (type, data) {
             s.app.light       = 'server sent';
             s.write(cmd+RN);
         });
+    } else if (type == 'partition') {
+        cmd = 'pt='+data.no+','+data.cmd+','+data.password;
+        _.each(sockets, function(s){
+            s.app.lastCommand = 'partition';
+            s.app.light       = 'server sent';
+            s.write(cmd+RN);
+        });
     }
 
     log('w', 'i', 'App update ['+type+'], command: '+cmd);

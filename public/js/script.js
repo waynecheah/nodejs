@@ -10,7 +10,7 @@ var _data       = {
     }
 };
 var _statusCls  = 'text-success text-danger text-warning text-muted';
-var _transition = 'turn';
+var _transition = 'slide';
 var _timer      = {};
 var _mapping    = {
     system: {
@@ -545,7 +545,9 @@ function armDisarmed () {
     if (sts == '0' || sts == 0) { // do arm process
         // TODO(secure update): check current zones status if it can really arm
 
-        armCountdown(10);
+        $('div.patternArm').hide();
+
+        armCountdown(5);
         $.mobile.loading('show', {
             text: 'Arm in 10 seconds...',
             textVisible: true,
@@ -1007,6 +1009,8 @@ $('#page-how-to-arm').on('pagecreate', function(){
     });
 }).on('pageshow', function(){
     var sts = _data.status.alarm_status;
+
+    $('div.patternArm').show();
 
     if (sts == 'a' || sts == 'h') {
         $('#page-how-to-arm h3.header').html('Confirm Disarmed');
