@@ -519,6 +519,18 @@ function updateTroubles ()  {
     }
 } // updateTroubles
 
+function checkPattern () {
+    alert($('#patternlock').val());
+
+    $('div.patternlocklinehorizontal').css('visibility', 'hidden');
+    $('div.patternlocklinevertical').css('visibility', 'hidden');
+    $('div.patternlocklinediagonalforward').css('visibility', 'hidden');
+    $('div.patternlocklinediagonalbackwards').css('visibility', 'hidden');
+    $('div.patternlockbuttoncontainer div.patternlockbutton').removeClass('touched multiple');
+
+    return false;
+}
+
 function armCountdown (sec) {
     var cls = null;
 
@@ -1100,6 +1112,14 @@ $(function() {
     $.mobile.defaultPageTransition = _transition;
 
     $(window).resize(function(){
+        if ($(this).width()<400) {
+            $('div.signinWrap').css('width', '320px');
+        } else if ($(this).width()<500) {
+            $('div.signinWrap').css('width', '420px');
+        } else {
+            $('div.signinWrap').css('width', '500px');
+        }
+
         if ($(this).width()<598) {
             $('div.header div.iconWrap').css('padding-right', '5px');
             $('div.header table.iconWrap').css('min-width', '94px');
