@@ -9,6 +9,7 @@ var _data       = {
         alarm_status: 'r'
     }
 };
+var _statusCls  = 'text-success text-danger text-warning text-muted';
 var _transition = 'turn';
 var _timer      = {};
 var _mapping    = {
@@ -125,73 +126,7 @@ var _mapping    = {
 };
 
 function loggedSuccess () {
-    var deviceCls = '';
-    if (typeof _data.root == 'undefined') {
-        _client   = _data.client;
-        _body     = _data.body;
-        deviceCls = 'clientDevice';
-    } else {
-        deviceCls = 'addDevice';
-    }
-
-    $('div.loginWrap').slideUp(function(){
-        $('div.commandWrap,div.'+deviceCls).fadeIn(function(){
-            $('#command').focus();
-        });
-    });
 } // loggedSuccess
-
-function updateAlarmStatus (alert) {
-    var rdr = $('#page-security').attr('data-render');
-    var thm = 'b';
-    var sts = '';
-
-    if (_data.status.alarm_status == 'a') {
-        thm = 'e';
-        sts = 'Armed Away';
-        $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
-        $('#page-security a.armBtn span.armTxt').html('Armed Away - Press to Disamed');
-
-        $('div.header span.icon-locked').attr('class', 'icon-locked text-success').show();
-        $('div.header span.icon-exclamation').hide();
-    } else if (_data.status.alarm_status == 'h') {
-        thm = 'e';
-        sts = 'Armed Home';
-        $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
-        $('#page-security a.armBtn span.armTxt').html('Armed Home - Press to Disamed');
-
-        $('div.header span.icon-locked').attr('class', 'icon-locked text-success').show();
-        $('div.header span.icon-exclamation').hide();
-    } else if (_data.status.alarm_status == 'r') {
-        sts = 'Disarmed';
-        $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
-        $('#page-security a.armBtn span.armTxt').html('Disarmed - Press to Arm');
-
-        $('div.header span.icon-locked').attr('class', 'icon-locked text-warning').show();
-        $('div.header span.icon-exclamation').hide();
-    } else if (_data.status.alarm_status == 'p') {
-        sts = 'Panic';
-        $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
-        $('#page-security a.armBtn span.armTxt').html('Panic - Press to Arm');
-
-        $('div.header span.icon-locked').hide();
-        $('div.header span.icon-exclamation').attr('class', 'icon-locked text-danger').show();
-    }
-
-    $('#page-security a.armBtn').attr('data-status', _data.status.alarm_status);
-
-    if (rdr == '1') {
-        //$('#page-security a.armBtn').button('refresh');
-        $('#page-security a.armBtn').buttonMarkup({ theme:thm });
-    } else {
-        $('#page-security a.armBtn').attr('data-theme', thm);
-    }
-
-    if (alert) {
-        notification('Alarm Status', 'Alarm status is now changed to '+sts);
-    }
-} // updateAlarmStatus
-
 function updateZone (id, value) {
     var mapping = {
         o: 'Opened',
@@ -290,15 +225,15 @@ function cloneHeader (page, title) {
 
 function updateAppOnlineStatus () {
     if (navigator.onLine) {
-        $('div.header span.icon-world').attr('class', 'icon-world text-success');
+        $('div.header span.i-internet').removeClass(_statusCls).addClass('text-success');
     } else {
-        $('div.header span.icon-world').attr('class', 'icon-world text-danger');
-        $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-muted');
-        $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-muted');
-        $('div.header span.icon-locked').attr('class', 'icon-locked text-muted').show();
-        $('div.header span.icon-heart').attr('class', 'icon-heart text-muted').show();
-        $('div.header span.icon-exclamation').hide();
-        $('div.header span.icon-sos').hide();
+        $('div.header span.i-internet').removeClass(_statusCls).addClass('text-danger');
+        $('div.header span.i-server').removeClass(_statusCls).addClass('text-muted');
+        $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-muted');
+        $('div.header span.i-lock').removeClass(_statusCls).addClass('text-muted').show();
+        $('div.header span.i-health').removeClass(_statusCls).addClass('text-muted').show();
+        $('div.header span.i-emergency').hide();
+        $('div.header span.i-troubles').hide();
     }
 } // updateAppOnlineStatus
 
@@ -312,18 +247,80 @@ function appUpdateFailureTimer (type, cancelUpdate) {
 
 function updateDeviceStatus (data) {
     if (data.deviceId) { // device is online
-        $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-success');
+        $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-success');
         $('.status').removeClass('text-danger text-default').addClass('text-success').html(data.info.pn+' connected');
         $('#page-security div.armBtnWrap').show();
     } else {
-        $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-danger');
+        $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-danger');
     }
 
+    updateAlarmStatus();
     updateZones();
     updateTroubles();
     updateSystemStatus();
     updateLights();
 } // updateDeviceStatus
+
+function updateAlarmStatus (alert) {
+    var info, txt;
+    var rdr  = $('#page-security').attr('data-render');
+    var cls  = 'text-success text-danger text-warning text-muted';
+    var thm  = 'b';
+    var ptid = 1;
+    var sts  = null;
+
+    _.each(_data.status.partition, function(str){
+        info = str.split(',');
+        if (ptid == info[0]) {
+            sts = info[1];
+        }
+    });
+
+    if (sts == '1' || sts == '2' || sts == '3') { // alarm currently armed
+        thm = 'e';
+
+        if (sts == '1') {
+            txt = 'Armed Away';
+        } else if (sts == '2') {
+            txt = 'Home Armed';
+        } else if (sts == '3') {
+            txt = 'Night Armed';
+        }
+
+        $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
+        $('#page-security a.armBtn span.armTxt').html(txt+' - Press to Disamed');
+
+        $('div.header span.i-lock').removeClass(cls+' ico-lock-open').addClass('text-success ico-lock-1').show();
+        $('div.header span.i-emergency').hide();
+    } else if (sts == '0') { // alarm currently disarmed
+        txt = 'Disarmed';
+        $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
+        $('#page-security a.armBtn span.armTxt').html('Disarmed - Press to Arm');
+
+        $('div.header span.i-lock').removeClass(cls+' ico-lock-1').addClass('text-warning ico-lock-open').show();
+        $('div.header span.i-emergency').hide();
+    } else if (sts == 'p') { // TODO(remove): panic shouldn't appear here?
+        txt = 'Panic';
+        $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
+        $('#page-security a.armBtn span.armTxt').html('Panic - Press to Arm');
+
+        $('div.header span.i-lock').hide();
+        $('div.header span.i-emergency').removeClass(cls).addClass('text-danger').show();
+    }
+
+    $('#page-security a.armBtn').attr('data-status', sts);
+
+    if (rdr == '1') { // page is rendered by jQuerymobile
+        //$('#page-security a.armBtn').button('refresh');
+        $('#page-security a.armBtn').buttonMarkup({ theme:thm });
+    } else {
+        $('#page-security a.armBtn').attr('data-theme', thm);
+    }
+
+    if (!_.isUndefined(alert) || alert) {
+        notification('Alarm Status', 'Alarm status is now changed to '+txt);
+    }
+} // updateAlarmStatus
 
 function updateZones () {
     var cls, con, info, id, no, pt, s1, s2, stt, thm, ty;
@@ -442,6 +439,7 @@ function updateZones () {
 function updateSystemStatus () {
     var css, info, sts, type;
     var html  = '';
+    var cls   = 'text-success text-danger text-warning text-muted';
     var alarm = 0;
     var fault = 0;
 
@@ -477,14 +475,14 @@ function updateSystemStatus () {
     }
 
     if (alarm) {
-        $('div.header span.icon-heart').hide();
-        $('div.header span.icon-sos').attr('class', 'icon-sos text-danger').show();
+        $('div.header span.i-health').hide();
+        $('div.header span.i-troubles').removeClass(cls).addClass('text-danger').show();
     } else if (fault) {
-        $('div.header span.icon-heart').hide();
-        $('div.header span.icon-sos').attr('class', 'icon-sos text-warning').show();
+        $('div.header span.i-health').hide();
+        $('div.header span.i-troubles').removeClass(cls).addClass('text-warning').show();
     } else {
-        $('div.header span.icon-sos').hide();
-        $('div.header span.icon-heart').attr('class', 'icon-heart text-success').show();
+        $('div.header span.i-troubles').hide();
+        $('div.header span.i-health').removeClass(cls).addClass('text-success').show();
     }
 } // updateSystemStatus
 
@@ -520,16 +518,60 @@ function updateTroubles ()  {
 } // updateTroubles
 
 function checkPattern () {
-    alert($('#patternlock').val());
-
     $('div.patternlocklinehorizontal').css('visibility', 'hidden');
     $('div.patternlocklinevertical').css('visibility', 'hidden');
     $('div.patternlocklinediagonalforward').css('visibility', 'hidden');
     $('div.patternlocklinediagonalbackwards').css('visibility', 'hidden');
     $('div.patternlockbuttoncontainer div.patternlockbutton').removeClass('touched multiple');
 
+    // TODO(validate): check if pattern draw correctly
+    armDisarmed();
+
     return false;
-}
+} // checkPattern
+
+function armDisarmed () {
+    var info;
+    var sts  = null;
+    var ptid = 1;
+
+    _.each(_data.status.partition, function(str){
+        info = str.split(',');
+        if (ptid == info[0]) {
+            sts = info[1];
+        }
+    });
+
+    if (sts == '0' || sts == 0) { // do arm process
+        // TODO(secure update): check current zones status if it can really arm
+
+        armCountdown(10);
+        $.mobile.loading('show', {
+            text: 'Arm in 10 seconds...',
+            textVisible: true,
+            theme: 'a'
+        });
+        $('#page-how-to-arm div.countdown').fadeIn();
+    } else { // do disarmed process
+        socket.emit('app update', 'partition', {
+            no: ptid,
+            cmd: 0,
+            password: $('#patternlock').val()
+        });
+
+        // TODO(callback): wait callback to confirm disarmed
+        $.mobile.loading('show', {
+            text: 'Disarmed successfully',
+            textVisible: true,
+            textonly: true,
+            theme: 'b'
+        });
+        setTimeout(function(){
+            $.mobile.loading('hide');
+            history.back();
+        }, 1000);
+    }
+} // armDisarmed
 
 function armCountdown (sec) {
     var cls = null;
@@ -575,8 +617,10 @@ function armCountdown (sec) {
         });
         $('#page-how-to-arm input.passcode').val('');
         $.mobile.loading('hide');
-        socket.emit('app update', 'status', {
-            alarm_status: armType
+        socket.emit('app update', 'partition', {
+            no: 1,
+            cmd: armType,
+            password: $('#patternlock').val()
         });
 
         setTimeout(function(){
@@ -779,11 +823,11 @@ var socket = io.connect('http://'+document.domain+':'+window.location.port, {
 
 socket.on('connect', function(){
     $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
-    $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-success');
+    $('div.header span.i-server').removeClass(_statusCls).addClass('text-success');
 });
 socket.on('connecting', function(){
     $('.connection').removeClass('text-danger text-success').addClass('text-default').html('Connecting..');
-    $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-warning');
+    $('div.header span.i-server').removeClass(_statusCls).addClass('text-warning');
 });
 socket.on('disconnect', function(){
     $('#page-security div.armBtnWrap').hide();
@@ -791,17 +835,17 @@ socket.on('disconnect', function(){
     $('.status').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
     $('.connection').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
 
-    $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-danger');
-    $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-warning');
-    $('div.header span.icon-locked').attr('class', 'icon-locked text-muted').show();
-    $('div.header span.icon-heart').attr('class', 'icon-heart text-muted').show();
-    $('div.header span.icon-exclamation').hide();
-    $('div.header span.icon-sos').hide();
+    $('div.header span.i-server').removeClass(_statusCls).addClass('text-danger');
+    $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-warning');
+    $('div.header span.i-lock').removeClass(_statusCls).addClass('text-muted').show();
+    $('div.header span.i-health').removeClass(_statusCls).addClass('text-muted').show();
+    $('div.header span.i-emergency').hide();
+    $('div.header span.i-troubles').hide();
     notification('Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000);
 });
 socket.on('reconnect', function(){
     notification('Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000);
-    $('div.header span.icon-hdd-net').attr('class', 'icon-hdd-net text-success');
+    $('div.header span.i-server').removeClass(_statusCls).addClass('text-success');
 });
 
 socket.on('DeviceInformation', function(data){
@@ -810,7 +854,7 @@ socket.on('DeviceInformation', function(data){
 });
 socket.on('Offline', function(data){
     $('#page-security div.armBtnWrap').hide();
-    $('div.header span.icon-hdd-raid').attr('class', 'icon-hdd-raid text-danger');
+    $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-danger');
 
     $('.status').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
     notification('Panel Offline', 'Your panel is detected offline now, this may due to internet connection problem.', 10000);
@@ -835,6 +879,7 @@ socket.on('DeviceUpdate', function(d){
         updateTroubles();
         updateSystemStatus();
     } else if (d.type == 'partition') {
+        updateAlarmStatus(true);
     } else if (d.type == 'lights') {
         updateLights();
     }
@@ -974,6 +1019,9 @@ $('#page-how-to-arm').on('pagecreate', function(){
     }
     $('#page-how-to-arm #code1').focus();
 }).on('pagehide', function(){
+    if (_countDown) { // in arm count down process, leave page make cancel of arming
+        _cancelArm = true;
+    }
     $('#page-how-to-arm input.passcode').val('');
     $('#page-how-to-arm div.countdown').hide();
 });
@@ -1066,43 +1114,44 @@ $('#page-history').on('pagecreate', function(){
 $('#page-how-to-arm input.passcode').click(function(){
     $(this).val('');
 }).keyup(function(){
-        var n = $(this).attr('data-no');
-        var i = parseInt(n) + 1;
-        if (i > 4) {
-            var sts = _data.status.alarm_status;
+    var n = $(this).attr('data-no');
+    var i = parseInt(n) + 1;
+    if (i > 4) {
+        var sts = _data.status.alarm_status;
 
-            if (sts == 'a' || sts == 'h') {
-                socket.emit('app update', 'status', {
-                    alarm_status: 'r'
-                });
+        if (sts == 'a' || sts == 'h') {
+            socket.emit('app update', 'status', {
+                alarm_status: 'r'
+            });
 
-                // TODO(callback): wait callback to confirm disarmed
-                $.mobile.loading('show', {
-                    text: 'Disarmed successfully',
-                    textVisible: true,
-                    textonly: true,
-                    theme: 'b'
-                });
-                setTimeout(function(){
-                    $.mobile.loading('hide');
-                    history.back();
-                }, 1000);
-            } else {
-                // check zone status
-
-                armCountdown(10);
-                $(this).blur();
-                $.mobile.loading('show', {
-                    text: 'Arm in 10 seconds...',
-                    textVisible: true,
-                    theme: 'a'
-                });
-                $('#page-how-to-arm div.countdown').fadeIn();
-            }
+            // TODO(callback): wait callback to confirm disarmed
+            $.mobile.loading('show', {
+                text: 'Disarmed successfully',
+                textVisible: true,
+                textonly: true,
+                theme: 'b'
+            });
+            setTimeout(function(){
+                $.mobile.loading('hide');
+                history.back();
+            }, 1000);
         } else {
-            $('#page-how-to-arm #code'+i).val('').focus();
+            // check zone status
+
+            armCountdown(10);
+            $.mobile.loading('show', {
+                text: 'Arm in 10 seconds...',
+                textVisible: true,
+                theme: 'a'
+            });
+            $('#page-how-to-arm div.countdown').fadeIn();
         }
-    });
+
+        $(this).blur();
+    } else {
+        $('#page-how-to-arm #code'+i).val('').focus();
+    }
+});
 
 $('#page-camera img.cam').on('load', function(){
     _camLoaded = true;

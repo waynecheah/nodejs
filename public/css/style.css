@@ -138,8 +138,8 @@ table.iconWrap {
     height: 55px;
 }
 table.iconWrap tr td:first-child {
-    padding-top: 6px;
+    padding-top: 1px;
 }
 table.iconWrap span {
-    font-size: 28px;
+    font-size: 19px;
 }
