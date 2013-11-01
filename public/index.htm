@@ -50,7 +50,7 @@
             </li>
             <li class="lights">
               <em class="Counter">0</em>
-              <a href="#page-lights" class="changePage ico-lightbulb-1"> Lights</a>
+              <a href="#page-lights" class="changePage ico-lightbulb"> Lights</a>
             </li>
           </ul>
         </li>
@@ -181,10 +181,6 @@
                   <span class="i-internet ico-globe-1 text-muted"></span>
                   <span class="i-server ico-monitor text-muted"></span>
                   <span class="i-hardware ico-hdd text-muted"></span>
-                  <span class="i-lock ico-lock-1 text-muted"></span>
-                  <span class="i-emergency ico-alert text-muted" style="display:none;"></span>
-                  <span class="i-health ico-heart text-muted"></span>
-                  <span class="i-troubles ico-stethoscope text-muted" style="display:none;"></span>
                 </td>
               </tr>
             </table>
@@ -195,7 +191,7 @@
         <ul data-role="listview" data-divider-theme="c" data-inset="false">
           <li data-theme="c">
             <a href="#page-security" style="padding-bottom:7px;">
-              <div class="ui-li-thumb"><span class="ico-lock icon80"></span></div>
+              <div class="ui-li-thumb"><span class="i-lock ico-lock icon80"></span></div>
               <div class="ui-grid-b">
                 <div class="ui-block-a" style="padding-top:9px; padding-left:86px;"><h3>Security</h3></div>
                 <div class="ui-block-b" style="padding-top:9px; text-align:right;">
@@ -213,13 +209,13 @@
           </li>
           <li data-theme="c" class="iconThumb">
             <a href="#page-system-status">
-              <div class="ui-li-thumb"><span class="ico-heart icon80"></span></div>
+              <div class="ui-li-thumb"><span class="i-health ico-heart icon80"></span></div>
               <div class="ui-li-content"><h3>System Health</h3></div>
             </a>
           </li>
           <li data-theme="c" class="iconThumb">
             <a href="#page-alarm">
-              <div class="ui-li-thumb"><span class="ico-bell icon80"></span></div>
+              <div class="ui-li-thumb"><span class="i-emergency ico-bell icon80"></span></div>
               <div class="ui-li-content"><h3>Alarm</h3></div>
               <span class="ui-li-count">0</span>
             </a>
@@ -252,7 +248,7 @@
       <div data-role="content">
         <div class="armBtnWrap" style="display:none;">
           <a data-role="button" data-transition="slideup" class="armBtn">
-            <span class="glyphicon"></span> <span class="armTxt">Disarmed - Press to Arm</span>
+            <span class="i-lock ico-lock"></span> <span class="armTxt">Disarmed - Press to Arm</span>
           </a>
         </div>
         <h2 class="grey normal">Home Security Zones</h2>
@@ -386,34 +382,7 @@
 
     <!-- Lights -->
     <div data-role="page" id="page-lights">
-      <div data-theme="c" data-role="header" data-position="fixed" class="header">
-        <div class="row">
-          <div class="pull-left">
-            <a href="#location" class="icon-block-menu"></a>
-          </div>
-          <div class="col-xs-5 col-sm-4" style="padding:0;">
-            <h3 class="headerTitle">Lights</h3>
-          </div>
-          <div class="pull-right">
-            <a href="#main-menu" class="icon-three-points"></a>
-          </div>
-          <div class="iconWrap col-xs-2 col-sm-4 pull-right">
-            <table class="iconWrap" align="right">
-              <tr>
-                <td align="right" valign="middle">
-                  <span class="icon-world text-muted"></span>
-                  <span class="icon-hdd-net text-muted"></span>
-                  <span class="icon-hdd-raid text-muted"></span>
-                  <span class="icon-locked text-muted"></span>
-                  <span class="icon-exclamation text-muted" style="display:none;"></span>
-                  <span class="icon-heart text-muted"></span>
-                  <span class="icon-sos text-muted" style="display:none;"></span>
-                </td>
-              </tr>
-            </table>
-          </div>
-        </div>
-      </div>
+      <div data-theme="c" data-role="header" data-position="fixed" class="header"></div>
       <div data-role="content">
         <ul data-role="listview" data-divider-theme="c" data-inset="false"></ul>
       </div>

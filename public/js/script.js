@@ -290,22 +290,21 @@ function updateAlarmStatus (alert) {
         $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
         $('#page-security a.armBtn span.armTxt').html(txt+' - Press to Disamed');
 
-        $('div.header span.i-lock').removeClass(cls+' ico-lock-open').addClass('text-success ico-lock-1').show();
+        $('span.i-lock').removeClass(cls+' ico-lock-open').addClass('text-success ico-lock-1').show();
         $('div.header span.i-emergency').hide();
     } else if (sts == '0') { // alarm currently disarmed
         txt = 'Disarmed';
         $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
         $('#page-security a.armBtn span.armTxt').html('Disarmed - Press to Arm');
 
-        $('div.header span.i-lock').removeClass(cls+' ico-lock-1').addClass('text-warning ico-lock-open').show();
+        $('span.i-lock').removeClass(cls+' ico-lock-1').addClass('text-warning ico-lock-open').show();
         $('div.header span.i-emergency').hide();
     } else if (sts == 'p') { // TODO(remove): panic shouldn't appear here?
         txt = 'Panic';
         $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
         $('#page-security a.armBtn span.armTxt').html('Panic - Press to Arm');
 
-        $('div.header span.i-lock').hide();
-        $('div.header span.i-emergency').removeClass(cls).addClass('text-danger').show();
+        $('span.i-emergency').removeClass(cls).addClass('text-danger').show();
     }
 
     $('#page-security a.armBtn').attr('data-status', sts);
@@ -476,13 +475,13 @@ function updateSystemStatus () {
 
     if (alarm) {
         $('div.header span.i-health').hide();
-        $('div.header span.i-troubles').removeClass(cls).addClass('text-danger').show();
+        $('span.i-troubles').removeClass(cls+' ico-heart ico-stethoscope').addClass('ico-warning-empty text-danger').show();
     } else if (fault) {
         $('div.header span.i-health').hide();
-        $('div.header span.i-troubles').removeClass(cls).addClass('text-warning').show();
+        $('span.i-health').removeClass(cls+' ico-heart ico-warning-empty').addClass('ico-stethoscope text-warning').show();
     } else {
         $('div.header span.i-troubles').hide();
-        $('div.header span.i-health').removeClass(cls).addClass('text-success').show();
+        $('span.i-health').removeClass(cls+' ico-stethoscope ico-warning-empty').addClass('ico-heart text-success').show();
     }
 } // updateSystemStatus
 
@@ -1102,7 +1101,10 @@ $('#page-system-status').on('pagecreate', function(){
 });
 
 // LIGHTS PAGE //
-$('#page-lights').on('pageshow', function(){
+$('#page-lights').on('pagecreate', function(){
+    $('#home div.row').clone(true).appendTo('#page-lights div[data-role=header]');
+    $('#page-history h3.headerTitle').html('Lights');
+}).on('pageshow', function(){
     $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
     $('nav.sidepanel ul li.lights').addClass('mm-selected');
 });
