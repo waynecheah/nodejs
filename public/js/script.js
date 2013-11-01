@@ -423,11 +423,11 @@ function updateZones () {
 
 
     if (_.keys(pts).length == 1) {
-        liHtml = '<li><em class="mm-counter">'+pts['1'].length+'</em><a href="#page-security" class="ico-bell"> Alarm</a></li>';
+        liHtml = '<li><em class="mm-counter">'+pts['1'].length+'</em><a href="#page-security" class="ico-megaphone"> Security Status</a></li>';
     } else {
         _.each(pts, function(zones, i){
-            liHtml += '<li><em class="mm-counter">'+zones.length+'</em><a href="#page-security/p'+i+'" class="ico-bell">' +
-                      ' Alarm Partition '+i+'</a></li>';
+            liHtml += '<li><em class="mm-counter">'+zones.length+'</em><a href="#page-security/p'+i+'" class="ico-megaphone">' +
+                      ' Security Partition '+i+'</a></li>';
         });
     }
 
@@ -475,13 +475,13 @@ function updateSystemStatus () {
 
     if (alarm) {
         $('div.header span.i-health').hide();
-        $('span.i-troubles').removeClass(cls+' ico-heart ico-stethoscope').addClass('ico-warning-empty text-danger').show();
+        $('span.i-troubles').removeClass(cls+' ico-gauge ico-stethoscope').addClass('ico-warning-empty text-danger').show();
     } else if (fault) {
         $('div.header span.i-health').hide();
-        $('span.i-health').removeClass(cls+' ico-heart ico-warning-empty').addClass('ico-stethoscope text-warning').show();
+        $('span.i-health').removeClass(cls+' ico-gauge ico-warning-empty').addClass('ico-stethoscope text-warning').show();
     } else {
         $('div.header span.i-troubles').hide();
-        $('span.i-health').removeClass(cls+' ico-stethoscope ico-warning-empty').addClass('ico-heart text-success').show();
+        $('span.i-health').removeClass(cls+' ico-stethoscope ico-warning-empty').addClass('ico-gauge text-success').show();
     }
 } // updateSystemStatus
 

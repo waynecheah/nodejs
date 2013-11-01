@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'fontello';
-  src: url('../fonts/fontello.eot?33856318');
-  src: url('../fonts/fontello.eot?33856318#iefix') format('embedded-opentype'),
-       url('../fonts/fontello.woff?33856318') format('woff'),
-       url('../fonts/fontello.ttf?33856318') format('truetype'),
-       url('../fonts/fontello.svg?33856318#fontello') format('svg');
+  src: url('../fonts/fontello.eot?36078631');
+  src: url('../fonts/fontello.eot?36078631#iefix') format('embedded-opentype'),
+       url('../fonts/fontello.woff?36078631') format('woff'),
+       url('../fonts/fontello.ttf?36078631') format('truetype'),
+       url('../fonts/fontello.svg?36078631#fontello') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -14,7 +14,7 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'fontello';
-    src: url('../fonts/fontello.svg?33856318#fontello') format('svg');
+    src: url('../fonts/fontello.svg?36078631#fontello') format('svg');
   }
 }
 */
@@ -30,6 +30,7 @@
   width: 1em;
   margin-right: .2em;
   text-align: center;
+  /* opacity: .8; */
  
   /* For safety - reset parent styles, that can break glyph codes*/
   font-variant: normal;
@@ -54,8 +55,10 @@
 .ico-stethoscope:before { content: '\e811'; } /* '' */
 .ico-users:before { content: '\e816'; } /* '' */
 .ico-user-add:before { content: '\e815'; } /* '' */
-.ico-info:before { content: '\e817'; } /* '' */
+.ico-info-circled:before { content: '\e814'; } /* '' */
 .ico-alert:before { content: '\e80f'; } /* '' */
+.ico-left-open:before { content: '\e81e'; } /* '' */
+.ico-left-open-mini:before { content: '\e813'; } /* '' */
 .ico-monitor:before { content: '\e819'; } /* '' */
 .ico-globe-1:before { content: '\e818'; } /* '' */
 .ico-gauge:before { content: '\e81a'; } /* '' */
@@ -64,23 +67,24 @@
 .ico-warning-empty:before { content: '\e80c'; } /* '' */
 .ico-mobile-alt:before { content: '\e822'; } /* '' */
 .ico-menu:before { content: '\e81c'; } /* '' */
-.ico-lock-1:before { content: '\e803'; } /* '' */
 .ico-bell:before { content: '\e802'; } /* '' */
+.ico-lock-open:before { content: '\e800'; } /* '' */
 .ico-hdd:before { content: '\e823'; } /* '' */
 .ico-facebook-rect:before { content: '\e826'; } /* '' */
 .ico-googleplus-rect:before { content: '\e824'; } /* '' */
 .ico-arrows-cw:before { content: '\e808'; } /* '' */
 .ico-clipboard:before { content: '\e825'; } /* '' */
-.ico-heart:before { content: '\e80a'; } /* '' */
+.ico-mail:before { content: '\e81d'; } /* '' */
 .ico-videocam:before { content: '\e827'; } /* '' */
 .ico-camera:before { content: '\e828'; } /* '' */
 .ico-lock:before { content: '\e806'; } /* '' */
+.ico-comment-1:before { content: '\e817'; } /* '' */
 .ico-trash-2:before { content: '\e829'; } /* '' */
 .ico-cog:before { content: '\e82a'; } /* '' */
 .ico-params:before { content: '\e82b'; } /* '' */
 .ico-calendar:before { content: '\e805'; } /* '' */
-.ico-sound:before { content: '\e813'; } /* '' */
 .ico-lightbulb:before { content: '\e801'; } /* '' */
+.ico-megaphone:before { content: '\e820'; } /* '' */
 .ico-shop:before { content: '\e80b'; } /* '' */
 .ico-search:before { content: '\e804'; } /* '' */
-.ico-lock-open:before { content: '\e800'; } /* '' */
+.ico-lock-1:before { content: '\e803'; } /* '' */
