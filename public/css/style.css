@@ -99,6 +99,14 @@ h3.headerTitle {
 .mm-menu li.mm-active > a, .mm-menu li.mm-active > span {
     background: rgba( 0, 0, 0, 0.2 );
 }
+.mm-menu ul.mm-opened li.mm-opened > em.mm-counter {
+    display: none;
+}
+.mm-menu li .mm-counter {
+    /*background-color: #eee;
+    padding: 0 7px;
+    border-radius: 8px;*/
+}
 
 .icon80 {
     font-size: 60px;
@@ -142,4 +150,8 @@ table.iconWrap tr td:first-child {
 }
 table.iconWrap span {
     font-size: 19px;
+}
+
+.errPop {
+    padding: 5px 20px 5px 10px;
 }

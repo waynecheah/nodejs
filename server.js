@@ -1033,11 +1033,19 @@ var server = net.createServer(function (socket) {
         }
     });
     socket.on('end', function() {
-        i = sockets.indexOf(socket);
-        log('n', 'i', 'client '+socket.id+' has disconnected');
+        log('n', 'i', 'client '+socket.id+' has sent FIN packet to close connection, host acknowledge by send back FIN');
+    });
+    socket.on('error', function(data) {
+        log('n', 'i', 'The connection for client '+socket.id+' has error occur');
+        log('n', 'd', data);
+    });
+    socket.on('close', function(hasErr) {
+        var msg = hasErr ? 'Error occur before connection closed' : 'No error was found';
+        log('n', 'i', 'client '+socket.id+' has disconnected. '+msg);
 
         delete socket.data;
 
+        i = sockets.indexOf(socket);
         sockets.splice(i, 1);
 
         // TODO(system): notify offline status to user who connected to it
@@ -1080,9 +1088,11 @@ io.sockets.on('connection', function(websocket) {
     log('w', 'i', 'web client '+websocket.id+' connected');
     websockets.push(websocket); // assign websocket to global variable
 
-    emitDeviceInfo(websocket); // get device information
 
-    websocket.on('disconnect', function () {
+    websocket.on('user logged', function(data){ // once user has login to system
+        emitDeviceInfo(websocket); // get device information
+    });
+    websocket.on('disconnect', function () { // disconnect - io predefined status
         var i = websockets.indexOf(websocket);
         log('w', 'i', 'web client '+websocket.id+' has disconnected');
         websockets.splice(i, 1);

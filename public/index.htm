@@ -3,30 +3,23 @@
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
 <!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<!--[if IEMobile 7 ]>    <html class="no-js iem7"> <![endif]-->
+<!--[if (gt IEMobile 7)|!(IEMobile)]><!--> <html class="no-js"> <!--<![endif]-->
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <title>
     Home Security and Automation
   </title>
   <meta name="description" content="here is the description of the mobile app">
-  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
-  <link href="http://fonts.googleapis.com/css?family=PT+Sans+Narrow:400,700" rel='stylesheet' />
 
-  <link rel="stylesheet" href="//code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.css" />
-  <link rel="stylesheet" href="css/mmenu.all.css" />
-  <link rel="stylesheet" href="css/patternlock.css" />
-  <link rel="stylesheet" href="css/bootstrap.css" />
-  <link rel="stylesheet" href="css/fontello.css" />
-  <link rel="stylesheet" href="css/icons.css" />
-  <link rel="stylesheet" href="css/style.css" />
-<!--[if lt IE 8]>
-  <link rel="stylesheet" href="css/fontello-ie7.css" />
-<![endif]-->
-  <script src="//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+  <script>var innerzone;</script>
+  <script src="js/online.js"></script>
+  <script src="js/scriptloader.js"></script>
 </head>
 <body class="ui-mobile-viewport">
 <!--[if lt IE 7]>
@@ -35,7 +28,7 @@
 
 <!-- Add your site or application content here -->
 
-  <div>
+  <div id="body" style="display:none;">
     <nav id="location" class="sidepanel">
       <ul>
         <li class="Label"><img src="img/logo.jpg" style="margin:5px 0 6px;" /></li>
@@ -110,11 +103,9 @@
 
 
     <!-- Sign In -->
-    <div data-role="page" id="sign-in">
+    <div data-role="page" id="page-sign-in">
       <div id="signin" data-theme="b" data-role="header" data-position="fixed" class="signin">
-        <h3>
-          Sign In
-        </h3>
+        <h3>Sign In</h3>
       </div>
       <div data-role="content">
         <div class="signinWrap" style="width:500px; margin:0 auto;">
@@ -155,6 +146,60 @@
               <a href="#home" id="login" data-role="button" data-inline="true" data-transition="flip">
                 <span class="ico-login"></span> Login
               </a>
+            </div>
+          </div>
+          <div data-role="fieldcontain" style="padding-top:10px;">
+            <div class="text-right">Don't have an account?
+              <a href="#page-register" data-transition="slideup">Register Now</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Register -->
+    <div data-role="page" id="page-register">
+      <div data-theme="b" data-role="header" data-position="fixed" class="register">
+        <h3>Register</h3>
+      </div>
+      <div data-role="content">
+        <div class="signinWrap" style="width:500px; margin:0 auto;">
+          <div data-role="fieldcontain" class="text-center" style="padding:50px;">
+            <span style="font-size:30px;">
+              <span style="color:#7092BE;">INNER</span><span style="color:#7F7F7F;">ZON<span
+               style="font-size:18px; vertical-align:top;">&#174;</span></span>
+            </span>
+          </div>
+          <div data-role="fieldcontain">
+            <div data-position-to="#reg-username" class="errPop">
+              <a href="#" data-rel="back" class="ui-btn-right">Close</a>
+              ...Please enter your username here...
+            </div>
+            <label for="reg-username">Username</label>
+            <input name="username" id="reg-username" placeholder="username" value="" type="email" data-mini="true" required="required">
+          </div>
+          <div data-role="fieldcontain">
+            <div data-position-to="#reg-password" class="errPop">
+              <a href="#" data-rel="back" class="ui-btn-right">Close</a>
+              ...Please enter your password here...
+            </div>
+            <label for="reg-password">Password</label>
+            <input name="password" id="reg-password" placeholder="password" value="" type="password" data-mini="true" required="required">
+          </div>
+          <div data-role="fieldcontain">
+            <div data-position-to="#reg-fullname" class="errPop">
+              <a href="#" data-rel="back" class="ui-btn-right">Close</a>
+              ...Please enter your fullname here...
+            </div>
+            <label for="reg-fullname">Full Name</label>
+            <input name="fullname" id="reg-fullname" placeholder="fullname" value="" type="text" data-mini="true" required="required">
+          </div>
+          <div data-role="fieldcontain">
+            <div style="width:37%; display:inline-block;">&nbsp;</div>
+            <div style="width:63%; display:inline-block;">
+              <button type="button" id="register-btn" data-role="button" data-inline="true">
+                <span class="ico-user-add"></span> Register
+              </button>
             </div>
           </div>
         </div>
@@ -350,8 +395,7 @@
         <ul data-role="listview" data-divider-theme="c" data-inset="false">
           <li data-theme="c">
             <a href="#page-cam1">
-              <img src="http://cheah.homeip.net:86/snapshot.cgi?user=cheah&pwd=jumpknee123"
-               width="120" height="80" alt="..." class="ui-li-thumb freesize" />
+              <img src="" width="120" height="80" alt="..." class="ui-li-thumb freesize" />
               <h3 style="padding-left:40px;">Kitchen Camera</h3>
               <p style="padding-left:40px;">linksys WVC80N</p>
             </a>
@@ -440,20 +484,9 @@
         </ul>
       </div>
     </div>
-
   </div>
 
-<!--[if lte IE 7]><script src="js/lte-ie7.js"></script><![endif]-->
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-  <script>window.jQuery || document.write('<script src="js/jquery-1.10.2.min.js"><\/script>')</script>
-  <script src="//code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/hammer.js/1.0.5/jquery.hammer.min.js"></script>
-  <script src="js/jquery.mmenu.min.all.js"></script>
-  <script src="js/patternlock.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.2.1/lodash.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.0/holder.min.js"></script>
-  <script src="js/script.js"></script>
+  <script>innerzone.loader.loadFootJs();</script>
 </body>
 
 <template id="light-list">

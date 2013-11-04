@@ -124,8 +124,12 @@ var _mapping    = {
         }
     }
 };
+var socket;
 
 function loggedSuccess () {
+    socket.emit('user logged', {
+        clientId: 123456
+    });
 } // loggedSuccess
 function updateZone (id, value) {
     var mapping = {
@@ -224,7 +228,7 @@ function cloneHeader (page, title) {
 } // cloneHeader
 
 function updateAppOnlineStatus () {
-    if (navigator.onLine) {
+    if (window.onLine) {
         $('div.header span.i-internet').removeClass(_statusCls).addClass('text-success');
     } else {
         $('div.header span.i-internet').removeClass(_statusCls).addClass('text-danger');
@@ -680,7 +684,10 @@ function resizeImage (id, url, size) {
     imgObj.onload = function() {
         context.drawImage(imgObj, 0, 0, width, height, 0, 0, 120, 80);
     };
-    imgObj.src = url;
+
+    if (window.onLine) {
+        imgObj.src = url;
+    }
 } // resizeImage
 
 function loadCamera () {
@@ -818,350 +825,409 @@ function pad (number, length) {
 } // pad
 
 
-var socket = io.connect('http://'+document.domain+':'+window.location.port, {
-    'max reconnection attempts': 100
-});
+function init () {
+    socket = io.connect('http://'+document.domain+':'+window.location.port, {
+        'max reconnection attempts': 100
+    });
 
-socket.on('connect', function(){
-    $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
-    $('div.header span.i-server').removeClass(_statusCls).addClass('text-success');
-});
-socket.on('connecting', function(){
-    $('.connection').removeClass('text-danger text-success').addClass('text-default').html('Connecting..');
-    $('div.header span.i-server').removeClass(_statusCls).addClass('text-warning');
-});
-socket.on('disconnect', function(){
-    $('#page-security div.armBtnWrap').hide();
-    $('.troubles').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
-    $('.status').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
-    $('.connection').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
+    socket.on('connect', function(){
+        $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
+        $('div.header span.i-server').removeClass(_statusCls).addClass('text-success');
+    });
+    socket.on('connecting', function(){
+        $('.connection').removeClass('text-danger text-success').addClass('text-default').html('Connecting..');
+        $('div.header span.i-server').removeClass(_statusCls).addClass('text-warning');
+    });
+    socket.on('disconnect', function(){
+        $('#page-security div.armBtnWrap').hide();
+        $('.troubles').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
+        $('.status').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
+        $('.connection').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
 
-    $('div.header span.i-server').removeClass(_statusCls).addClass('text-danger');
-    $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-warning');
-    $('div.header span.i-lock').removeClass(_statusCls).addClass('text-muted').show();
-    $('div.header span.i-health').removeClass(_statusCls).addClass('text-muted').show();
-    $('div.header span.i-emergency').hide();
-    $('div.header span.i-troubles').hide();
-    notification('Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000);
-});
-socket.on('reconnect', function(){
-    notification('Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000);
-    $('div.header span.i-server').removeClass(_statusCls).addClass('text-success');
-});
+        $('div.header span.i-server').removeClass(_statusCls).addClass('text-danger');
+        $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-warning');
+        $('div.header span.i-lock').removeClass(_statusCls).addClass('text-muted').show();
+        $('div.header span.i-health').removeClass(_statusCls).addClass('text-muted').show();
+        $('div.header span.i-emergency').hide();
+        $('div.header span.i-troubles').hide();
+        notification('Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000);
+    });
+    socket.on('reconnect', function(){
+        notification('Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000);
+        $('div.header span.i-server').removeClass(_statusCls).addClass('text-success');
+    });
 
-socket.on('DeviceInformation', function(data){
-    _data = data;
-    updateDeviceStatus(data);
-});
-socket.on('Offline', function(data){
-    $('#page-security div.armBtnWrap').hide();
-    $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-danger');
+    socket.on('DeviceInformation', function(data){
+        _data = data;
+        updateDeviceStatus(data);
+    });
+    socket.on('Offline', function(data){
+        $('#page-security div.armBtnWrap').hide();
+        $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-danger');
 
-    $('.status').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
-    notification('Panel Offline', 'Your panel is detected offline now, this may due to internet connection problem.', 10000);
-});
-socket.on('DeviceUpdate', function(d){
-    var newVal, curVal;
+        $('.status').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
+        notification('Panel Offline', 'Your panel is detected offline now, this may due to internet connection problem.', 10000);
+    });
+    socket.on('DeviceUpdate', function(d){
+        var newVal, curVal;
 
-    if (!_.isUndefined(_timer[d.type])) { // app update process got response successfully, clear updateFailure's timer
-        clearTimeout(_timer[d.type]);
-        delete _timer[d.type];
-    }
-
-    _.each(_data.status[d.type], function(val, i){
-        newVal = d.value.split(',');
-        curVal = val.split(',');
-        if (newVal[0] == curVal[0]) {
-            _data.status[d.type][i] = d.value;
+        if (!_.isUndefined(_timer[d.type])) { // app update process got response successfully, clear updateFailure's timer
+            clearTimeout(_timer[d.type]);
+            delete _timer[d.type];
         }
-    });
 
-    if (d.type == 'system') {
-        updateTroubles();
-        updateSystemStatus();
-    } else if (d.type == 'partition') {
-        updateAlarmStatus(true);
-    } else if (d.type == 'lights') {
-        updateLights();
-    }
-});
-
-
-// HOME PAGE //
-$('#home').on('pagebeforecreate', function(){
-    $.mobile.defaultPageTransition = 'pop'; // after logged use pop transition
-
-    initSidePanel();
-    $('nav#main-menu').mmenu({
-        counters: false,
-        dragOpen: {
-            open: true
-        },
-        position: 'right',
-        zposition: 'front',
-            slidingSubmenus: false
-    });
-}).on('pagecreate', function(){
-    var startX = 0;
-    var valid  = false;
-    $('div.mm-page').on('dragright', function(e){
-        if (startX == 0) {
-            startX = e.gesture.center.pageX;
-            if (startX < 150) {
-                valid = true;
+        _.each(_data.status[d.type], function(val, i){
+            newVal = d.value.split(',');
+            curVal = val.split(',');
+            if (newVal[0] == curVal[0]) {
+                _data.status[d.type][i] = d.value;
             }
-        } else if (valid) {
-            if (e.gesture.center.pageX - startX >= 40) {
-                valid = false;
-                absPositionHeader();
-            }
-        }
-    }).on('dragend', function(){
-        startX = 0;
-    });
-
-    $('a.changePage').click(function(){
-        var href = $(this).attr('href');
-        $.mobile.changePage(href);
-    });
-
-
-    if (typeof window.webkitNotifications != 'undefined' && window.webkitNotifications.checkPermission()) {
-        $('div.gainPermissions').show();
-        $('div.gainPermissions').click(function(){
-            window.webkitNotifications.requestPermission();
-            permissionCheck();
         });
-    } else { // either browser not support Notification or it already gained permission
-        $('div.gainPermissions').remove();
-    }
-}).on('pageshow', function(){
-    $.mobile.defaultPageTransition = _transition;
-    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
-    $('nav.sidepanel ul li:first').addClass('mm-selected');
-    $('nav.sidepanel li.location:first').addClass('mm-active');
-});
 
-// SECURITY PAGE //
-$('#page-security').on('pagecreate', function(){
-    cloneHeader('security', 'Security');
-    $('#page-security a.armBtn').click(function(){
-        var id, inf;
-        var pts  = _data.status.partition;
-        var info = pts[0].split(',');
-
-        $.mobile.defaultPageTransition = 'slideup'; // arm page use slideup transition
-
-        if (info[1] == '0') { // partition alarm: disarmed
-            var opened = false;
-
-            _.each(_data.status.zones, function(str){
-                inf = str.split(',');
-                id  = 'zn'+inf[0];
-
-                if (inf[1] == '1') { // zone condition: open
-                    if (inf[2] == '0') { // zone status: ready
-                        opened = true;
-                    }
-                    $('#page-security ul[data-role=listview] li.'+id+' div.bypass').show();
-                } else {
-                    $('#page-security ul[data-role=listview] li.'+id+' div.bypass').hide();
-                }
-            });
-
-            if (opened) {
-                $('body').addClass('ui-overlay-a');
-                $.mobile.changePage('#dialog-alert-opened-zones', {
-                    role: 'dialog',
-                    transition: 'slidedown'
-                });
-            } else {
-                $.mobile.changePage('#page-how-to-arm');
-            }
-        } else {
-            $.mobile.changePage('#page-how-to-arm');
+        if (d.type == 'system') {
+            updateTroubles();
+            updateSystemStatus();
+        } else if (d.type == 'partition') {
+            updateAlarmStatus(true);
+        } else if (d.type == 'lights') {
+            updateLights();
         }
-
-        $.mobile.defaultPageTransition = _transition;
     });
-}).on('pageshow', function(){
-    $('body').removeClass('ui-overlay-a');
-    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
-    $('nav.sidepanel ul li.security').addClass('mm-selected');
-}).on('pagehide', function(){
-    var url = jQuery.mobile.path.get();
-    if (url != 'page-how-to-arm' && url.indexOf('&ui-state=dialog') == -1) {
-        $('#page-security ul[data-role=listview] div.bypass').hide();
+
+
+    // Sign In //
+    if (!$.mobile.path.get()) {
+        $('#username').focus();
     }
-});
-
-// HOW TO ARM PAGE //
-$('#page-how-to-arm').on('pagecreate', function(){
-    $('#page-how-to-arm .cancelArm').click(function(){
-        var isBackBtn = $(this).hasClass('back');
-        cancelCountdown(isBackBtn);
-    });
-    $('#page-how-to-arm a.armType').click(function(){
-        $('#page-how-to-arm a.armType').removeClass('ui-btn-active');
-        $(this).addClass('ui-btn-active');
-        $('#page-how-to-arm #code1').focus();
-    });
-}).on('pageshow', function(){
-    var sts = _data.status.alarm_status;
-
-    $('div.patternArm').show();
-
-    if (sts == 'a' || sts == 'h') {
-        $('#page-how-to-arm h3.header').html('Confirm Disarmed');
-        $('#page-how-to-arm h4.armCodeTxt').html('Enter Keypad Code To Disarmed');
-        $('#page-how-to-arm div.armTypeWrap').hide();
-    } else {
-        $('#page-how-to-arm h3.header').html('Confirm Arm');
-        $('#page-how-to-arm h4.armCodeTxt').html('Enter Keypad Code To Arm');
-        $('#page-how-to-arm div.armTypeWrap').show();
-    }
-    $('#page-how-to-arm #code1').focus();
-}).on('pagehide', function(){
-    if (_countDown) { // in arm count down process, leave page make cancel of arming
-        _cancelArm = true;
-    }
-    $('#page-how-to-arm input.passcode').val('');
-    $('#page-how-to-arm div.countdown').hide();
-});
-
-// CAMERAS PAGE //
-$('#page-cameras').on('pagebeforecreate', function(){
-    var html = '';
-    var attr = 'width="120" height="80" class="ipcam"';
-    var cams = [{
-        page: 'page-camera',
-        id: 'ipcam1',
-        size: 'l',
-        url: 'http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne',
-        label: 'Outdoor Camera',
-        model: 'EasyN H6-837'
-    }, {
-        page: 'page-camera5',
-        id: 'ipcam5',
-        size: 's',
-        url: 'http://cheah.homeip.net:85/snapshot.cgi?user=cheah&pwd=jumpknee123',
-        label: 'Dining Camera',
-        model: 'Wansview NC541'
-    }, {
-        page: 'page-camera6',
-        id: 'ipcam6',
-        size: 'l',
-        url: 'http://cheah.homeip.net:86/snapshot.cgi?user=cheah&pwd=jumpknee123',
-        label: 'Parlor Camera',
-        model: 'ICam+ i918w'
-    }];
-
-    _.each(cams, function(o){
-        html += '<li data-theme="c" class="ui-li-has-thumb">' +
-                  '<a href="#'+o.page+'" data-transition="slide">' +
-                    '<div class="ui-li-thumb freesize">' +
-                      '<canvas id="'+o.id+'" data-size="'+o.size+'" data-url="'+o.url+'" '+attr+'></canvas>' +
-                    '</div><h3 style="padding-left:40px;">'+o.label+'</h3>' +
-                    '<p style="padding-left:40px;">'+o.model+'</p>' +
-                  '</a>' +
-                '</li>';
+    $('#page-sign-in').on('pageshow', function(){
+        $('#username').focus();
     });
 
-    $('#page-cameras ul[data-role=listview]').html(html);
+    // Register //
+    $('#page-register').on('pagecreate', function(){
+        $('#page-register div.errPop').popup({
+            history: false,
+            shadow: false,
+            theme: 'e',
+            transition: 'flow',
+            afterclose: function(){
+                var id = $(this).attr('data-position-to');
+                $(id).focus();
+            }
+        });
+        $('#page-register div.errPop a').buttonMarkup({
+            icon: 'delete',
+            iconpos: 'notext',
+            theme: 'e'
+        });
+        $('#register-btn').click(function(){
+            var username = $('#reg-username').val();
+            var password = $('#reg-password').val();
+            var fullname = $('#reg-fullname').val();
 
-    cloneHeader('cameras', 'Cameras');
-}).on('pageshow', function(){
-    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
-    $('nav.sidepanel ul li.cameras').addClass('mm-selected');
-    $.each($('#page-cameras canvas.ipcam'), function(){
-        var id   = $(this).attr('id');
-        var size = $(this).attr('data-size');
-        var url  = $(this).attr('data-url');
-        resizeImage(id, url, size);
-    });
-});
+            if (!username || !password || !fullname) {
+                if (!username) {
+                    $('div[data-position-to=#reg-username]').popup('open');
+                } else if (!password) {
+                    $('div[data-position-to=#reg-password]').popup('open');
+                } else if (!fullname) {
+                    $('div[data-position-to=#reg-fullname]').popup('open');
+                }
+                return;
+            }
 
-// CAMERA PAGE //
-$('#page-camera').on('pagebeforecreate', function(){
-    var url = 'http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne';
-    $('#page-camera div.cameraWrap img.cam').attr('src', url);
-}).on('pageshow', function(){
-    _loadCam = true;
-    loadCamera();
-}).on('pagehide', function(){
-    _loadCam = false;
-});
-
-// SYSTEM STATUS PAGE //
-$('#page-system-status').on('pagecreate', function(){
-    cloneHeader('system-status', 'System Status');
-}).on('pageshow', function(){
-    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
-    $('nav.sidepanel ul li.system-status').addClass('mm-selected');
-});
-
-// LIGHTS PAGE //
-$('#page-lights').on('pagecreate', function(){
-    $('#home div.row').clone(true).appendTo('#page-lights div[data-role=header]');
-    $('#page-history h3.headerTitle').html('Lights');
-}).on('pageshow', function(){
-    $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
-    $('nav.sidepanel ul li.lights').addClass('mm-selected');
-});
-
-// EVENT LOGS //
-$('#page-history').on('pagecreate', function(){
-    $('#home div.row').clone(true).appendTo('#page-history div[data-role=header]');
-    $('#page-history h3.headerTitle').html('Event Logs');
-});
-
-
-
-$('#page-how-to-arm input.passcode').click(function(){
-    $(this).val('');
-}).keyup(function(){
-    var n = $(this).attr('data-no');
-    var i = parseInt(n) + 1;
-    if (i > 4) {
-        var sts = _data.status.alarm_status;
-
-        if (sts == 'a' || sts == 'h') {
-            socket.emit('app update', 'status', {
-                alarm_status: 'r'
-            });
-
-            // TODO(callback): wait callback to confirm disarmed
             $.mobile.loading('show', {
-                text: 'Disarmed successfully',
+                text: 'Registration has done successfully! You may login now',
                 textVisible: true,
                 textonly: true,
-                theme: 'b'
+                theme: 'a'
             });
             setTimeout(function(){
                 $.mobile.loading('hide');
-                history.back();
-            }, 1000);
-        } else {
-            // check zone status
+                window.history.back();
+            }, 2500);
+        });
+    }).on('pageshow', function(){
+        $('#reg-username').focus();
+    });
 
-            armCountdown(10);
-            $.mobile.loading('show', {
-                text: 'Arm in 10 seconds...',
-                textVisible: true,
-                theme: 'a'
+    // HOME PAGE //
+    $('#home').on('pagebeforecreate', function(){
+        $.mobile.defaultPageTransition = 'pop'; // after logged use pop transition
+        initSidePanel();
+        $('nav#main-menu').mmenu({
+            counters: false,
+            dragOpen: {
+                open: true
+            },
+            position: 'right',
+            zposition: 'front',
+            slidingSubmenus: false
+        });
+    }).on('pagecreate', function(){
+        var startX = 0;
+        var valid  = false;
+
+        loggedSuccess();
+
+        $('div.mm-page').on('dragright', function(e){
+            if (startX == 0) {
+                startX = e.gesture.center.pageX;
+                if (startX < 150) {
+                    valid = true;
+                }
+            } else if (valid) {
+                if (e.gesture.center.pageX - startX >= 40) {
+                    valid = false;
+                    absPositionHeader();
+                }
+            }
+        }).on('dragend', function(){
+                startX = 0;
             });
-            $('#page-how-to-arm div.countdown').fadeIn();
+
+        $('a.changePage').click(function(){
+            var href = $(this).attr('href');
+            $.mobile.changePage(href);
+        });
+
+        if (typeof window.webkitNotifications != 'undefined' && window.webkitNotifications.checkPermission()) {
+            $('div.gainPermissions').show();
+            $('div.gainPermissions').click(function(){
+                window.webkitNotifications.requestPermission();
+                permissionCheck();
+            });
+        } else { // either browser not support Notification or it already gained permission
+            $('div.gainPermissions').remove();
         }
+    }).on('pageshow', function(){
+        $.mobile.defaultPageTransition = _transition;
+        $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+        $('nav.sidepanel ul li:first').addClass('mm-selected');
+        $('nav.sidepanel li.location:first').addClass('mm-active');
+    });
 
-        $(this).blur();
-    } else {
-        $('#page-how-to-arm #code'+i).val('').focus();
-    }
-});
+    // SECURITY PAGE //
+    $('#page-security').on('pagecreate', function(){
+        cloneHeader('security', 'Security');
+        $('#page-security a.armBtn').click(function(){
+            var id, inf;
+            var pts  = _data.status.partition;
+            var info = pts[0].split(',');
 
-$('#page-camera img.cam').on('load', function(){
-    _camLoaded = true;
-});
+            $.mobile.defaultPageTransition = 'slideup'; // arm page use slideup transition
+
+            if (info[1] == '0') { // partition alarm: disarmed
+                var opened = false;
+
+                _.each(_data.status.zones, function(str){
+                    inf = str.split(',');
+                    id  = 'zn'+inf[0];
+
+                    if (inf[1] == '1') { // zone condition: open
+                        if (inf[2] == '0') { // zone status: ready
+                            opened = true;
+                        }
+                        $('#page-security ul[data-role=listview] li.'+id+' div.bypass').show();
+                    } else {
+                        $('#page-security ul[data-role=listview] li.'+id+' div.bypass').hide();
+                    }
+                });
+
+                if (opened) {
+                    $('body').addClass('ui-overlay-a');
+                    $.mobile.changePage('#dialog-alert-opened-zones', {
+                        role: 'dialog',
+                        transition: 'slidedown'
+                    });
+                } else {
+                    $.mobile.changePage('#page-how-to-arm');
+                }
+            } else {
+                $.mobile.changePage('#page-how-to-arm');
+            }
+
+            $.mobile.defaultPageTransition = _transition;
+        });
+    }).on('pageshow', function(){
+        $('body').removeClass('ui-overlay-a');
+        $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+        $('nav.sidepanel ul li.security').addClass('mm-selected');
+    }).on('pagehide', function(){
+        var url = jQuery.mobile.path.get();
+        if (url != 'page-how-to-arm' && url.indexOf('&ui-state=dialog') == -1) {
+            $('#page-security ul[data-role=listview] div.bypass').hide();
+        }
+    });
+
+    // HOW TO ARM PAGE //
+    $('#page-how-to-arm').on('pagecreate', function(){
+        $('#page-how-to-arm .cancelArm').click(function(){
+            var isBackBtn = $(this).hasClass('back');
+            cancelCountdown(isBackBtn);
+        });
+        $('#page-how-to-arm a.armType').click(function(){
+            $('#page-how-to-arm a.armType').removeClass('ui-btn-active');
+            $(this).addClass('ui-btn-active');
+            $('#page-how-to-arm #code1').focus();
+        });
+    }).on('pageshow', function(){
+        var sts = _data.status.alarm_status;
+
+        $('div.patternArm').show();
+
+        if (sts == 'a' || sts == 'h') {
+            $('#page-how-to-arm h3.header').html('Confirm Disarmed');
+            $('#page-how-to-arm h4.armCodeTxt').html('Enter Keypad Code To Disarmed');
+            $('#page-how-to-arm div.armTypeWrap').hide();
+        } else {
+            $('#page-how-to-arm h3.header').html('Confirm Arm');
+            $('#page-how-to-arm h4.armCodeTxt').html('Enter Keypad Code To Arm');
+            $('#page-how-to-arm div.armTypeWrap').show();
+        }
+        $('#page-how-to-arm #code1').focus();
+    }).on('pagehide', function(){
+        if (_countDown) { // in arm count down process, leave page make cancel of arming
+            _cancelArm = true;
+        }
+        $('#page-how-to-arm input.passcode').val('');
+        $('#page-how-to-arm div.countdown').hide();
+    });
+
+    // CAMERAS PAGE //
+    $('#page-cameras').on('pagebeforecreate', function(){
+        var html = '';
+        var attr = 'width="120" height="80" class="ipcam"';
+        var cams = [{
+            page: 'page-camera',
+            id: 'ipcam1',
+            size: 'l',
+            url: 'http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne',
+            label: 'Outdoor Camera',
+            model: 'EasyN H6-837'
+        }, {
+            page: 'page-camera5',
+            id: 'ipcam5',
+            size: 's',
+            url: 'http://cheah.homeip.net:85/snapshot.cgi?user=cheah&pwd=jumpknee123',
+            label: 'Dining Camera',
+            model: 'Wansview NC541'
+        }, {
+            page: 'page-camera6',
+            id: 'ipcam6',
+            size: 'l',
+            url: 'http://cheah.homeip.net:86/snapshot.cgi?user=cheah&pwd=jumpknee123',
+            label: 'Parlor Camera',
+            model: 'ICam+ i918w'
+        }];
+
+        _.each(cams, function(o){
+            html += '<li data-theme="c" class="ui-li-has-thumb">' +
+                '<a href="#'+o.page+'" data-transition="slide">' +
+                '<div class="ui-li-thumb freesize">' +
+                '<canvas id="'+o.id+'" data-size="'+o.size+'" data-url="'+o.url+'" '+attr+'></canvas>' +
+                '</div><h3 style="padding-left:40px;">'+o.label+'</h3>' +
+                '<p style="padding-left:40px;">'+o.model+'</p>' +
+                '</a>' +
+                '</li>';
+        });
+
+        $('#page-cameras ul[data-role=listview]').html(html);
+
+        cloneHeader('cameras', 'Cameras');
+    }).on('pageshow', function(){
+        $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+        $('nav.sidepanel ul li.cameras').addClass('mm-selected');
+        $.each($('#page-cameras canvas.ipcam'), function(){
+            var id   = $(this).attr('id');
+            var size = $(this).attr('data-size');
+            var url  = $(this).attr('data-url');
+            resizeImage(id, url, size);
+        });
+    });
+
+    // CAMERA PAGE //
+    $('#page-camera').on('pagebeforecreate', function(){
+        var url = 'http://cheah.homeip.net:81/snapshot.cgi?loginuse=cheah&loginpas=jumpkne';
+        $('#page-camera div.cameraWrap img.cam').attr('src', url);
+    }).on('pageshow', function(){
+        _loadCam = true;
+        loadCamera();
+    }).on('pagehide', function(){
+        _loadCam = false;
+    });
+
+    // SYSTEM STATUS PAGE //
+    $('#page-system-status').on('pagecreate', function(){
+        cloneHeader('system-status', 'System Status');
+    }).on('pageshow', function(){
+        $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+        $('nav.sidepanel ul li.system-status').addClass('mm-selected');
+    });
+
+    // LIGHTS PAGE //
+    $('#page-lights').on('pagecreate', function(){
+        $('#home div.row').clone(true).appendTo('#page-lights div[data-role=header]');
+        $('#page-history h3.headerTitle').html('Lights');
+    }).on('pageshow', function(){
+        $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+        $('nav.sidepanel ul li.lights').addClass('mm-selected');
+    });
+
+    // EVENT LOGS //
+    $('#page-history').on('pagecreate', function(){
+        $('#home div.row').clone(true).appendTo('#page-history div[data-role=header]');
+        $('#page-history h3.headerTitle').html('Event Logs');
+    });
+
+
+    $('#page-how-to-arm input.passcode').click(function(){
+        $(this).val('');
+    }).keyup(function(){
+        var n = $(this).attr('data-no');
+        var i = parseInt(n) + 1;
+        if (i > 4) {
+            var sts = _data.status.alarm_status;
+
+            if (sts == 'a' || sts == 'h') {
+                socket.emit('app update', 'status', {
+                    alarm_status: 'r'
+                });
+
+                // TODO(callback): wait callback to confirm disarmed
+                $.mobile.loading('show', {
+                    text: 'Disarmed successfully',
+                    textVisible: true,
+                    textonly: true,
+                    theme: 'b'
+                });
+                setTimeout(function(){
+                    $.mobile.loading('hide');
+                    history.back();
+                }, 1000);
+            } else {
+                // check zone status
+
+                armCountdown(10);
+                $.mobile.loading('show', {
+                    text: 'Arm in 10 seconds...',
+                    textVisible: true,
+                    theme: 'a'
+                });
+                $('#page-how-to-arm div.countdown').fadeIn();
+            }
+
+            $(this).blur();
+        } else {
+            $('#page-how-to-arm #code'+i).val('').focus();
+        }
+    });
+
+    $('#page-camera img.cam').on('load', function(){
+        _camLoaded = true;
+    });
+} // init
+
 
 $(function() {
     $.mobile.defaultPageTransition = _transition;
@@ -1183,8 +1249,13 @@ $(function() {
             $('div.header table.iconWrap').css('min-width', '158px');
         }
     }).trigger('resize');
+    $('#body').fadeIn();
 
+    init();
     updateAppOnlineStatus();
-    window.addEventListener('online',  updateAppOnlineStatus);
-    window.addEventListener('offline', updateAppOnlineStatus);
+
+    window.onLineHandler  = updateAppOnlineStatus;
+    window.offLineHandler = updateAppOnlineStatus;
+    //window.addEventListener('online',  updateAppOnlineStatus);
+    //window.addEventListener('offline', updateAppOnlineStatus);
 });
