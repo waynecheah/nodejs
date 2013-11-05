@@ -813,6 +813,11 @@ function emitLightUpdate (no, command, value) {
     appUpdateFailureTimer('lights', updateLights);
 } // emitLightUpdate
 
+function emitRegistration (data) {
+    $('#register-btn').button('disable').html('<span class="ico-user-spin4"></span> Sending..');
+    socket.emit('register', data);
+} // emitRegistration
+
 
 function pad (number, length) {
     var str = '' + number;
@@ -893,6 +898,30 @@ function init () {
             updateLights();
         }
     });
+    socket.on('ResponseOnRequest', function(req, data){
+        if (req == 'register') {
+            $('#register-btn').button('enable').html('<span class="ico-user-add"></span> Register');
+
+            if (!data.status) {
+                if (data.usernameTaken) {
+                    $('div[data-position-to=#reg-username] span.msg').html('The username is already been taken, please try another..');
+                    $('div[data-position-to=#reg-username]').popup('open');
+                }
+                return;
+            }
+
+            $.mobile.loading('show', {
+                text: 'Registration has done successfully! You may login now',
+                textVisible: true,
+                textonly: true,
+                theme: 'a'
+            });
+            setTimeout(function(){
+                $.mobile.loading('hide');
+                window.history.back();
+            }, 2500);
+        }
+    });
 
 
     // Sign In //
@@ -912,7 +941,7 @@ function init () {
             transition: 'flow',
             afterclose: function(){
                 var id = $(this).attr('data-position-to');
-                $(id).focus();
+                $(id).focus().select();
             }
         });
         $('#page-register div.errPop a').buttonMarkup({
@@ -927,6 +956,7 @@ function init () {
 
             if (!username || !password || !fullname) {
                 if (!username) {
+                    $('div[data-position-to=#reg-username] span.msg').html('...Please enter your username here...');
                     $('div[data-position-to=#reg-username]').popup('open');
                 } else if (!password) {
                     $('div[data-position-to=#reg-password]').popup('open');
@@ -936,16 +966,11 @@ function init () {
                 return;
             }
 
-            $.mobile.loading('show', {
-                text: 'Registration has done successfully! You may login now',
-                textVisible: true,
-                textonly: true,
-                theme: 'a'
+            emitRegistration({
+                username: username,
+                password: password,
+                fullname: fullname
             });
-            setTimeout(function(){
-                $.mobile.loading('hide');
-                window.history.back();
-            }, 2500);
         });
     }).on('pageshow', function(){
         $('#reg-username').focus();
