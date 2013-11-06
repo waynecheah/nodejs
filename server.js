@@ -193,6 +193,43 @@ function gv (data, start) { // get value
     return data.substr(start);
 } // gv
 
+function encryption (data, key, iv, format) {
+    var cipher = crypto.createCipheriv('aes-128-cbc', key, iv);
+    var strlen = data.length;
+    var random;
+
+    if (strlen <= 11) { // use 16 bytes
+        random = 15 - strlen;
+    } else if (strlen <= 27) { // use 32 bytes
+        random = 31 - strlen;
+    } else if (strlen <= 43) { // use 48 bytes
+        random = 47 - strlen;
+    } else {
+        return false;
+    }
+
+    random = randomString({ length:random });
+    data   = random+'|'+data;
+
+    cipher.setAutoPadding(false);
+    return cipher.update(data, 'utf8', format);
+} // encryption
+
+function decryption (data, key, iv, format) {
+    var decipher = crypto.createDecipheriv('aes-128-cbc', key, iv);
+    var decrData, pos;
+
+    decipher.setAutoPadding(false);
+    decrData = decipher.update(data, format, 'utf8');
+    pos      = decrData.indexOf('|'); // get separator position
+
+    if (pos < 0) { // invalid data, there should have a | within decrypted data
+        return false;
+    }
+
+    return decrData.substr(pos+1);
+} // decryption
+
 function datetime () {
     return moment().format('YYMMDDHHmmss');
 } // datetime
@@ -915,6 +952,13 @@ db.once('open', function(){
     log('s', 'i', 'MongoDB connected! host: '+db.host+', port: '+db.port);
 });
 var ObjectId = mongoose.Schema.Types.ObjectId;
+var Client = mongoose.model('Client', {
+    username: String,
+    password: String,
+    fullname: String,
+    created: { type:Date, default:Date.now },
+    modified: { type:Date, default:Date.now }
+});
 var Device = mongoose.model('Device', {
     name: String,
     macAdd: String,
@@ -1000,6 +1044,22 @@ var server = net.createServer(function (socket) {
                     sockets[i].end();
                 }
             }
+        } else if (dt.substr(0,4) == 'aes=') {
+            var secret = data.split(RN);
+            var str, serverSecret;
+
+            _.each(secret, function(d){
+                if (d.substr(0,4) == 'aes=') {
+                    str = d.substr(4);
+                    str = decryption(str, 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+                    log('n', 'i', 'secret came from hardware '+str);
+                }
+            });
+
+            serverSecret = encryption('this is my secret', 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+
+            socket.write('ok'+RN);
+            socket.write(serverSecret+RN);
         } else if (dt.substr(0,7) == '-hello-') { // device is checking if server alive and responding
             log('n', 'i', socket.id+' says hello');
             socket.write('ok'+RN);
