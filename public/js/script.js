@@ -11,6 +11,7 @@ var _data       = {
 };
 var _statusCls  = 'text-success text-danger text-warning text-muted';
 var _transition = 'slide';
+var _wsProcess  = [];
 var _timer      = {};
 var _mapping    = {
     system: {
@@ -222,7 +223,7 @@ function absPositionHeader () {
 } // absPositionHeader
 
 function cloneHeader (page, title) {
-    $('#home div.row').clone(true).appendTo('#page-'+page+' div[data-role=header]');
+    $('#header-tpl div.row').clone(true).appendTo('#page-'+page+' div[data-role=header]');
     $('#page-'+page+' div.header').attr('data-theme', 'c');
     $('#page-'+page+' h3.headerTitle').html(title);
 } // cloneHeader
@@ -814,8 +815,17 @@ function emitLightUpdate (no, command, value) {
 } // emitLightUpdate
 
 function emitRegistration (data) {
-    $('#register-btn').button('disable').html('<span class="ico-user-spin4"></span> Sending..');
-    socket.emit('register', data);
+    $('#register-btn').button('disable');
+    $('#register-btn').parent().find('span.ui-btn-text').html('<span class="ico-spin4 animate-spin"></span> Sending..');
+    _wsProcess.push('register');
+    socket.emit('app request', 'register', data);
+
+    setTimeout(function(){ // timeout in 5 seconds
+        if (_wsProcess.indexOf('register') >= 0) { // mission incomplete
+            $('#register-btn').button('enable');
+            $('#register-btn').parent().find('span.ui-btn-text').html('<span class="ico-user-add"></span> Register');
+        }
+    }, 5000);
 } // emitRegistration
 
 
@@ -900,9 +910,12 @@ function init () {
     });
     socket.on('ResponseOnRequest', function(req, data){
         if (req == 'register') {
-            $('#register-btn').button('enable').html('<span class="ico-user-add"></span> Register');
+            _.pull(_wsProcess, 'register');
+            $('#register-btn').parent().find('span.ui-btn-text').html('<span class="ico-user-add"></span> Register');
 
             if (!data.status) {
+                $('#register-btn').button('enable');
+
                 if (data.usernameTaken) {
                     $('div[data-position-to=#reg-username] span.msg').html('The username is already been taken, please try another..');
                     $('div[data-position-to=#reg-username]').popup('open');
@@ -917,6 +930,7 @@ function init () {
                 theme: 'a'
             });
             setTimeout(function(){
+                $('#register-btn').button('enable');
                 $.mobile.loading('hide');
                 window.history.back();
             }, 2500);
@@ -1192,8 +1206,7 @@ function init () {
 
     // LIGHTS PAGE //
     $('#page-lights').on('pagecreate', function(){
-        $('#home div.row').clone(true).appendTo('#page-lights div[data-role=header]');
-        $('#page-history h3.headerTitle').html('Lights');
+        cloneHeader('lights', 'Lights');
     }).on('pageshow', function(){
         $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
         $('nav.sidepanel ul li.lights').addClass('mm-selected');
@@ -1201,8 +1214,7 @@ function init () {
 
     // EVENT LOGS //
     $('#page-history').on('pagecreate', function(){
-        $('#home div.row').clone(true).appendTo('#page-history div[data-role=header]');
-        $('#page-history h3.headerTitle').html('Event Logs');
+        cloneHeader('history', 'Event Logs');
     });
 
 

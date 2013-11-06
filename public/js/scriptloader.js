@@ -7,7 +7,8 @@
         }, {
             online: '//code.jquery.com/mobile/1.3.2/jquery.mobile-1.3.2.min.css',
             offline: 'css/jquery.mobile-1.3.2.min.css'
-        }, 'css/mmenu.all.css', 'css/patternlock.css', 'css/bootstrap.css', 'css/fontello.css', 'css/icons.css', 'css/style.css'],
+        }, 'css/mmenu.all.css', 'css/patternlock.css', 'css/bootstrap.css', 'css/animation.css',
+        'css/fontello.css', 'css/icons.css', 'css/style.css'],
 
         headJs: [{
             online: '//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js',

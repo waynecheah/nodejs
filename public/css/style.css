@@ -122,6 +122,17 @@ li.iconThumb div.ui-li-content {
     padding: 20px 0 0 8px;
 }
 
+div.header div.navBackWrap {
+    width: 82px;
+    padding-top: 5px;
+}
+div.header a.ico-left-open, div.header a.ico-left-open-mini {
+    margin-left: 5px;
+    font-size: 32px;
+}
+div.header a.logoIcon {
+    background: url(../img/icon.png) 32px 1px no-repeat;
+}
 div.header a.icon-block-menu, div.header a.icon-three-points {
     color: #999;
     line-height: 55px;

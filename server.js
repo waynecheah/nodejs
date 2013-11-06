@@ -1102,6 +1102,25 @@ io.sockets.on('connection', function(websocket) {
     websocket.on('app update', function(type, data){
         appUpdate(type, data);
     });
+    websocket.on('app request', function(req, data){
+        if (req == 'register') {
+            log('w', 'i', 'New registration submitted by web cliend '+websocket.id);
+            log('w', 'd', data);
+
+            var status = true;
+            var taken  = false;
+
+            if (data.username == 'cheah_88@hotmail.com') {
+                status = false;
+                taken  = true;
+            }
+
+            websocket.emit('ResponseOnRequest', 'register', {
+                status: status,
+                usernameTaken: taken
+            });
+        }
+    });
 });
 
 
