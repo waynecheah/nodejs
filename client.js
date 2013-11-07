@@ -1,8 +1,9 @@
 
-var net    = require('net');
-var crypto = require('crypto');
-var colors = require('colors');
-var _      = require('lodash');
+var net          = require('net');
+var crypto       = require('crypto');
+var colors       = require('colors');
+var _            = require('lodash');
+var randomString = require('random-string');
 
 var sockets   = [];
 var RN        = '\r\n';
@@ -180,10 +181,43 @@ function g2 (cmd, i) {
 
 function encryption (data, key, iv, format) {
     var cipher = crypto.createCipheriv('aes-128-cbc', key, iv);
+    var strlen = data.length;
+    var random;
+
+    if (strlen <= 11) { // use 16 bytes
+        random = 15 - strlen;
+    } else if (strlen <= 27) { // use 32 bytes
+        random = 31 - strlen;
+    } else if (strlen <= 43) { // use 48 bytes
+        random = 47 - strlen;
+    } else {
+        return false;
+    }
+
+    random = randomString({ length:random });
+    data   = random+'|'+data;
+    log('n', 'i', 'Encrypt data: '+data);
 
     cipher.setAutoPadding(false);
     return cipher.update(data, 'utf8', format);
 } // encryption
+
+function decryption (data, key, iv, format) {
+    var decipher = crypto.createDecipheriv('aes-128-cbc', key, iv);
+    var decrData, position;
+
+    decipher.setAutoPadding(false);
+    decrData = decipher.update(data, format, 'utf8');
+    position = decrData.indexOf('|'); // get separator position
+
+    if (position < 0) { // invalid data, there should have a | within decrypted data
+        log('n', 'e', 'Invalid decrypted data: '+decrData);
+        return false;
+    }
+    log('n', 's', 'Decrypted data: '+decrData);
+
+    return decrData.substr(position+1);
+} // decryption
 
 function lightUpdate () {
 
@@ -244,6 +278,15 @@ socket.cmd = function(dt){
 socket.get = function(type, item) {
     log('n', 'd', _data[type][item]);
 };
+socket.aes = function(str){
+    var secret = encryption(str, 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+
+    if (secret) {
+        _stage = 'aes';
+        log('n', 's', 'Sent encrypted data: '+secret);
+        socket.write('aes='+secret+RN);
+    }
+}
 
 log('n', 'i', 'Socket created.');
 socket.on('data', function(data) {
@@ -357,6 +400,13 @@ socket.on('data', function(data) {
                 log('s', 'e', '[e'+no+'] '+serverErr['e'+no]);
             }
             resetTime();
+        } else if (_stage == 'aes') {
+            _stage = 'ready'
+            str    = decryption(data, 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+
+            if (str) {
+                log('s', 'i', 'Secret came from server: '+str);
+            }
         }
     });
 }).on('connect', function() {

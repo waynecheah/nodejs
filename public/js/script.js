@@ -609,7 +609,7 @@ function armCountdown (sec) {
             armCountdown(sec);
         }, 1000);
     } else {
-        var armType = 'r';
+        var armType = '1';
         _countDown  = false;
         _cancelArm  = false;
 
@@ -935,6 +935,39 @@ function init () {
                 window.history.back();
             }, 2500);
         }
+    });
+    socket.on('AES', function(data){
+        var cmd, info, sts, txt;
+
+        _.each(_data.status.partition, function(str){
+            info = str.split(',');
+            if (1 == info[0]) {
+                sts = info[1];
+            }
+        });
+
+        if (sts == '1' || sts == '2' || sts == '3') {
+            txt = 'Disarmed in 5 seconds';
+            cmd = 0;
+        } else {
+            txt = 'Armed in 5 seconds';
+            cmd = 1;
+        }
+
+        $.mobile.loading('show', {
+            html: '<h1>I have knew your secret! <div class="text-danger">"'+data+'"</div>'+txt+'</h1>',
+            textVisible: true,
+            textonly: true,
+            theme: 'e'
+        });
+        setTimeout(function(){
+            socket.emit('app update', 'partition', {
+                no: 1,
+                cmd: cmd,
+                password: data
+            });
+            $.mobile.loading('hide');
+        }, 5000);
     });
 
 

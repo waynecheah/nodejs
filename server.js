@@ -1,27 +1,28 @@
 
-var mongoose   = require('mongoose');
-var http       = require('http');
-var net        = require('net');
-var connect    = require('connect');
-var io         = require('socket.io');
-var fs         = require('fs');
-var crypto     = require('crypto');
-var colors     = require('colors');
-var _          = require('lodash');
-var moment     = require('moment');
-var nodemailer = require('nodemailer');
+var mongoose     = require('mongoose');
+var http         = require('http');
+var net          = require('net');
+var connect      = require('connect');
+var io           = require('socket.io');
+var fs           = require('fs');
+var crypto       = require('crypto');
+var colors       = require('colors');
+var _            = require('lodash');
+var moment       = require('moment');
+var nodemailer   = require('nodemailer');
+var randomString = require('random-string');
 
 var environment = _.isUndefined(process.env.NODE_ENV) ? 'development' : process.env.NODE_ENV;
-var sockets    = [];
-var websockets = [];
-var RN         = '\r\n';
-var _timer     = null;
-var host       = '192.168.1.75';
-var clientErr  = {
+var sockets     = [];
+var websockets  = [];
+var RN          = '\r\n';
+var _timer      = null;
+var host        = '192.168.1.75';
+var clientErr   = {
     e0: 'Invalid input',
     e3: 'Invalid light status update, improper format sent'
 };
-var serverErr  = {
+var serverErr   = {
     e0: 'Invalid input',
     e1: 'System error',
     e2: 'Error found while query made to database',
@@ -37,8 +38,8 @@ var serverErr  = {
     e12: '',
     e13: ''
 };
-var webErr     = {};
-var mapping = {
+var webErr      = {};
+var mapping     = {
     system: {
         type: {
             0: 'N/A',
@@ -210,6 +211,7 @@ function encryption (data, key, iv, format) {
 
     random = randomString({ length:random });
     data   = random+'|'+data;
+    log('s', 'i', 'Encrypt data: '+data);
 
     cipher.setAutoPadding(false);
     return cipher.update(data, 'utf8', format);
@@ -217,17 +219,19 @@ function encryption (data, key, iv, format) {
 
 function decryption (data, key, iv, format) {
     var decipher = crypto.createDecipheriv('aes-128-cbc', key, iv);
-    var decrData, pos;
+    var decrData, position;
 
     decipher.setAutoPadding(false);
     decrData = decipher.update(data, format, 'utf8');
-    pos      = decrData.indexOf('|'); // get separator position
+    position = decrData.indexOf('|'); // get separator position
 
-    if (pos < 0) { // invalid data, there should have a | within decrypted data
+    if (position < 0) { // invalid data, there should have a | within decrypted data
+        log('n', 'e', 'Invalid decrypted data: '+decrData);
         return false;
     }
+    log('n', 's', 'Decrypted data: '+decrData);
 
-    return decrData.substr(pos+1);
+    return decrData.substr(position+1);
 } // decryption
 
 function datetime () {
@@ -1045,21 +1049,43 @@ var server = net.createServer(function (socket) {
                 }
             }
         } else if (dt.substr(0,4) == 'aes=') {
-            var secret = data.split(RN);
+            var secret = dt.split(RN);
             var str, serverSecret;
+            var words = [
+                'do not call me lao ban',
+                'you want lor choi only',
+                'it is a fair world',
+                'we both have pressure',
+                'do not touch my shoulder',
+                'alex is real lao ban',
+                'we are only fake lao ban',
+                'who make kee wee kiasu',
+                'do you believe in god',
+                'innerzon has talents'
+            ];
+            var i = randomString({ length:1, letters:false });
 
-            _.each(secret, function(d){
-                if (d.substr(0,4) == 'aes=') {
-                    str = d.substr(4);
-                    str = decryption(str, 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
-                    log('n', 'i', 'secret came from hardware '+str);
+            _.each(secret, function(s){
+                if (s.substr(0,4) == 'aes=') {
+                    log('n', 'i', 'Receive AES data: '+s.substr(4));
+                    str = decryption(s.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+
+                    if (str) {
+                        log('n', 'i', 'Secret came from hardware: '+str);
+
+                        _.each(websockets, function(websocket){
+                            websocket.emit('AES', str);
+                        });
+                    }
                 }
             });
-
-            serverSecret = encryption('this is my secret', 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
-
             socket.write('ok'+RN);
-            socket.write(serverSecret+RN);
+
+            serverSecret = encryption(words[i], 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+            if (serverSecret) {
+                log('s', 's', 'Sent encrypted data: '+serverSecret);
+                socket.write(serverSecret+RN);
+            }
         } else if (dt.substr(0,7) == '-hello-') { // device is checking if server alive and responding
             log('n', 'i', socket.id+' says hello');
             socket.write('ok'+RN);

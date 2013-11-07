@@ -1,11 +1,11 @@
 {
   "name": "node-app",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "private": true,
   "description": "a Node application",
   "scripts": {
-    "start": "node app.js",
-    "debug": "node debug app.js"
+    "start": "node server.js",
+    "debug": "node debug server.js"
   },
   "dependencies": {
     "mongoose": ">= 2.6.5",
@@ -14,12 +14,13 @@
     "socket.io": "~0.9.16",
     "connect": "~2.9.0",
     "lodash": "~2.1.0",
-    "moment": "~2.3.1"
+    "moment": "~2.3.1",
+    "random-string": "~0.1.1"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/waynecheah/nodejs.git"
   },
-  "main": "app.js",
+  "main": "server.js",
   "author": "Wayne Cheah"
 }
