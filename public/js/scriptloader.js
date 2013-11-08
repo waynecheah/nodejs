@@ -143,7 +143,7 @@
 
 
     (loader = {
-        useOnline: false,
+        useOnline: true,
 
         loadCss: function(){
             loadFiles(files.css, 'css');

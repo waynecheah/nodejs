@@ -83,7 +83,7 @@ div.cameraWrap {
 h3.headerTitle {
     text-overflow: ellipsis;
     white-space: nowrap;
-    overflow: auto;
+    overflow: hidden;
 }
 
 .mm-menu li.mm-label {
@@ -123,7 +123,7 @@ li.iconThumb div.ui-li-content {
 }
 
 div.header div.navBackWrap {
-    width: 82px;
+    width: 80px;
     padding-top: 5px;
 }
 div.header a.ico-left-open, div.header a.ico-left-open-mini {
