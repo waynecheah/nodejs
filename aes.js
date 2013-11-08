@@ -1,7 +1,8 @@
 
-var net        = require('net');
-var crypto     = require('crypto');
-var colors     = require('colors');
+var net    = require('net');
+var crypto = require('crypto');
+var colors = require('colors');
+var _      = require('lodash');
 
 var sockets    = [];
 var RN         = '\r\n';
