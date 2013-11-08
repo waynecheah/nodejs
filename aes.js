@@ -5,7 +5,7 @@ var colors     = require('colors');
 
 var sockets    = [];
 var RN         = '\r\n';
-var host       = '127.0.0.1';
+var host       = '192.168.1.75';
 
 function hex2a (hex) {
     var str = '';
@@ -57,6 +57,18 @@ function log (env, type, mesg) {
     console.log('  '+'['+colors.bold(colors.white(env))+'] '+colors.bold(type)+' '+mesg);
 } // log
 
+
+_.each(process.argv, function(v, i){
+    if (i < 2) {
+        return;
+    }
+    if (v == 'l') { // running at localhost
+        host = '127.0.0.1';
+    } else if (ps = iss(v, 'n')) { // running on local network
+        var sn = gv(v, ps);
+        host   = '192.168.1.'+sn;
+    }
+});
 
 
 //
