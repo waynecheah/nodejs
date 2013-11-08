@@ -1068,7 +1068,7 @@ var server = net.createServer(function (socket) {
             _.each(secret, function(s){
                 if (s.substr(0,4) == 'aes=') {
                     log('n', 'i', 'Receive AES data: '+s.substr(4));
-                    str = decryption(s.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+                    str = decryption(s.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
 
                     if (str) {
                         log('n', 'i', 'Secret came from hardware: '+str);
@@ -1081,7 +1081,7 @@ var server = net.createServer(function (socket) {
             });
             socket.write('ok'+RN);
 
-            serverSecret = encryption(words[i], 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+            serverSecret = encryption(words[i], 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
             if (serverSecret) {
                 log('s', 's', 'Sent encrypted data: '+serverSecret);
                 socket.write(serverSecret+RN);

@@ -279,7 +279,7 @@ socket.get = function(type, item) {
     log('n', 'd', _data[type][item]);
 };
 socket.aes = function(str){
-    var secret = encryption(str, 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+    var secret = encryption(str, 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
 
     if (secret) {
         _stage = 'aes';
@@ -402,7 +402,7 @@ socket.on('data', function(data) {
             resetTime();
         } else if (_stage == 'aes') {
             _stage = 'ready'
-            str    = decryption(data, 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+            str    = decryption(data, 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
 
             if (str) {
                 log('s', 'i', 'Secret came from server: '+str);
