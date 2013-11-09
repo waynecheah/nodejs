@@ -87,7 +87,7 @@ var server = net.createServer(function (socket) {
         socket.write('Welcome! And you name is?');
     });
     socket.on('data', function(data) { // send from client
-        var mesg = data.toString().replace(RN, '');
+        var mesg = data.replace(RN, '');
 
         if (mesg == 'quit') {
             socket.write('\r\nSee ya ;)\r\n');
@@ -98,7 +98,7 @@ var server = net.createServer(function (socket) {
                 }
             }
         } else if (mesg.substr(0,4) == 'enc=') {
-            var encrypted = encryption(mesg.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+            var encrypted = encryption(mesg.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
             for (var i=0; i<sockets.length; i++) {
                 if (sockets[i] == socket) {
                     socket.write(encrypted+RN);
@@ -108,7 +108,7 @@ var server = net.createServer(function (socket) {
             log('n', 's', 'Encrypted: ['+encrypted+']');
         } else if (mesg.substr(0,4) == 'dec=') {
             log('n', 'i', '['+mesg.substr(4)+']');
-            var decrypted = decryption(mesg.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+            var decrypted = decryption(mesg.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
             for (var i=0; i<sockets.length; i++) {
                 if (sockets[i] == socket) {
                     socket.write(decrypted+RN)
