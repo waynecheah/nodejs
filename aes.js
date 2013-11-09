@@ -91,7 +91,7 @@ var server = net.createServer(function (socket) {
         log('n', 'd', data);
         var mesg = data.toString().replace(RN, '');
         log('n', 'i', 'After to string');
-        log('n', 'd', mesg;
+        log('n', 'd', mesg);
 
         if (mesg == 'quit') {
             socket.write('\r\nSee ya ;)\r\n');
