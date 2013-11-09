@@ -98,7 +98,7 @@ var server = net.createServer(function (socket) {
                 }
             }
         } else if (mesg.substr(0,4) == 'enc=') {
-            var encrypted = encryption(mesg.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
+            var encrypted = encryption(mesg.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
             for (var i=0; i<sockets.length; i++) {
                 if (sockets[i] == socket) {
                     socket.write(encrypted+RN);
@@ -108,7 +108,7 @@ var server = net.createServer(function (socket) {
             log('n', 's', 'Encrypted: ['+encrypted+']');
         } else if (mesg.substr(0,4) == 'dec=') {
             log('n', 'i', '['+mesg.substr(4)+']');
-            var decrypted = decryption(mesg.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
+            var decrypted = decryption(mesg.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
             for (var i=0; i<sockets.length; i++) {
                 if (sockets[i] == socket) {
                     socket.write(decrypted+RN)

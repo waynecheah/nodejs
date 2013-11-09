@@ -199,11 +199,11 @@ function encryption (data, key, iv, format) {
     var strlen = data.length;
     var random;
 
-    if (strlen <= 11) { // use 16 bytes
+    if (strlen <= 12) { // use 16 bytes
         random = 15 - strlen;
-    } else if (strlen <= 27) { // use 32 bytes
+    } else if (strlen <= 28) { // use 32 bytes
         random = 31 - strlen;
-    } else if (strlen <= 43) { // use 48 bytes
+    } else if (strlen <= 44) { // use 48 bytes
         random = 47 - strlen;
     } else {
         return false;
@@ -1068,7 +1068,7 @@ var server = net.createServer(function (socket) {
             _.each(secret, function(s){
                 if (s.substr(0,4) == 'aes=') {
                     log('n', 'i', 'Receive AES data: '+s.substr(4));
-                    str = decryption(s.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
+                    str = decryption(s.substr(4), 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
 
                     if (str) {
                         log('n', 'i', 'Secret came from hardware: '+str);
@@ -1081,7 +1081,7 @@ var server = net.createServer(function (socket) {
             });
             socket.write('ok'+RN);
 
-            serverSecret = encryption(words[i], 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
+            serverSecret = encryption(words[i], 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
             if (serverSecret) {
                 log('s', 's', 'Sent encrypted data: '+serverSecret);
                 socket.write(serverSecret+RN);
