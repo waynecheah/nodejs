@@ -947,12 +947,13 @@ function init () {
         });
 
         if (sts == '1' || sts == '2' || sts == '3') {
-            txt = 'Disarmed in 5 seconds';
+            txt = 'Disarmed in 2 seconds';
             cmd = 0;
         } else {
-            txt = 'Armed in 5 seconds';
+            txt = 'Armed in 2 seconds';
             cmd = 1;
         }
+        txt = '';
 
         $.mobile.loading('show', {
             html: '<h1>I have knew your secret! <div class="text-danger">"'+data+'"</div>'+txt+'</h1>',
@@ -961,13 +962,13 @@ function init () {
             theme: 'e'
         });
         setTimeout(function(){
-            socket.emit('app update', 'partition', {
+            /*socket.emit('app update', 'partition', {
                 no: 1,
                 cmd: cmd,
                 password: data
-            });
+            });*/
             $.mobile.loading('hide');
-        }, 5000);
+        }, 2000);
     });
 
 
