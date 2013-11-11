@@ -328,6 +328,7 @@ function updateAlarmStatus (alert) {
 
 function updateZones () {
     var cls, con, info, id, no, pt, s1, s2, stt, thm, ty;
+    var serialNo = _data.info.sn;
     var pts      = {};
     var listview = '';
     var liHtml   = '';
@@ -428,14 +429,16 @@ function updateZones () {
 
 
     if (_.keys(pts).length == 1) {
-        liHtml = '<li><em class="mm-counter">'+pts['1'].length+'</em><a href="#page-security" class="ico-megaphone"> Security Status</a></li>';
+        liHtml = '<li class="security"><em class="mm-counter">'+pts['1'].length+'</em>' +
+                 '<a href="#page-security" class="ico-megaphone"> Security Status</a></li>';
     } else {
         _.each(pts, function(zones, i){
-            liHtml += '<li><em class="mm-counter">'+zones.length+'</em><a href="#page-security/p'+i+'" class="ico-megaphone">' +
-                      ' Security Partition '+i+'</a></li>';
+            liHtml += '<li class="security"><em class="mm-counter">'+zones.length+'</em>' +
+                      '<a href="#page-security/p'+i+'" class="ico-megaphone"> Security Partition '+i+'</a></li>';
         });
     }
 
+    $('#location ul.sn li.security').remove();
     $('#location ul.sn').prepend(liHtml);
     initSidePanel();
 } // updateZones
