@@ -33,7 +33,7 @@ var serverErr   = {
     e7: 'Reported system info found incomplete',
     e8: 'No any partition status reported',
     e9: 'No any zone status reported',
-    e10: '',
+    e10: 'Fail update device last status info to DB',
     e11: '',
     e12: '',
     e13: ''
@@ -477,6 +477,8 @@ function getCurrentStatus (socket, data) {
                 log('n', 'i', 'All current status have updated successfully');
                 socket.data.status = socket.tmp;
                 socket.tmp         = {};
+
+                dbStatusUpdate(socket);
             }
         } else if (dt) {
             log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
@@ -756,6 +758,8 @@ function getDeviceUpdate (socket, data) {
                 socket.write('e5'+RN);
                 return;
             }
+
+            //TODO(DeviceUpdate): on emergency update
         } else if (ps = iss(dt, 'li')) {
             str  = gv(dt, ps);
             info = str.split(',');
@@ -777,6 +781,7 @@ function getDeviceUpdate (socket, data) {
         if (success) {
             log('n', 'i', 'Server reply "ok" to device for the status update:- '+dt);
             socket.write('ok'+RN);
+            dbStatusUpdate(socket);
         }
     });
 } // getDeviceUpdate
@@ -819,26 +824,44 @@ function getMap (category, m1, m2, m3, m4) {
 
 
 function emitDeviceInfo (websocket) {
-    var sk;
+    var callback = function(sk){
+        websocket.emit('DeviceInformation', {
+            deviceId: sk.deviceId,
+            info: sk.info,
+            status: sk.status
+        });
+    };
 
     if (_.isUndefined(sockets[0])) { // device not online
-        // TODO(mongodb): Get device's last status update from database
-        sk = {
+        // Get device's last status update from database
+        var cond    = {}; //{ //serial: '1234' }; // TODO(user): get user's device serial number
+        var fields  = 'deviceId info status';
+        var options = { sort: { modified: -1 } };
+
+        var sk = {
             deviceId: null,
             info: null,
             status: {
                 system: null
             }
         };
-    } else {
-        sk = sockets[0].data;
-    }
 
-    websocket.emit('DeviceInformation', {
-        deviceId: sk.deviceId,
-        info: sk.info,
-        status: sk.status
-    });
+        Status.findOne(cond, fields, options, function(err, doc){
+            if (err) {
+                log('s', 'e', 'Fail retrieve device last status info');
+                callback(sk);
+                return;
+            } else if (!doc) {
+                callback(sk);
+                return;
+            }
+
+            doc.deviceId = null;
+            callback(doc);
+        });
+    } else {
+        callback(sockets[0].data);
+    }
 } // emitDeviceInfo
 
 function emitDeviceUpdate (serial, type, value) {
@@ -853,28 +876,6 @@ function emitDeviceUpdate (serial, type, value) {
         });
     });
 } // emitDeviceUpdate
-
-function statusUpdate (data) {
-    if (typeof data == 'object') {
-        for (var i=0; i<websockets.length; i++) {
-            websockets[i].emit('InitialUpdates', data);
-        }
-    }
-} // statusUpdate
-
-function deviceUpdate (id, type, value, socketInfo) {
-    for (var i=0; i<websockets.length; i++) {
-        websockets[i].emit('DeviceUpdate', {
-            id: id,
-            type: type,
-            value: value
-        });
-    }
-
-    if (typeof socketInfo != 'undefined' && typeof socketInfo.sn != 'undefined') {
-        fnDeviceLog(type, socketInfo.sn, id, value);
-    }
-} // deviceUpdate
 
 function appUpdate (type, data) {
     var cmd;
@@ -931,6 +932,36 @@ function reportedOkay (socket, data) {
 } // reportedOkay
 
 
+function dbStatusUpdate (socket) {
+    var cond = {
+        deviceId: socket.id,
+        serial: socket.data.info.sn
+    };
+    var update = {
+        $set: {
+            info: socket.data.info,
+            status: socket.data.status,
+            modified: Date.now()
+        }
+    };
+
+    Status.update(cond, update, { upsert:true }, function(err, updated, rawResponse){
+        if (err) {
+            log('s', 'e', 'Fail update device last status info to DB');
+            socket.write('e10'+RN);
+            return;
+        }
+
+        if (rawResponse.updatedExisting) {
+            log('s', 's', 'Device last status info has updated to DB successfully. '+updated+' document inserted');
+        } else {
+            log('s', 's', 'Device last status info has inserted to DB successfully. '+updated+' document updated');
+        }
+        log('s', 'd', rawResponse);
+    });
+} // dbStatusUpdate
+
+
 
 _.each(process.argv, function(v, i){
     if (i < 2) {
@@ -956,6 +987,7 @@ db.once('open', function(){
     log('s', 'i', 'MongoDB connected! host: '+db.host+', port: '+db.port);
 });
 var ObjectId = mongoose.Schema.Types.ObjectId;
+var Mixed    = mongoose.Schema.Types.Mixed;
 var Client = mongoose.model('Client', {
     username: String,
     password: String,
@@ -968,6 +1000,19 @@ var Device = mongoose.model('Device', {
     macAdd: String,
     serial: { type:String, index:true },
     lastSync: Number,
+    created: { type:Date, default:Date.now },
+    modified: { type:Date, default:Date.now }
+});
+var Status = mongoose.model('Status', {
+    deviceId: String,
+    serial: String,
+    info: {
+        cn: String,
+        pn: String,
+        sn: String,
+        vs: Number
+    },
+    status: Mixed,
     created: { type:Date, default:Date.now },
     modified: { type:Date, default:Date.now }
 });
