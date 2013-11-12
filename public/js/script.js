@@ -267,9 +267,9 @@ function updateDeviceStatus (data) {
 } // updateDeviceStatus
 
 function updateAlarmStatus (alert) {
-    var info, txt;
+    var color, info, txt;
     var rdr  = $('#page-security').attr('data-render');
-    var cls  = 'text-success text-danger text-warning text-muted';
+    var cls  = _statusCls;
     var thm  = 'b';
     var ptid = 1;
     var sts  = null;
@@ -282,7 +282,8 @@ function updateAlarmStatus (alert) {
     });
 
     if (sts == '1' || sts == '2' || sts == '3') { // alarm currently armed
-        thm = 'e';
+        thm   = 'e';
+        color = 'text-success';
 
         if (sts == '1') {
             txt = 'Armed Away';
@@ -295,23 +296,26 @@ function updateAlarmStatus (alert) {
         $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-lock');
         $('#page-security a.armBtn span.armTxt').html(txt+' - Press to Disamed');
 
-        $('span.i-lock').removeClass(cls+' ico-lock-open').addClass('text-success ico-lock-1').show();
-        $('div.header span.i-emergency').hide();
+        $('span.i-lock').removeClass(cls+' ico-lock-open').addClass(color+' ico-lock').show();
     } else if (sts == '0') { // alarm currently disarmed
-        txt = 'Disarmed';
+        txt   = 'Disarmed';
+        color = 'text-warning';
+
         $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
         $('#page-security a.armBtn span.armTxt').html('Disarmed - Press to Arm');
 
-        $('span.i-lock').removeClass(cls+' ico-lock-1').addClass('text-warning ico-lock-open').show();
-        $('div.header span.i-emergency').hide();
+        $('span.i-lock').removeClass(cls+' ico-lock').addClass(color+' ico-lock-open').show();
     } else if (sts == 'p') { // TODO(remove): panic shouldn't appear here?
-        txt = 'Panic';
+        txt   = 'Panic';
+        color = 'text-danger';
+
         $('#page-security a.armBtn span.glyphicon').attr('class', 'glyphicon glyphicon-warning-sign');
         $('#page-security a.armBtn span.armTxt').html('Panic - Press to Arm');
 
-        $('span.i-emergency').removeClass(cls).addClass('text-danger').show();
+        $('span.i-emergency').removeClass(cls).addClass(color).show();
     }
 
+    $('.armStatus').removeClass(cls).addClass(color).html(txt);
     $('#page-security a.armBtn').attr('data-status', sts);
 
     if (rdr == '1') { // page is rendered by jQuerymobile
@@ -329,6 +333,7 @@ function updateAlarmStatus (alert) {
 function updateZones () {
     var cls, con, info, id, no, pt, s1, s2, stt, thm, ty;
     var serialNo = _data.info.sn;
+    var ptid     = 1;
     var pts      = {};
     var listview = '';
     var liHtml   = '';
@@ -388,6 +393,10 @@ function updateZones () {
             pts[pt].push(no);
         }
 
+        if (pt > 1) { // TODO(Partition): currently only show partition 1, future version show all available partitions
+            return;
+        }
+
         listview += '<li data-theme="'+thm+'" class="'+id+'"><img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />' +
                     '<h3>Zone '+no+' <span class="pl5 s12">'+ty+'</span></h3><p>'+con+'</p><span class="ui-li-aside">' +
                     '<div data-role="fieldcontain" data-status="'+info[2]+'" class="bypass" style="display:none;">' +
@@ -440,6 +449,7 @@ function updateZones () {
 
     $('#location ul.sn li.security').remove();
     $('#location ul.sn').prepend(liHtml);
+    $('#home span.totalZones').html(pts[ptid].length);
     initSidePanel();
 } // updateZones
 
@@ -768,7 +778,6 @@ function updateLights () {
         tpl.appendTo('#page-lights ul[data-role=listview]');
     });
 
-    $('#home span.ui-li-count').html(_data.status.lights.length);
     $('li.lights em.mm-counter').html(_data.status.lights.length);
 
     if ($('#page-lights.ui-page').length) { // page already rendered
