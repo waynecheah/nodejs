@@ -459,26 +459,16 @@ function getCurrentStatus (socket, data) {
                 log('n', 'w', 'No any zone status reported');
                 socket.write('e9'+RN);
             } else {
-                var lastSync = datetime();
-
-                Device.findOneAndUpdate({ serial:socket.data.info.sn }, { lastSync:lastSync }, function(err){
-                    if (err) {
-                        log('n', 'e', err);
-                        socket.write('e2'+RN);
-                        return
-                    }
-                    log('n', 'i', 'Update database of it last sync date & time: '+lastSync);
-
-                    _.each(websockets, function(websocket){
-                        emitDeviceInfo(websocket);
-                    });
-                });
-
                 log('n', 'i', 'All current status have updated successfully');
                 socket.data.status = socket.tmp;
                 socket.tmp         = {};
 
-                dbStatusUpdate(socket);
+                dbUpdateLastSync(socket.data.info.sn);
+                dbStatusUpdate(socket, function(){
+                    _.each(websockets, function(websocket){
+                        emitDeviceInfo(websocket);
+                    });
+                });
             }
         } else if (dt) {
             log('n', 'e', 'Invalid input: '+dt.replace(RN,''));
@@ -932,7 +922,25 @@ function reportedOkay (socket, data) {
 } // reportedOkay
 
 
-function dbStatusUpdate (socket) {
+function dbUpdateLastSync (serial, callback) {
+    var lastSync = datetime();
+
+    Device.findOneAndUpdate({ serial:serial }, { lastSync:lastSync }, function(err){
+        if (err) {
+            log('n', 'e', err);
+            socket.write('e2'+RN);
+            return
+        }
+
+        log('n', 'i', 'Update database of it last sync date & time: '+lastSync);
+
+        if (_.isDefined(callback) && _.isFunction(callback)) {
+            callback();
+        }
+    });
+} // dbUpdateLastSync
+
+function dbStatusUpdate (socket, callback) {
     var cond = {
         deviceId: socket.id,
         serial: socket.data.info.sn
@@ -958,6 +966,10 @@ function dbStatusUpdate (socket) {
             log('s', 's', 'Device last status info has inserted to DB successfully. '+updated+' document updated');
         }
         log('s', 'd', rawResponse);
+
+        if (_.isDefined(callback) && _.isFunction(callback)) {
+            callback();
+        }
     });
 } // dbStatusUpdate
 

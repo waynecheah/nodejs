@@ -231,14 +231,19 @@ function cloneHeader (page, title) {
 function updateAppOnlineStatus () {
     if (window.onLine) {
         $('div.header span.i-internet').removeClass(_statusCls).addClass('text-success');
+
+        if (!socket.socket.connected) { // attempt reconnect socket if socket has disconnected
+            socket.connect();
+        }
     } else {
         $('div.header span.i-internet').removeClass(_statusCls).addClass('text-danger');
-        $('div.header span.i-server').removeClass(_statusCls).addClass('text-muted');
+        $('div.header span.i-server').removeClass('ico-upload-cloud '+_statusCls).addClass('ico-cloud text-muted');
         $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-muted');
         $('div.header span.i-lock').removeClass(_statusCls).addClass('text-muted').show();
         $('div.header span.i-health').removeClass(_statusCls).addClass('text-muted').show();
         $('div.header span.i-emergency').hide();
         $('div.header span.i-troubles').hide();
+        disableLightsUpdate();
     }
 } // updateAppOnlineStatus
 
@@ -815,6 +820,16 @@ function updateLights () {
     Holder.run();
 } // updateLights
 
+function disableLightsUpdate (no) {
+    if (_.isDefined(no) && no) {
+        $('#page-lights li[data-id=li'+no+'] select[data-role=slider]').slider('disable');
+        $('#page-lights li[data-id=li'+no+']').find('div.slider input').slider('disable').addClass('ui-disabled');
+    } else {
+        $('#page-lights li select[data-role=slider]').slider('disable');
+        $('#page-lights li').find('div.slider input').slider('disable').addClass('ui-disabled');
+    }
+} // disableLightsUpdate
+
 function emitLightUpdate (no, command, value) {
     socket.emit('app update', 'light', {
         no: no,
@@ -853,17 +868,20 @@ function pad (number, length) {
 
 
 function init () {
+    var icoOnline  = 'ico-upload-cloud ';
+    var icoOffline = 'ico-cloud ';
+
     socket = io.connect('http://'+document.domain+':'+window.location.port, {
         'max reconnection attempts': 100
     });
 
     socket.on('connect', function(){
         $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
-        $('div.header span.i-server').removeClass(_statusCls).addClass('text-success');
+        $('div.header span.i-server').removeClass(icoOffline+_statusCls).addClass(icoOnline+'text-success');
     });
     socket.on('connecting', function(){
         $('.connection').removeClass('text-danger text-success').addClass('text-default').html('Connecting..');
-        $('div.header span.i-server').removeClass(_statusCls).addClass('text-warning');
+        $('div.header span.i-server').removeClass(icoOnline+_statusCls).addClass(icoOffline+'text-warning');
     });
     socket.on('disconnect', function(){
         $('#page-security div.armBtnWrap').hide();
@@ -871,17 +889,20 @@ function init () {
         $('.status').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
         $('.connection').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
 
-        $('div.header span.i-server').removeClass(_statusCls).addClass('text-danger');
+        $('div.header span.i-server').removeClass(icoOnline+_statusCls).addClass(icoOffline+'text-danger');
         $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-warning');
         $('div.header span.i-lock').removeClass(_statusCls).addClass('text-muted').show();
         $('div.header span.i-health').removeClass(_statusCls).addClass('text-muted').show();
         $('div.header span.i-emergency').hide();
         $('div.header span.i-troubles').hide();
+
+        disableLightsUpdate();
         notification('Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000);
     });
     socket.on('reconnect', function(){
+        loggedSuccess();
         notification('Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000);
-        $('div.header span.i-server').removeClass(_statusCls).addClass('text-success');
+        $('div.header span.i-server').removeClass(icoOffline+_statusCls).addClass(icoOnline+'text-success');
     });
 
     socket.on('DeviceInformation', function(data){
@@ -893,6 +914,8 @@ function init () {
         $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-danger');
 
         $('.status').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
+
+        disableLightsUpdate();
         notification('Panel Offline', 'Your panel is detected offline now, this may due to internet connection problem.', 10000);
     });
     socket.on('DeviceUpdate', function(d){
