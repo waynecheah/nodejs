@@ -49,6 +49,9 @@
  
 .ico-spin4:before { content: '\e809'; } /* '' */
 .ico-logout:before { content: '\e80d'; } /* '' */
+.ico-upload-cloud:before { content: '\e80a'; } /* '' */
+.ico-cloud:before { content: '\e81f'; } /* '' */
+.ico-download-cloud:before { content: '\e821'; } /* '' */
 .ico-cog-alt:before { content: '\e810'; } /* '' */
 .ico-login:before { content: '\e80e'; } /* '' */
 .ico-ellipsis-vert:before { content: '\e812'; } /* '' */
