@@ -1212,6 +1212,22 @@ function init () {
         $('#page-how-to-arm div.countdown').hide();
     });
 
+    // SYSTEM STATUS PAGE //
+    $('#page-system-status').on('pagecreate', function(){
+        cloneHeader('system-status', 'System Status');
+    }).on('pageshow', function(){
+        $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+        $('nav.sidepanel ul li.system-status').addClass('mm-selected');
+    });
+
+    // ALARM PAGE //
+    $('#page-alarm').on('pagecreate', function(){
+        cloneHeader('alarm', 'Alarm');
+    }).on('pageshow', function(){
+        $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+        $('nav.sidepanel ul li.alarm').addClass('mm-selected');
+    });
+
     // CAMERAS PAGE //
     $('#page-cameras').on('pagebeforecreate', function(){
         var html = '';
@@ -1273,14 +1289,6 @@ function init () {
         loadCamera();
     }).on('pagehide', function(){
         _loadCam = false;
-    });
-
-    // SYSTEM STATUS PAGE //
-    $('#page-system-status').on('pagecreate', function(){
-        cloneHeader('system-status', 'System Status');
-    }).on('pageshow', function(){
-        $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
-        $('nav.sidepanel ul li.system-status').addClass('mm-selected');
     });
 
     // LIGHTS PAGE //
