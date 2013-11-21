@@ -934,7 +934,7 @@ function dbUpdateLastSync (serial, callback) {
 
         log('n', 'i', 'Update database of it last sync date & time: '+lastSync);
 
-        if (_.isDefined(callback) && _.isFunction(callback)) {
+        if (!_.isUndefined(callback) && _.isFunction(callback)) {
             callback();
         }
     });
@@ -967,7 +967,7 @@ function dbStatusUpdate (socket, callback) {
         }
         log('s', 'd', rawResponse);
 
-        if (_.isDefined(callback) && _.isFunction(callback)) {
+        if (!_.isUndefined(callback) && _.isFunction(callback)) {
             callback();
         }
     });

@@ -232,8 +232,8 @@ function updateAppOnlineStatus () {
     if (window.onLine) {
         $('div.header span.i-internet').removeClass(_statusCls).addClass('text-success');
 
-        if (!socket.socket.connected) { // attempt reconnect socket if socket has disconnected
-            socket.connect();
+        if (_wsProcess.indexOf('connecting_websocket') < 0 && !socket.socket.connected) { // attempt reconnect socket if socket has disconnected
+            socket.socket.connect();
         }
     } else {
         $('div.header span.i-internet').removeClass(_statusCls).addClass('text-danger');
@@ -724,7 +724,7 @@ function loadCamera () {
 } // loadCamera
 
 function updateLights () {
-    var info, no, type, status, value, user, tpl;
+    var info, no, opts, type, status, value, user, tpl;
     var html1 = $('#light-list').html();
     var html2 = $('#dim-light-list').html();
 
@@ -742,10 +742,10 @@ function updateLights () {
         value  = parseInt(info[3]);
         user   = info[4];
 
-        if (type == 2) { // dimabled light
+        if (type == 2) { // dimmable light
             tpl = $(html2);
 
-            if (status == 0) {
+            if (!_data.deviceId || status == 0) { // device is not online or dimmable light in off mode, disabled by default
                 status = 'off';
                 tpl.find('div.slider input[type=range]').attr('disabled', true);
             } else {
@@ -773,12 +773,17 @@ function updateLights () {
             }
         }
 
-        tpl.attr('data-id', 'li'+no);
-        tpl.find('h3.listTitle').append(type);
-        tpl.find('select[data-role=slider]').attr({
+        opts = {
             id: 'lightSwitch'+no,
             'data-no': no
-        });
+        };
+        if (!_data.deviceId) { // device is not online, disabled by default
+            opts.disabled = 'disabled';
+        }
+
+        tpl.attr('data-id', 'li'+no);
+        tpl.find('h3.listTitle').append(type);
+        tpl.find('select[data-role=slider]').attr(opts);
         tpl.find('select[data-role=slider]').val(status); // light on/off
         tpl.appendTo('#page-lights ul[data-role=listview]');
     });
@@ -821,7 +826,7 @@ function updateLights () {
 } // updateLights
 
 function disableLightsUpdate (no) {
-    if (_.isDefined(no) && no) {
+    if (!_.isUndefined(no) && no) {
         $('#page-lights li[data-id=li'+no+'] select[data-role=slider]').slider('disable');
         $('#page-lights li[data-id=li'+no+']').find('div.slider input').slider('disable').addClass('ui-disabled');
     } else {
@@ -871,15 +876,19 @@ function init () {
     var icoOnline  = 'ico-upload-cloud ';
     var icoOffline = 'ico-cloud ';
 
+    _wsProcess.push('connecting_websocket');
+
     socket = io.connect('http://'+document.domain+':'+window.location.port, {
         'max reconnection attempts': 100
     });
 
     socket.on('connect', function(){
+        _.pull(_wsProcess, 'connecting_websocket');
         $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
         $('div.header span.i-server').removeClass(icoOffline+_statusCls).addClass(icoOnline+'text-success');
     });
     socket.on('connecting', function(){
+        _wsProcess.push('connecting_websocket');
         $('.connection').removeClass('text-danger text-success').addClass('text-default').html('Connecting..');
         $('div.header span.i-server').removeClass(icoOnline+_statusCls).addClass(icoOffline+'text-warning');
     });
@@ -900,6 +909,7 @@ function init () {
         notification('Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000);
     });
     socket.on('reconnect', function(){
+        _.pull(_wsProcess, 'connecting_websocket');
         loggedSuccess();
         notification('Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000);
         $('div.header span.i-server').removeClass(icoOffline+_statusCls).addClass(icoOnline+'text-success');
@@ -1202,6 +1212,22 @@ function init () {
         $('#page-how-to-arm div.countdown').hide();
     });
 
+    // SYSTEM STATUS PAGE //
+    $('#page-system-status').on('pagecreate', function(){
+        cloneHeader('system-status', 'System Status');
+    }).on('pageshow', function(){
+        $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+        $('nav.sidepanel ul li.system-status').addClass('mm-selected');
+    });
+
+    // ALARM PAGE //
+    $('#page-alarm').on('pagecreate', function(){
+        cloneHeader('alarm', 'Alarm');
+    }).on('pageshow', function(){
+        $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
+        $('nav.sidepanel ul li.alarm').addClass('mm-selected');
+    });
+
     // CAMERAS PAGE //
     $('#page-cameras').on('pagebeforecreate', function(){
         var html = '';
@@ -1263,14 +1289,6 @@ function init () {
         loadCamera();
     }).on('pagehide', function(){
         _loadCam = false;
-    });
-
-    // SYSTEM STATUS PAGE //
-    $('#page-system-status').on('pagecreate', function(){
-        cloneHeader('system-status', 'System Status');
-    }).on('pageshow', function(){
-        $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
-        $('nav.sidepanel ul li.system-status').addClass('mm-selected');
     });
 
     // LIGHTS PAGE //
