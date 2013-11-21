@@ -121,6 +121,17 @@ li.iconThumb div.ui-li-thumb {
 li.iconThumb div.ui-li-content {
     padding: 20px 0 0 8px;
 }
+li.iconThumbFormat div.ui-block-a {
+    padding-left: 86px;
+}
+li.iconThumbFormat div.nested h3 {
+    padding-top: 9px;
+}
+li.iconThumbFormat div.ui-block-b {
+    line-height: 45px;
+    padding-top: 13px;
+    text-align: right;
+}
 
 div.header div.navBackWrap {
     width: 80px;
