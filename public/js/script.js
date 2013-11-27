@@ -1309,7 +1309,9 @@ function checkInternet (loop) {
         _wsProcess.push('checkInternet'); // register task name to progress list
     }
 
-    $('#internetChecker').attr('src', 'https://developers.google.com/_static/images/silhouette36.png?t='+(new Date).getTime());
+    $('#internetChecker').one('load', function(){
+        window.onLine = true;
+    }).attr('src', 'https://developers.google.com/_static/images/silhouette36.png?t='+(new Date).getTime());
 
     setTimeout(function(){
         if (!window.onLine) { // internet still down
