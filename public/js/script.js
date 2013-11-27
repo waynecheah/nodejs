@@ -125,11 +125,292 @@ var _mapping    = {
         }
     }
 };
-var socket;
+var glParams    = {
+    apiKey: 'AIzaSyD6z5RkfXSuBKGwm0djIHoRWm-OLsS7IYI',
+    client_id: '341678844265-5ak3e1c5eiaglb2h9ortqbs9q57ro6gb.apps.googleusercontent.com',
+    scope: 'https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/glass.timeline',
+    immediate: true
+};
+var socket, xmlhttp, userID;
+
+function appLogin () {
+    if (!innerzon.serverOnline) {
+        return;
+    }
+
+    var username = $('#username').val();
+    var password = $('#password').val();
+    var remember = $('#save-password').val();
+
+    if (!username || !password) {
+        if (!username) {
+            $('div[data-position-to=#username]').popup('open');
+        } else if (!password) {
+            $('div[data-position-to=#password]').popup('open');
+        }
+        return;
+    }
+
+    emitAppSignin({
+        username: username,
+        password: password,
+        remember: remember
+    });
+} // appLogin
+function appLogout (appOnly) {
+    var fnSignInPage = function(){
+        userID = null;
+        $.removeCookie('userID');
+        $.removeCookie('accessToken');
+        $.removeCookie('loggedBy');
+        $.mobile.changePage('#page-sign-in', {
+            transition: 'flip',
+            reverse: true
+        });
+    };
+    fnSignInPage();
+} // appLogout
+
+function fbLogin () {
+    if (!window.onLine) {
+        return;
+    }
+
+    $('#page-sign-in').animate({opacity:0.4}, 800);
+    $.mobile.loading('show', {
+        text: 'Sign in with Facebook',
+        textVisible: true,
+        theme: 'a'
+    });
+
+    FB.login(function(res){
+            if (res.status == 'connected'){
+                /*$.cookie.json = true;
+                $.cookie('fb.authResponse', res.authResponse, {
+                    expires: addSec2DateObj(res.authResponse.expiresIn)
+                });*/
+                var dateObj = addSec2DateObj(res.authResponse.expiresIn);
+                $.cookie('userID', res.authResponse.userID, { expires: dateObj });
+                $.cookie('loggedBy', 'facebook', { expires: dateObj });
+
+                userID  = res.authResponse.userID;
+                var fql = 'SELECT email, first_name, last_name, name, username ' +
+                          'FROM user WHERE uid ='+userID;
+                FB.api({
+                    method: 'fql.query',
+                    query: fql
+                }, function(data) {
+                    if (!data || data.error || _.isUndefined(data[0])) {
+                        innerzon.debug('Error occurred', 'err');
+                    } else {
+                        var client = {
+                            username: data[0].email,
+                            fullname: data[0].name,
+                            services: {
+                                facebook: res.authResponse
+                            }
+                        };
+                        emitFBSignin(client);
+                    }
+                });
+            } else {
+                innerzon.debug('User cancel the login process');
+                statusNotifier('The sign in process has been cancelled', 'a', 3000, function(){
+                    $('#page-sign-in').animate({opacity:1}, 800);
+                });
+            }
+        }, {
+            scope: 'email,user_location,user_online_presence,read_stream'//,publish_stream'
+        }
+    );
+} // fbLogin
+function fbLogout (appOnly) {
+    var fnSignInPage = function(){
+        userID = null;
+        $.removeCookie('userID');
+        $.removeCookie('loggedBy');
+        $.mobile.changePage('#page-sign-in', {
+            transition: 'flip',
+            reverse: true
+        });
+    };
+
+    innerzon.gdebug('Facebook logout');
+
+    if (_.isUndefined(appOnly)) { // logout from Facebook
+        FB.logout(function(res) {
+            userID = null;
+            fnSignInPage();
+            innerzon.debug('Logout user from facebook');
+            innerzon.debug(res);
+            innerzon.gdebug(false);
+        });
+    } else { // log out from our APP only
+        FB.api('/me/permissions', 'delete', function(res) {
+            userID = null;
+            fnSignInPage();
+            innerzon.debug('Logout App from facebook');
+            innerzon.debug(res);
+            innerzon.gdebug(false);
+        });
+    }
+} // fbLogout
+
+function gapiOnload () {
+    innerzon.gdebug('Google API javascript client');
+    innerzon.debug('Client library is loaded');
+    gapi.client.setApiKey(glParams.apiKey);
+
+    innerzon.debug('Getting authorize result..');
+    window.setTimeout(function(){ // check authorization
+        gapi.auth.authorize(glParams, function(authResult){
+            innerzon.debug(authResult);
+
+            if (userID) {
+                innerzon.debug('User was logged before by Google+');
+            } else if (authResult && !authResult.error) {
+                innerzon.debug('User has just logged with Google+');
+                if (!window.location.hash){ // in loading page
+                    $.mobile.changePage('#home', {
+                        transition: 'pop'
+                    });
+                }
+            } else {
+                innerzon.debug('User has not sign-in with Google+');
+                if (window.location.hash != '#page-sign-in') {
+                    $.mobile.changePage('#page-sign-in', {
+                        transition: 'pop'
+                    });
+                }
+            }
+
+            $('a.google').css('opacity', 1).removeClass('disallowed');
+            $('a.googleGlass').css('opacity', 1).removeClass('disallowed');
+            $('a.google span.text').html('Sign in with <b>Google</b>');
+
+            innerzon.gdebug(false);
+        });
+    }, 1);
+} // gapiOnload
+function glLogin () {
+    if (!window.onLine || $('a.google').hasClass('disallowed')) {
+        return;
+    }
+
+    $('#page-sign-in').animate({opacity:0.4}, 800);
+    $.mobile.loading('show', {
+        text: 'Sign in with Google+',
+        textVisible: true,
+        theme: 'a'
+    });
+
+    var config = {
+        'client_id': glParams.client_id,
+        'scope': glParams.scope
+    };
+    var token;
+
+    gapi.auth.authorize(config, function(){
+        token = gapi.auth.getToken();
+        innerzon.debug('Google authorization callback');
+        innerzon.debug(token);
+
+        if (!token) {
+            statusNotifier('The sign in process has been cancelled', 'a', 3000, function(){
+                $('#page-sign-in').animate({opacity:1}, 800);
+            });
+        } else {
+            var dateObj = addSec2DateObj(token.expires_in);
+
+            gapi.client.load('plus', 'v1', function() {
+                gapi.client.plus.people.get({
+                    userId: 'me',
+                    fields: 'id,displayName,emails,image,name,nickname'
+                }).execute(function(res) {
+                    $.cookie('userID', res.id, { expires:dateObj });
+                    $.cookie('loggedBy', 'google', { expires:dateObj });
+
+                    userID = res.id;
+
+                    var client = {
+                        username: res.emails[0].value,
+                        fullname: res.displayName,
+                        services: {
+                            google: token
+                        }
+                    };
+                    emitGLSignin(client);
+                });
+            });
+        }
+    });
+    $(window).one('focus',function(){
+        setTimeout(function(){
+            if (!token) {
+                statusNotifier('The sign in process has been cancelled', 'a', 3000, function(){
+                    $('#page-sign-in').animate({opacity:1}, 800);
+                });
+            }
+        }, 300);
+    });
+} // glLogin
+function glLogout () {
+    var token        = gapi.auth.getToken();
+    var fnSignInPage = function(){
+        userID = null;
+        $.removeCookie('userID');
+        $.removeCookie('loggedBy');
+        $.mobile.changePage('#page-sign-in', {
+            transition: 'flip',
+            reverse: true
+        });
+    };
+
+    innerzon.gdebug('Google logout');
+
+    $.ajax({
+        type: 'GET',
+        url: 'https://accounts.google.com/o/oauth2/revoke?token='+token.access_token,
+        async: false,
+        contentType: 'application/json',
+        dataType: 'jsonp',
+        success: function(res) {
+            innerzon.debug('Logout App from google');
+            innerzon.debug(res);
+            innerzon.gdebug(false);
+            fnSignInPage();
+        },
+        error: function(e) {
+            innerzon.debug('Fail logout App from google');
+            innerzon.debug(e);
+            innerzon.gdebug(false);
+        }
+    });
+} // glLogout
+function makeRequest () {
+    gapi.client.load('mirror', 'v1', function() {
+        var request = gapi.client.mirror.timeline.list({
+            includeDeleted: true,
+            maxResults: 5,
+            fields: 'items(created,displayTime,id,location,notification,text,title,updated)'
+        });
+        request.execute(function(err, res) {
+            if (err) {
+                innerzon.debug(err, 'err');
+                return;
+            }
+
+            _.each(res, function(o){
+                innerzon.debug(o);
+            });
+        });
+    });
+} // makeRequest
 
 function loggedSuccess () {
+    var id = userID ? userID : $.cookie('userID');
     socket.emit('user logged', {
-        clientId: 123456
+        clientId: id
     });
 } // loggedSuccess
 function updateZone (id, value) {
@@ -166,13 +447,13 @@ function notification (title, content, timeclose) {
 
         ntf.ondisplay = function() {
             window.setTimeout(function() {
-                console.log('close '+title);
+                innerzon.debug('Close notification after '+time+' '+title);
                 ntf.cancel();
             }, time);
-            console.log('display '+title);
+            innerzon.debug('Display notification '+title);
         };
         ntf.onclose = function() {
-            console.log('Notification closing');
+            innerzon.debug('Close notification');
         };
         ntf.show();
     } else {
@@ -191,6 +472,7 @@ function permissionCheck () {
 } // permissionCheck
 
 function initSidePanel () {
+    $('nav.sidepanel').removeClass('hide');
     $('nav#location').mmenu({
         classes: 'mm-light',
         counters: false,
@@ -229,14 +511,13 @@ function cloneHeader (page, title) {
 } // cloneHeader
 
 function updateAppOnlineStatus () {
-    if (window.onLine) {
-        $('div.header span.i-internet').removeClass(_statusCls).addClass('text-success');
-
+    if (innerzon.serverOnline) { // server is connected
+        $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
+        $('div.header span.i-server').removeClass('ico-cloud '+_statusCls).addClass('ico-upload-cloud text-success');
         if (_wsProcess.indexOf('connecting_websocket') < 0 && !socket.socket.connected) { // attempt reconnect socket if socket has disconnected
             socket.socket.connect();
         }
     } else {
-        $('div.header span.i-internet').removeClass(_statusCls).addClass('text-danger');
         $('div.header span.i-server').removeClass('ico-upload-cloud '+_statusCls).addClass('ico-cloud text-muted');
         $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-muted');
         $('div.header span.i-lock').removeClass(_statusCls).addClass('text-muted').show();
@@ -245,11 +526,17 @@ function updateAppOnlineStatus () {
         $('div.header span.i-troubles').hide();
         disableLightsUpdate();
     }
+
+    if (window.onLine) { // internet is connected
+        $('div.header span.i-internet').removeClass(_statusCls).addClass('text-success');
+    } else {
+        $('div.header span.i-internet').removeClass(_statusCls).addClass('text-danger');
+    }
 } // updateAppOnlineStatus
 
 function appUpdateFailureTimer (type, cancelUpdate) {
     _timer[type] = setTimeout(function(){
-        console.log('Update of ['+type+'] failure..');
+        innerzon.debug('Update of ['+type+'] failure..');
         cancelUpdate();
     }, 5000);
 } // appUpdateFailureTimer
@@ -826,6 +1113,10 @@ function updateLights () {
 } // updateLights
 
 function disableLightsUpdate (no) {
+    if ($('#page-lights.ui-page').length == 0) { // the page is not rendered yet
+        return;
+    }
+
     if (!_.isUndefined(no) && no) {
         $('#page-lights li[data-id=li'+no+'] select[data-role=slider]').slider('disable');
         $('#page-lights li[data-id=li'+no+']').find('div.slider input').slider('disable').addClass('ui-disabled');
@@ -834,6 +1125,86 @@ function disableLightsUpdate (no) {
         $('#page-lights li').find('div.slider input').slider('disable').addClass('ui-disabled');
     }
 } // disableLightsUpdate
+
+function resRegistered (data) {
+    _.pull(_wsProcess, 'register');
+    $('#register-btn').parent().find('span.ui-btn-text').html('<span class="ico-user-add"></span> Register');
+
+    if (!data.status) {
+        $('#register-btn').button('enable');
+
+        if (data.errMessage) {
+            statusNotifier(data.errMessage, 'e', 3000);
+        }
+        if (data.usernameTaken) {
+            $('div[data-position-to=#reg-username] span.msg').html('The username is already been taken, please try another..');
+            $('div[data-position-to=#reg-username]').popup('open');
+        }
+        return;
+    }
+
+    statusNotifier('Registration has done successfully! You may login now', 'a', 2500, function(){
+        $('#username').val($('#reg-username').val());
+        $('#register-btn').button('enable');
+        window.history.back();
+        setTimeout(function(){
+            $('#password').focus()
+        }, 1000);
+    });
+} // resRegistered
+
+function resAppLogin (data) {
+    $.mobile.loading('hide');
+
+    if (data.status) { // user logged using app and proceed to home page
+        userID = data.info.userId;
+
+        var dateObj = addSec2DateObj(data.info.expiresIn);
+        $.cookie('userID', userID, { expires: dateObj });
+        $.cookie('accessToken', data.info.accessToken, { expires: dateObj });
+        $.cookie('loggedBy', 'app', { expires: dateObj });
+
+        $.mobile.changePage('#home', {
+            transition: 'flip'
+        });
+        $('#password').val('');
+    } else {
+        if (!_.isUndefined(data.field)) {
+            $('#'+data.field).focus();
+            $('div[data-position-to=#'+data.field+'] span.msg').html(data.message);
+            $('div[data-position-to=#'+data.field+']').popup('open');
+        } else if (!_.isUndefined(data.message)) {
+            statusNotifier(data.message, 'e', 3000);
+        }
+    }
+} // resAppLogin
+
+function resFbSignIn (data) {
+    $('#page-sign-in').animate({opacity:1}, 800);
+    $.mobile.loading('hide');
+
+    if (data.status) { // user logged with Facebook and proceed to home page
+        $.mobile.changePage('#home', {
+            transition: 'flip'
+        });
+    } else {
+        statusNotifier(data.message, 'e', 3000);
+    }
+} // resFbSignIn
+
+function resGlSignIn (data) {
+    $('#page-sign-in').animate({opacity:1}, 800);
+    $.mobile.loading('hide');
+
+    if (data.status) { // user logged with Google and proceed to home page
+        $.mobile.changePage('#home', {
+            transition: 'flip'
+        });
+    } else {
+        statusNotifier(data.message, 'e', 3000);
+    }
+} // resGlSignIn
+
 
 function emitLightUpdate (no, command, value) {
     socket.emit('app update', 'light', {
@@ -860,6 +1231,139 @@ function emitRegistration (data) {
     }, 5000);
 } // emitRegistration
 
+function emitAppSignin (data) {
+    $.mobile.loading('show', {
+        text: 'Logging..',
+        textVisible: true,
+        theme: 'a'
+    });
+    socket.emit('app request', 'app signin', data);
+} // emitAppSignin
+
+function emitFBSignin (data) {
+    socket.emit('app request', 'fb signin', data);
+} // emitFBSignin
+
+function emitGLSignin (data) {
+    socket.emit('app request', 'gl signin', data);
+} // emitGLSignin
+
+
+function isOffline () {
+    innerzon.debug('Check if server offline');
+    innerzon.serverOnline = false; // make a test if server really down
+
+    checkServer();
+    checkInternet();
+    setTimeout(function(){
+        if (window.onLine == false) {
+            innerzon.debug('Confirm client is disconnected from internet', 'err');
+            $(window).trigger('offline'); // confirm internet is offline now, trigger offline event
+            $(window).trigger('internetOff');
+        } else if (innerzon.serverOnline == false) {
+            innerzon.debug('Confirm server is offline', 'err');
+            $(window).trigger('offline'); // confirm server is offline now, trigger offline event
+        }
+    }, 3000);
+} // isOffline
+
+function checkServer (loop) {
+    if (!xmlhttp) {
+        if (window.XMLHttpRequest) {
+            xmlhttp = new XMLHttpRequest();
+        } else {
+            xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
+        }
+        xmlhttp.onreadystatechange = function(){
+            if (xmlhttp.readyState==4 && xmlhttp.status==200){
+                innerzon.debug('Server is online now');
+                innerzon.serverOnline = true;
+                $(window).trigger('online');
+                _.pull(_wsProcess, 'checkServerStatus');
+            }
+        };
+    }
+
+    if (typeof loop == 'undefined' && _wsProcess.indexOf('checkServerStatus') >= 0) { // checking server status is in progress
+        return;
+    }
+    if (_wsProcess.indexOf('checkServerStatus') < 0) {
+        _wsProcess.push('checkServerStatus'); // register task name to progress list
+    }
+
+    xmlhttp.open('GET', 'js/online.status.js?t='+(new Date).getTime(), true);
+    xmlhttp.send();
+
+    setTimeout(function(){
+        if (!innerzon.serverOnline) { // server still down
+            checkServer(true);
+        }
+    }, 3000);
+} // checkServer
+
+function checkInternet (loop) {
+    if (typeof loop == 'undefined' && _wsProcess.indexOf('checkInternet') >= 0) { // checking internet status is in progress
+        return;
+    }
+    if (_wsProcess.indexOf('checkInternet') < 0) {
+        _wsProcess.push('checkInternet'); // register task name to progress list
+    }
+
+    $('#internetChecker').attr('src', 'https://developers.google.com/_static/images/silhouette36.png?t='+(new Date).getTime());
+
+    setTimeout(function(){
+        if (!window.onLine) { // internet still down
+            checkInternet(true);
+        }
+    }, 3000);
+} // checkInternet
+
+function validationPopup (page) {
+    $('#'+page+' div.errPop').popup({
+        history: false,
+        shadow: false,
+        theme: 'e',
+        transition: 'flow',
+        afterclose: function(){
+            var id = $(this).attr('data-position-to');
+            $(id).focus().select();
+        }
+    });
+    $('#'+page+' div.errPop a').buttonMarkup({
+        icon: 'delete',
+        iconpos: 'notext',
+        theme: 'e'
+    });
+} // validationPopup
+
+function statusNotifier (text, theme, closeInSec, callback) {
+    $.mobile.loading('show', {
+        text: text,
+        textVisible: true,
+        textonly: true,
+        theme: theme
+    });
+
+    if (_.isUndefined(closeInSec)) {
+        return;
+    }
+    if (_.isUndefined(callback)) {
+        callback = null;
+    }
+
+    setTimeout(function(){
+        $.mobile.loading('hide');
+        callback && callback();
+    }, closeInSec);
+} // statusNotifier
+
+function getUrlVars () {
+    var vars  = {};
+    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+        vars[key] = value;
+    });
+    return vars;
+} // getUrlVars
 
 function pad (number, length) {
     var str = '' + number;
@@ -870,6 +1374,14 @@ function pad (number, length) {
 
     return str;
 } // pad
+
+function addSec2DateObj (seconds) {
+    var d = new Date();
+    var n = d.getTime() + (seconds * 1000);
+
+    d.setTime(n);
+    return d;
+} // addSec2DateObj
 
 
 function init () {
@@ -882,37 +1394,43 @@ function init () {
         'max reconnection attempts': 100
     });
 
+    socket.on('error', function(){
+        _.pull(_wsProcess, 'connecting_websocket');
+        isOffline();
+    });
     socket.on('connect', function(){
         _.pull(_wsProcess, 'connecting_websocket');
-        $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
+        $('.connection').removeClass(_statusCls).addClass('text-success').html('Connected');
         $('div.header span.i-server').removeClass(icoOffline+_statusCls).addClass(icoOnline+'text-success');
     });
     socket.on('connecting', function(){
         _wsProcess.push('connecting_websocket');
-        $('.connection').removeClass('text-danger text-success').addClass('text-default').html('Connecting..');
+        $('.connection').removeClass(_statusCls).addClass('text-default').html('Connecting..');
         $('div.header span.i-server').removeClass(icoOnline+_statusCls).addClass(icoOffline+'text-warning');
+    });
+    socket.on('connect_failed', function(){
+        _.pull(_wsProcess, 'connecting_websocket');
+        isOffline();
     });
     socket.on('disconnect', function(){
         $('#page-security div.armBtnWrap').hide();
-        $('.troubles').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
-        $('.status').removeClass('text-success text-default').addClass('text-warning').html('Unavailable');
-        $('.connection').removeClass('text-success text-default').addClass('text-danger').html('Disconnected');
+        $('.troubles').removeClass(_statusCls).addClass('text-warning').html('Unavailable');
+        $('.status').removeClass(_statusCls).addClass('text-warning').html('Unavailable');
+        $('.connection').removeClass(_statusCls).addClass('text-danger').html('Disconnected');
 
-        $('div.header span.i-server').removeClass(icoOnline+_statusCls).addClass(icoOffline+'text-danger');
-        $('div.header span.i-hardware').removeClass(_statusCls).addClass('text-warning');
-        $('div.header span.i-lock').removeClass(_statusCls).addClass('text-muted').show();
-        $('div.header span.i-health').removeClass(_statusCls).addClass('text-muted').show();
-        $('div.header span.i-emergency').hide();
-        $('div.header span.i-troubles').hide();
-
-        disableLightsUpdate();
         notification('Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000);
+        isOffline();
     });
     socket.on('reconnect', function(){
         _.pull(_wsProcess, 'connecting_websocket');
         loggedSuccess();
         notification('Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000);
         $('div.header span.i-server').removeClass(icoOffline+_statusCls).addClass(icoOnline+'text-success');
+        isOffline();
+    });
+    socket.on('reconnect_failed', function(){
+        _.pull(_wsProcess, 'connecting_websocket');
+        isOffline();
     });
 
     socket.on('DeviceInformation', function(data){
@@ -955,30 +1473,13 @@ function init () {
     });
     socket.on('ResponseOnRequest', function(req, data){
         if (req == 'register') {
-            _.pull(_wsProcess, 'register');
-            $('#register-btn').parent().find('span.ui-btn-text').html('<span class="ico-user-add"></span> Register');
-
-            if (!data.status) {
-                $('#register-btn').button('enable');
-
-                if (data.usernameTaken) {
-                    $('div[data-position-to=#reg-username] span.msg').html('The username is already been taken, please try another..');
-                    $('div[data-position-to=#reg-username]').popup('open');
-                }
-                return;
-            }
-
-            $.mobile.loading('show', {
-                text: 'Registration has done successfully! You may login now',
-                textVisible: true,
-                textonly: true,
-                theme: 'a'
-            });
-            setTimeout(function(){
-                $('#register-btn').button('enable');
-                $.mobile.loading('hide');
-                window.history.back();
-            }, 2500);
+            resRegistered(data);
+        } else if (req == 'app signin') {
+            resAppLogin(data);
+        } else if (req == 'fb signin') {
+            resFbSignIn(data);
+        } else if (req == 'gl signin') {
+            resGlSignIn(data);
         }
     });
     socket.on('AES', function(data){
@@ -1021,8 +1522,41 @@ function init () {
     if (!$.mobile.path.get()) {
         $('#username').focus();
     }
-    $('#page-sign-in').on('pageshow', function(){
+    $('#page-sign-in').on('pagecreate', function(){
+        $.mobile.defaultPageTransition = 'pop';
+        validationPopup('page-sign-in');
+    }).on('pageshow', function(){
+        $.mobile.defaultPageTransition = _transition;
         $('#username').focus();
+    });
+
+
+    $(document).on('pagebeforechange', function(e, data){
+        if (typeof data.toPage === 'string') {
+            var obj = $.mobile.path.parseUrl(data.toPage);
+
+            innerzon.gdebug('Page before change controller');
+            innerzon.debug('Hash: '+obj.hash);
+
+            if (userID) {
+                innerzon.debug('User is logged');
+                if (!obj.hash || obj.hash == '#page-sign-in' || obj.hash == '#page-register') {
+                    innerzon.debug('User should not in loading/sign-in/registration page','warn');
+                    e.preventDefault();
+                    $.mobile.urlHistory.ignoreNextHashChange = true;
+                    window.location.hash = '#home';
+                }
+            } else if (obj.hash == '#page-sign-in' || obj.hash == '#page-register') {
+                innerzon.debug('Go to sign in/registration page');
+            } else {
+                innerzon.debug('Note user they have not logged, can not browser any other page', 'warn');
+                e.preventDefault();
+                $.mobile.urlHistory.ignoreNextHashChange = true;
+                window.location.hash = '#page-sign-in';
+            }
+
+            innerzon.gdebug(false);
+        }
     });
 
     // Register //
@@ -1049,7 +1583,7 @@ function init () {
 
             if (!username || !password || !fullname) {
                 if (!username) {
-                    $('div[data-position-to=#reg-username] span.msg').html('...Please enter your username here...');
+                    $('div[data-position-to=#reg-username] span.msg').html('...Please enter your email here...');
                     $('div[data-position-to=#reg-username]').popup('open');
                 } else if (!password) {
                     $('div[data-position-to=#reg-password]').popup('open');
@@ -1071,7 +1605,6 @@ function init () {
 
     // HOME PAGE //
     $('#home').on('pagebeforecreate', function(){
-        $.mobile.defaultPageTransition = 'pop'; // after logged use pop transition
         initSidePanel();
         $('nav#main-menu').mmenu({
             counters: false,
@@ -1119,7 +1652,6 @@ function init () {
             $('div.gainPermissions').remove();
         }
     }).on('pageshow', function(){
-        $.mobile.defaultPageTransition = _transition;
         $('nav.sidepanel ul li').removeClass('mm-active mm-selected');
         $('nav.sidepanel ul li:first').addClass('mm-selected');
         $('nav.sidepanel li.location:first').addClass('mm-active');
@@ -1354,17 +1886,16 @@ function init () {
 
 
 $(function() {
+    var fbParams = {
+        appId: '553789621375577',
+        cookie: true,
+        email: true
+    };
+
+    userID = $.cookie('userID');
     $.mobile.defaultPageTransition = _transition;
 
     $(window).resize(function(){
-        if ($(this).width()<400) {
-            $('div.signinWrap').css('width', '320px');
-        } else if ($(this).width()<500) {
-            $('div.signinWrap').css('width', '420px');
-        } else {
-            $('div.signinWrap').css('width', '500px');
-        }
-
         if ($(this).width()<598) {
             $('div.header div.iconWrap').css('padding-right', '5px');
             $('div.header table.iconWrap').css('min-width', '94px');
@@ -1376,10 +1907,89 @@ $(function() {
     $('#body').fadeIn();
 
     init();
-    updateAppOnlineStatus();
+    isOffline();
 
-    window.onLineHandler  = updateAppOnlineStatus;
-    window.offLineHandler = updateAppOnlineStatus;
-    //window.addEventListener('online',  updateAppOnlineStatus);
-    //window.addEventListener('offline', updateAppOnlineStatus);
+    $('#login').click(appLogin);
+    $('a.facebook').click(fbLogin);
+    $('a.google').click(function(){
+        glLogin(glParams);
+    });
+    $('a.i-logout').click(function(){
+        var loggedBy = $.cookie('loggedBy');
+
+        if (loggedBy == 'app') {
+            appLogout();
+        } else if (loggedBy == 'facebook') {
+            fbLogout(true);
+        } else if (loggedBy == 'google') {
+            glLogout();
+        }
+    });
+
+    var internetStatusFn = function(status){
+        if (status) {
+            $('a.facebook').css('opacity', 1).removeClass('disallowed');
+            $('a.google').css('opacity', 1).removeClass('disallowed');
+            $('a.googleGlass').css('opacity', 1).removeClass('disallowed');
+            $('a.i-logout').css('opacity', 1).removeClass('disallowed');
+        } else {
+            $('a.facebook').css('opacity', 0.4).addClass('disallowed');
+            $('a.google').css('opacity', 0.4).addClass('disallowed');
+            $('a.googleGlass').css('opacity', 0.4).addClass('disallowed');
+            $('a.i-logout').css('opacity', 0.4).addClass('disallowed');
+        }
+    };
+    internetStatusFn(false);
+    var internetOkFn = function(){
+        FB.init(fbParams);
+        FB.getLoginStatus(function(res){
+            if (res.status === 'connected') {
+                userID = res.authResponse.userID;
+
+                if (!window.location.hash){ // in loading page
+                    $.mobile.changePage('#home', {
+                        transition: 'pop'
+                    });
+                }
+            } else if (res.status === 'not_authorized') {
+                if (window.location.hash != '#page-sign-in') {
+                    $.mobile.changePage('#page-sign-in', {
+                        transition: 'pop'
+                    });
+                }
+            } else { // the user isn't logged in to Facebook.
+                if (window.location.hash != '#page-sign-in') {
+                    $.mobile.changePage('#page-sign-in', {
+                        transition: 'pop'
+                    });
+                }
+            }
+        });
+
+        $('a.google').css('opacity', 0.4).addClass('disallowed');
+        $('a.googleGlass').css('opacity', 0.4).addClass('disallowed');
+        $('a.google span.text').html('Checking login status..');
+
+        var po   = document.createElement('script');
+        po.type  = 'text/javascript';
+        po.async = true;
+        po.src   = '//apis.google.com/js/client.js?onload=gapiOnload';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(po, s);
+    };
+
+    $(window).bind('online', updateAppOnlineStatus);
+    $(window).bind('offline', updateAppOnlineStatus);
+    $(window).on('internetOff', function(){
+        internetStatusFn(false);
+    });
+    $(window).on('internetOn', function(){
+        internetStatusFn(true);
+    });
+
+    if (window.onLine) {
+        internetOkFn();
+    } else {
+        $(window).one('internetOn', internetOkFn);
+    }
 });

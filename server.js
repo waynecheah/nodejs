@@ -922,6 +922,42 @@ function reportedOkay (socket, data) {
 } // reportedOkay
 
 
+function dbUserRegistration (o, callback) {
+    var cond = {
+        username: o.username
+    };
+    var fields = 'fullname';
+
+    Client.findOne(cond, fields, function(err, doc){
+        if (err) {
+            var msg = 'Fail to check username availability';
+            log('s', 'e', msg);
+            log('s', 'd', err);
+            callback(false, msg);
+            return;
+        } else if (doc) {
+            callback(-1);
+            return;
+        }
+
+        var data = {
+            username: o.username,
+            password: o.password,
+            fullname: o.fullname
+        };
+        Client.create(data, function(err, doc){
+            if (err) {
+                var msg = 'Fail to insert user record to database';
+                log('s', 'e', msg);
+                log('s', 'd', err);
+                callback(false, msg);
+                return;
+            }
+            callback(doc);
+        });
+    });
+} // dbUserRegistration
+
 function dbUpdateLastSync (serial, callback) {
     var lastSync = datetime();
 
@@ -1004,6 +1040,8 @@ var Client = mongoose.model('Client', {
     username: String,
     password: String,
     fullname: String,
+    accessToken: Mixed,
+    services: Array,
     created: { type:Date, default:Date.now },
     modified: { type:Date, default:Date.now }
 });
@@ -1051,12 +1089,18 @@ var lgr = (environment == 'development') ? 'dev' : function(tokens, req, res){ /
 var app = connect()
     .use(connect.favicon())
     .use(connect.logger(lgr))
-    .use(connect.static('public', { index:'index.htm' }))
-    .use(connect.directory('public'))
+    .use(connect.static('public'))
+    //.use(connect.directory('public'))
     .use(connect.cookieParser())
     .use(connect.session({ secret: 'session secret at here' }))
+    .use(connect.query())
     .use(function(req, res){
-        fs.readFile(__dirname + '/index.htm', function(err, data){
+        if (!_.isUndefined(req.query.code)) {
+            console.log('authorize code: ');
+            console.log(req.query.code);
+        }
+
+        fs.readFile(__dirname + '/public/index.htm', function(err, data){
             if (err) {
                 res.writeHead(500, { 'Content-Type':'text/plain' });
                 return res.end('Error');
@@ -1229,6 +1273,7 @@ io.configure('development', function(){
 log('s', 'i', 'Socket.io listening to '+host+':8080');
 io.sockets.on('connection', function(websocket) {
     log('w', 'i', 'web client '+websocket.id+' connected');
+    websocket.data = {};
     websockets.push(websocket); // assign websocket to global variable
 
 
@@ -1250,17 +1295,170 @@ io.sockets.on('connection', function(websocket) {
             log('w', 'i', 'New registration submitted by web cliend '+websocket.id);
             log('w', 'd', data);
 
-            var status = true;
-            var taken  = false;
+            dbUserRegistration(data, function(res, err){
+                var status = true;
+                var taken  = false;
+                var errMsg = '';
 
-            if (data.username == 'cheah_88@hotmail.com') {
-                status = false;
-                taken  = true;
-            }
+                if (!res) {
+                    status = false;
+                    errMsg = err;
+                } else if (res == -1) {
+                    status = false;
+                    taken  = true;
+                }
 
-            websocket.emit('ResponseOnRequest', 'register', {
-                status: status,
-                usernameTaken: taken
+                websocket.emit('ResponseOnRequest', 'register', {
+                    status: status,
+                    usernameTaken: taken,
+                    errMessage: errMsg
+                });
+            });
+        } else if (req == 'app signin') {
+            log('w', 'i', 'App sign-in by web client '+websocket.id);
+            log('w', 'd', data);
+
+            var cond    = { username:data.username };
+            var fields  = 'id fullname password';
+            var fnLogin = function(status, mesg, field){
+                var data = { status:status };
+
+                if (status) {
+                    data.info = mesg;
+                } else {
+                    if (!_.isUndefined(mesg)) {
+                        data.message = mesg;
+                    }
+                    if (!_.isUndefined(field)) {
+                        data.field = field;
+                    }
+                }
+
+                websocket.emit('ResponseOnRequest', 'app signin', data);
+            };
+
+            Client.findOne(cond, fields, function(err, doc){
+                if (err) {
+                    var msg = 'Fail to sign-in, please try again';
+                    log('s', 'e', msg);
+                    log('s', 'd', err);
+                    fnLogin(false, msg);
+                    return;
+                }
+                if (!doc || doc.length == 0) {
+                    var msg = 'The email you entered does not belong to any account';
+                    log('s', 'e', msg);
+                    fnLogin(false, msg, 'username');
+                    return;
+                }
+                if (doc.password != data.password) {
+                    var msg = 'The password you entered is incorrect. Please try again (make sure your caps lock is off)';
+                    log('s', 'e', msg);
+                    fnLogin(false, msg, 'password');
+                    return;
+                }
+
+                var token   = encryption(doc._id.toString(), 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+                var expire  = moment().add('days', 7);
+                var created = moment();
+                var update  = {
+                    accessToken: {
+                        code: token,
+                        expire: expire._d,
+                        created: created._d
+                    },
+                    modified: created._d
+                };
+
+                Client.findByIdAndUpdate(doc._id, { $set:update }, function(){
+                    if (err) {
+                        var msg = 'Fail to sign-in, please try again';
+                        log('s', 'e', msg);
+                        log('s', 'd', err);
+                        fnLogin(false, msg);
+                        return;
+                    }
+
+                    log('s', 's', 'Login successfully and access token create to user '+data.username);
+                    log('s', 'd', update.accessToken);
+
+                    fnLogin(true, {
+                        userId: doc._id,
+                        name: doc.fullname,
+                        accessToken: token,
+                        expiresIn: (86400 * 7)
+                    });
+                });
+            });
+        } else if (req == 'fb signin') {
+            log('w', 'i', 'Sign-in with facebook by web client '+websocket.id);
+            log('w', 'd', data);
+
+            var cond    = { username:data.username };
+            var fnLogin = function(status, mesg){
+                websocket.emit('ResponseOnRequest', 'fb signin', {
+                    status: status,
+                    message: mesg
+                });
+            };
+            var options = {
+                upsert: true,
+                select: 'id'
+            };
+
+            Client.findOneAndUpdate(cond, data, options, function(err, doc){
+                if (err) {
+                    var msg = 'Fail upsert user sign-in info to database';
+                    log('s', 'e', msg);
+                    log('s', 'd', err);
+                    fnLogin(false, msg);
+                    return;
+                }
+
+                log('s', 's', 'User sign-in info has save to DB successfully.');
+
+                websocket.data.info = {
+                    id: doc._id,
+                    name: data.fullname,
+                    method: 'facebook',
+                    time: datetime()
+                };
+                fnLogin(true, '');
+            });
+        } else if (req == 'gl signin') {
+            log('w', 'i', 'Sign-in with google by web client '+websocket.id);
+            log('w', 'd', data);
+
+            var cond    = { username:data.username };
+            var options = {
+                upsert: true,
+                select: 'id'
+            };
+            var fnLogin = function(status, mesg){
+                websocket.emit('ResponseOnRequest', 'gl signin', {
+                    status: status,
+                    message: mesg
+                });
+            };
+
+            Client.findOneAndUpdate(cond, data, options, function(err, doc){
+                if (err) {
+                    var msg = 'Fail upsert user sign-in info to database';
+                    log('s', 'e', msg);
+                    log('s', 'd', err);
+                    fnLogin(false, msg);
+                    return;
+                }
+
+                log('s', 's', 'User sign-in info has save to DB successfully.');
+
+                websocket.data.info = {
+                    id: doc._id,
+                    name: data.fullname,
+                    method: 'google',
+                    time: datetime()
+                };
+                fnLogin(true, '');
             });
         }
     });

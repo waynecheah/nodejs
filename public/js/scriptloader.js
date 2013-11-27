@@ -24,6 +24,14 @@
             offline: 'js/jquery.mobile-1.3.2.min.js',
             testJs: '$.mobile'
         }, {
+            online: '//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.3.1/jquery.cookie.js',
+            offline: 'js/jquery.cookie.js',
+            testJs: '$.cookie'
+        }, {
+            online: '//connect.facebook.net/en_US/all.js',
+            offline: 'js/connect.fb.js',
+            testJs: 'window.FB'
+        }, {
             online: '//cdnjs.cloudflare.com/ajax/libs/hammer.js/1.0.5/jquery.hammer.min.js',
             offline: 'js/jquery.hammer.min.js'
         }, 'js/jquery.mmenu.min.all.js', 'js/patternlock.js', {
@@ -102,11 +110,14 @@
         for (i=0; i<js.length; i++) {
             if (typeof js[i] == 'string') {
                 file = js[i];
+                innerzon.debug('[default] '+file);
             } else if (typeof js[i] == 'object') {
                 if (window.onLine && loader.useOnline == true && typeof js[i].online == 'string') {
                     file = js[i].online;
+                    innerzon.debug('[CDN]     '+file);
                 } else if (typeof js[i].offline == 'string') {
                     file = js[i].offline;
+                    innerzon.debug('[local]   '+file);
                 }
             }
 
@@ -114,7 +125,7 @@
             if (loader.useOnline == true && typeof js[i].offline == 'string' && typeof js[i].testJs == 'string') {
                 file = js[i].offline;
                 test = js[i].testJs;
-                document.write('<script>'+test+' || innerzone.loader.writeScript("'+file+'")</script>');
+                document.write('<script>'+test+' || innerzon.loader.writeScript("'+file+'")</script>');
             }
         }
     } // loadFootJs
@@ -122,16 +133,21 @@
     function loadFiles (files, filetype) {
         var file, i;
 
+        innerzon.gdebug(filetype);
+
         for (i=0; i<files.length; i++) {
             file = false;
 
             if (typeof files[i] == 'string') {
                 file = files[i];
+                innerzon.debug('[default] '+file);
             } else if (typeof files[i] == 'object') {
                 if (window.onLine && loader.useOnline == true && typeof files[i].online == 'string') {
                     file = files[i].online;
+                    innerzon.debug('[CDN]     '+file);
                 } else if (typeof files[i].offline == 'string') {
                     file = files[i].offline;
+                    innerzon.debug('[local]   '+file);
                 }
             }
 
@@ -139,11 +155,38 @@
                 loadFile(file, filetype);
             }
         }
+
+        innerzon.gdebug(false);
     } // loadFiles
 
 
     (loader = {
         useOnline: true,
+
+        init: function() {
+            var xmlhttp;
+
+            if (window.XMLHttpRequest) {
+                xmlhttp = new XMLHttpRequest();
+            } else {
+                xmlhttp = new ActiveXObject('Microsoft.XMLHTTP');
+            }
+
+            xmlhttp.onreadystatechange = function(){
+                if (xmlhttp.readyState==4 && xmlhttp.status==200){
+                    innerzon.debug('Server is online');
+                    innerzon.serverOnline = true;
+                }
+            };
+
+            innerzon.serverOnline = false;
+            xmlhttp.open('GET', 'js/online.status.js?t='+(new Date).getTime(), true);
+            xmlhttp.send();
+
+            innerzon.gdebug('Start script loader', true);
+            this.loadCss();
+            innerzon.gdebug(false);
+        }, // init
 
         loadCss: function(){
             loadFiles(files.css, 'css');
@@ -155,7 +198,9 @@
         }, // loadHeadJs
 
         loadFootJs: function(){
+            innerzon.gdebug('Start footer script loader', true);
             loadFootJs();
+            innerzon.gdebug(false);
         }, //loadFootJs
 
         writeScript: function(js){
@@ -165,7 +210,8 @@
         getFootJs: function(){
             return files.footJs;
         } // getFootJs
-    }).loadCss();
+    }).init();
 
-    return innerzone = { loader:loader };
+    innerzon.loader = loader;
+    return innerzon;
 }).call(this);

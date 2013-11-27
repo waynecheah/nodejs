@@ -73,7 +73,9 @@
 .ico-bell:before { content: '\e802'; } /* '' */
 .ico-lock-open:before { content: '\e800'; } /* '' */
 .ico-hdd:before { content: '\e823'; } /* '' */
+.ico-facebook:before { content: '\e82d'; } /* '' */
 .ico-facebook-rect:before { content: '\e826'; } /* '' */
+.ico-gplus:before { content: '\e82c'; } /* '' */
 .ico-googleplus-rect:before { content: '\e824'; } /* '' */
 .ico-arrows-cw:before { content: '\e808'; } /* '' */
 .ico-clipboard:before { content: '\e825'; } /* '' */

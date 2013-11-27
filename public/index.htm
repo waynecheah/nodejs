@@ -16,12 +16,62 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
-
-  <script>var innerzone;</script>
-  <script src="js/online.js"></script>
-  <script src="js/scriptloader.js"></script>
 </head>
 <body class="ui-mobile-viewport">
+  <img id="internetChecker" src="https://developers.google.com/_static/images/silhouette36.png" style="visibility:hidden"
+   onerror="innerzon.handleConnection.offline()" onload="innerzon.handleConnection.online()" />
+  <script>
+    var innerzon = {
+        env: 'dev',
+
+        handleConnection: {
+            online: function(){
+                innerzon.debug('Client has internet connectivity');
+                $(window).trigger('online');
+                $(window).trigger('internetOn');
+                window.onLine = true;
+            },
+            offline: function(){
+                innerzon.debug('Client is disconnected from internet', 'err');
+                window.onLine = false;
+            }
+        },
+
+        gdebug: function(name, collapsed){
+            if (this.env == 'pro') {
+                return;
+            }
+
+            if (!name) {
+                console.groupEnd();
+            } else {
+                if (typeof collapsed == 'undefined') {
+                    console.group(name);
+                } else {
+                    console.groupCollapsed(name);
+                }
+            }
+        },
+
+        debug: function(data, type) {
+            if (this.env == 'pro') {
+                return;
+            }
+
+            if (typeof type == 'undefined') {
+                console.log(data);
+            } else if (type == 'err') {
+                console.error(data);
+            } else if (type == 'warn') {
+                console.warn(data);
+            } else if (type == 'table') {
+                console.table(data);
+            }
+        }
+    };
+  </script>
+  <script src="js/scriptloader.js"></script>
+
 <!--[if lt IE 7]>
 <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
 <![endif]-->
@@ -29,7 +79,7 @@
 <!-- Add your site or application content here -->
 
   <div id="body" style="display:none;">
-    <nav id="location" class="sidepanel">
+    <nav id="location" class="sidepanel hide">
       <ul>
         <li class="Label"><img src="img/logo.jpg" style="margin:5px 0 6px;" /></li>
         <li class="Label group">Location List</li>
@@ -74,10 +124,13 @@
         <li>
           <a href="#about" class="ico-info-circled"> About</a>
         </li>
+        <li>
+          <a href="#logout" class="i-logout ico-logout"> Logout</a>
+        </li>
       </ul>
     </nav>
 
-    <nav id="main-menu" class="sidepanel">
+    <nav id="main-menu" class="sidepanel hide">
       <ul>
         <li class="Selected"><a href="#home">Home</a></li>
         <li class="security"><a href="#page-security">Security</a></li>
@@ -102,57 +155,87 @@
     </nav>
 
 
+    <!-- Initialize Loading -->
+    <div data-role="page" id="page-initialization">
+      <div data-role="content" style="text-align:center;">
+        <h1>loading..</h1>
+      </div>
+    </div>
+
     <!-- Sign In -->
     <div data-role="page" id="page-sign-in">
       <div id="signin" data-theme="b" data-role="header" data-position="fixed" class="signin">
         <h3>Sign In</h3>
       </div>
       <div data-role="content">
-        <div class="signinWrap" style="width:500px; margin:0 auto;">
-          <div data-role="fieldcontain" class="text-center" style="padding:50px;">
+        <div data-role="fieldcontain" class="text-center" style="padding:30px 0 15px;">
             <span style="font-size:30px;">
-              <span style="color:#7092BE;">INNER</span><span style="color:#7F7F7F;">ZON<span
-               style="font-size:18px; vertical-align:top;">&#174;</span></span>
+              <span style="color:#7092BE;">INNER</span><span style="color:#7F7F7F;">ZON
+              <span style="font-size:18px; vertical-align:top;">&#174;</span></span>
             </span>
-          </div>
-          <div data-role="fieldcontain">
-            <label for="username">
-              Username
-            </label>
-            <input name="username" id="username" placeholder="username" value="" type="text" data-mini="true">
-          </div>
-          <div data-role="fieldcontain">
-            <label for="password">
-              Password
-            </label>
-            <input name="password" id="password" placeholder="password" value="" type="password" data-mini="true">
-          </div>
-          <div data-role="fieldcontain">
-            <label for="save-password">
-              Save Password
-            </label>
-            <select name="toggleswitch1" id="save-password" data-theme="" data-role="slider" data-mini="true">
-              <option value="off">
-                No
-              </option>
-              <option value="on">
-                Yes
-              </option>
-            </select>
-          </div>
-          <div data-role="fieldcontain">
-            <div style="width:37%; display:inline-block;">&nbsp;</div>
-            <div style="width:63%; display:inline-block;">
-              <a href="#home" id="login" data-role="button" data-inline="true" data-transition="flip">
-                <span class="ico-login"></span> Login
-              </a>
+        </div>
+        <div class="authOptions">
+          <div class="authOption useSignin pull-left">
+            <h1 style="margin:6px 0 30px;">Sign-In</h1>
+            <div data-role="fieldcontain">
+              <div data-position-to="#username" class="errPop">
+                <a href="#" data-rel="back" class="ui-btn-right">Close</a>
+                <span class="msg">...Please enter your email here...</span>
+              </div>
+              <label for="username">
+                Email
+              </label>
+              <input name="username" id="username" placeholder="username" value="" type="text" data-mini="true">
+            </div>
+            <div data-role="fieldcontain">
+              <div data-position-to="#password" class="errPop">
+                <a href="#" data-rel="back" class="ui-btn-right">Close</a>
+                <span class="msg">...Please enter your password here...</span>
+              </div>
+              <label for="password">
+                Password
+              </label>
+              <input name="password" id="password" placeholder="password" value="" type="password" data-mini="true">
+            </div>
+            <div data-role="fieldcontain">
+              <label for="save-password">
+                Save Password
+              </label>
+              <select name="toggleswitch1" id="save-password" data-theme="" data-role="slider" data-mini="true">
+                <option value="off">No</option>
+                <option value="on">Yes</option>
+              </select>
+            </div>
+            <div data-role="fieldcontain">
+              <div style="width:37%; display:inline-block;">&nbsp;</div>
+              <div style="width:63%; display:inline-block;">
+                <a href="#" id="login" data-role="button" data-inline="true" data-transition="flip">
+                  <span class="ico-login"></span> Login
+                </a>
+              </div>
+            </div>
+            <div data-role="fieldcontain" style="padding-top:10px;">
+              <div class="text-right">Don't have an account?
+                <a href="#page-register" data-transition="slideup">Register Now</a>
+              </div>
             </div>
           </div>
-          <div data-role="fieldcontain" style="padding-top:10px;">
-            <div class="text-right">Don't have an account?
-              <a href="#page-register" data-transition="slideup">Register Now</a>
-            </div>
+          <div class="authDivider"></div>
+          <div class="authOption withServices pull-right">
+            <a href="#" class="authButton facebook">
+              <span class="authIcon i-facbook ico-facebook"></span>
+              <span class="text">Sign in with <b>Facebook</b></span>
+            </a>
+            <a href="#" class="authButton google">
+              <span class="authIcon i-google ico-gplus"></span>
+              <span class="text">Sign in with <b>Google</b></span>
+            </a>
+            <a class="googleGlass"
+             href="https://accounts.google.com/o/oauth2/auth?access_type=offline&display=popup&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fglass.timeline%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fglass.location&response_type=code&client_id=341678844265-5ak3e1c5eiaglb2h9ortqbs9q57ro6gb.apps.googleusercontent.com&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Foauth2callback">
+              <img src="img/getitonglass_172x60_action_button.png" />
+            </a>
           </div>
+          <div class="clearfix"></div>
         </div>
       </div>
     </div>
@@ -173,9 +256,9 @@
           <div data-role="fieldcontain">
             <div data-position-to="#reg-username" class="errPop">
               <a href="#" data-rel="back" class="ui-btn-right">Close</a>
-              <span class="msg">...Please enter your username here...</span>
+              <span class="msg">...Please enter your email here...</span>
             </div>
-            <label for="reg-username">Username</label>
+            <label for="reg-username">Email</label>
             <input name="username" id="reg-username" placeholder="username" value="" type="email" data-mini="true" required="required">
           </div>
           <div data-role="fieldcontain">
@@ -490,7 +573,10 @@
     </div>
   </div>
 
-  <script>innerzone.loader.loadFootJs();</script>
+  <div id="fb-root"></div>
+  <script>
+    innerzon.loader.loadFootJs();
+  </script>
 </body>
 
 
