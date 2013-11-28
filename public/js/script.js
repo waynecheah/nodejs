@@ -13,6 +13,17 @@ var _statusCls  = 'text-success text-danger text-warning text-muted';
 var _transition = 'slide';
 var _wsProcess  = [];
 var _timer      = {};
+var fbParams    = {
+    appId: '553789621375577',
+    cookie: true,
+    email: true
+};
+var glParams    = {
+    apiKey: 'AIzaSyD6z5RkfXSuBKGwm0djIHoRWm-OLsS7IYI',
+    client_id: '341678844265-5ak3e1c5eiaglb2h9ortqbs9q57ro6gb.apps.googleusercontent.com',
+    scope: 'https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/userinfo.email',
+    immediate: true
+};
 var _mapping    = {
     system: {
         type: {
@@ -124,12 +135,6 @@ var _mapping    = {
             us: 'User'
         }
     }
-};
-var glParams    = {
-    apiKey: 'AIzaSyD6z5RkfXSuBKGwm0djIHoRWm-OLsS7IYI',
-    client_id: '341678844265-5ak3e1c5eiaglb2h9ortqbs9q57ro6gb.apps.googleusercontent.com',
-    scope: 'https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/glass.timeline',
-    immediate: true
 };
 var socket, xmlhttp, userID;
 
@@ -261,7 +266,7 @@ function gapiOnload () {
     innerzon.debug('Client library is loaded');
     gapi.client.setApiKey(glParams.apiKey);
 
-    innerzon.debug('Getting authorize result..');
+    innerzon.debug('Getting authorize result from google..');
     window.setTimeout(function(){ // check authorization
         gapi.auth.authorize(glParams, function(authResult){
             innerzon.debug(authResult);
@@ -292,9 +297,16 @@ function gapiOnload () {
         });
     }, 1);
 } // gapiOnload
-function glLogin () {
+function glLogin (service) {
     if (!window.onLine || $('a.google').hasClass('disallowed')) {
         return;
+    }
+    if (_.isUndefined(service)) {
+        var scope = glParams.scope;
+    } else if (service == 'glass') {
+        var scope = glParams.scope+' https://www.googleapis.com/auth/glass.timeline';
+    } else {
+        var scope = glParams.scope;
     }
 
     $('#page-sign-in').animate({opacity:0.4}, 800);
@@ -306,7 +318,7 @@ function glLogin () {
 
     var config = {
         'client_id': glParams.client_id,
-        'scope': glParams.scope
+        'scope': scope
     };
     var token;
 
@@ -360,6 +372,7 @@ function glLogout () {
         userID = null;
         $.removeCookie('userID');
         $.removeCookie('loggedBy');
+        $.mobile.loading('hide');
         $.mobile.changePage('#page-sign-in', {
             transition: 'flip',
             reverse: true
@@ -367,6 +380,11 @@ function glLogout () {
     };
 
     innerzon.gdebug('Google logout');
+    $.mobile.loading('show', {
+        text: 'Logging out Google+..',
+        textVisible: true,
+        theme: 'a'
+    });
 
     $.ajax({
         type: 'GET',
@@ -384,6 +402,7 @@ function glLogout () {
             innerzon.debug('Fail logout App from google');
             innerzon.debug(e);
             innerzon.gdebug(false);
+            statusNotifier('Fail logout from google. Please try again', 'a', 3000);
         }
     });
 } // glLogout
@@ -1888,12 +1907,6 @@ function init () {
 
 
 $(function() {
-    var fbParams = {
-        appId: '553789621375577',
-        cookie: true,
-        email: true
-    };
-
     userID = $.cookie('userID');
     $.mobile.defaultPageTransition = _transition;
 
@@ -1914,7 +1927,10 @@ $(function() {
     $('#login').click(appLogin);
     $('a.facebook').click(fbLogin);
     $('a.google').click(function(){
-        glLogin(glParams);
+        glLogin();
+    });
+    $('a.googleGlass').click(function(){
+        glLogin('glass');
     });
     $('a.i-logout').click(function(){
         var loggedBy = $.cookie('loggedBy');
