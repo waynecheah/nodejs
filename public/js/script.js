@@ -1329,6 +1329,9 @@ function checkInternet (loop) {
     }
 
     $('#internetChecker').one('load', function(){
+        innerzon.debug('Client has internet connectivity now');
+        $(window).trigger('online');
+        $(window).trigger('internetOn');
         window.onLine = true;
     }).attr('src', 'https://developers.google.com/_static/images/silhouette36.png?t='+(new Date).getTime());
 

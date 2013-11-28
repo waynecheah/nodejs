@@ -27,8 +27,6 @@
         handleConnection: {
             online: function(){
                 innerzon.debug('Client has internet connectivity');
-                $(window).trigger('online');
-                $(window).trigger('internetOn');
                 window.onLine = true;
             },
             offline: function(){
