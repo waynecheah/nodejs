@@ -1328,13 +1328,17 @@ function checkInternet (loop) {
         _wsProcess.push('checkInternet'); // register task name to progress list
     }
 
-    $('#internetChecker').one('load', function(){
-        innerzon.debug('Client has internet connectivity now');
-        $(window).trigger('online');
-        $(window).trigger('internetOn');
-        window.onLine = true;
-        _.pull(_wsProcess, 'checkInternet');
-    }).attr('src', 'https://developers.google.com/_static/images/silhouette36.png?t='+(new Date).getTime());
+    if (typeof loop == 'undefined'){ // when make first checking
+        $('#internetChecker').one('load', function(){
+            innerzon.debug('Client has internet connectivity now');
+            $(window).trigger('online');
+            $(window).trigger('internetOn');
+            window.onLine = true;
+            _.pull(_wsProcess, 'checkInternet');
+        });
+    }
+
+    $('#internetChecker').attr('src', 'http://www.google.com.my/images/srpr/logo11w.png?t='+(new Date).getTime());
 
     setTimeout(function(){
         if (!window.onLine) { // internet still down
