@@ -203,7 +203,42 @@ div.withServices {
     }
     div.withServices {
         width: 320px;
-        padding-right: 0;
+        padding-right: 16px;
+    }
+    div.authDivider {
+        width: 96%;
+    }
+    #save-password-label {
+        width: 120px;
+    }
+}
+@media (max-width: 365px) {
+    div.authOptions {
+        width: 320px;
+    }
+    div.useSignin {
+        width: 300px;
+        margin: 0 auto;
+    }
+    div.withServices {
+        width: 280px;
+        padding-right: 3px;
+    }
+    div.authDivider {
+        width: 100%;
+    }
+}
+div.signinWrap {
+    width: 500px;
+}
+@media (max-width: 580px) {
+    div.signinWrap {
+        width: 380px;
+    }
+}
+@media (max-width: 420px) {
+    div.signinWrap {
+        width: 280px;
     }
 }
 a.authButton {
