@@ -1395,16 +1395,19 @@ io.sockets.on('connection', function(websocket) {
             log('w', 'd', data);
 
             var cond    = { username:data.username };
+            var options = {
+                upsert: true,
+                select: 'id'
+            };
             var fnLogin = function(status, mesg){
                 websocket.emit('ResponseOnRequest', 'fb signin', {
                     status: status,
                     message: mesg
                 });
             };
-            var options = {
-                upsert: true,
-                select: 'id'
-            };
+            var dateObj = moment();
+
+            data.modified = dateObj._d;
 
             Client.findOneAndUpdate(cond, data, options, function(err, doc){
                 if (err) {
@@ -1440,6 +1443,9 @@ io.sockets.on('connection', function(websocket) {
                     message: mesg
                 });
             };
+            var dateObj = moment();
+
+            data.modified = dateObj._d;
 
             Client.findOneAndUpdate(cond, data, options, function(err, doc){
                 if (err) {
