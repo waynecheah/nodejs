@@ -1333,6 +1333,7 @@ function checkInternet (loop) {
         $(window).trigger('online');
         $(window).trigger('internetOn');
         window.onLine = true;
+        _.pull(_wsProcess, 'checkInternet');
     }).attr('src', 'https://developers.google.com/_static/images/silhouette36.png?t='+(new Date).getTime());
 
     setTimeout(function(){
