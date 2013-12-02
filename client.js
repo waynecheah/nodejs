@@ -12,6 +12,8 @@ var host      = 'cheah.homeip.net';
 var port      = 1470;
 var clientErr  = {
     e0: 'Invalid input',
+    e1: 'Invalid partition status update, improper format sent',
+    e2: 'Invalid zone status update, improper format sent',
     e3: 'Invalid light status update, improper format sent'
 };
 var serverErr  = {
@@ -308,6 +310,59 @@ socket.on('data', function(data) {
             write('si='+g2('si', 0), 'Send si='+g2('si', 0));
             _sdcmd = 'si';
             _cmdcn = 1;
+        } else if (ps = iss(data, 'pt')) {
+            str  = gv(data, ps);
+            info = str.split(',');
+
+            if (info.length != 3) {
+                log('n', 'e', 'Invalid partition status update, improper format sent');
+                write('e1'+RN);
+                return;
+            }
+
+            log('n', 'i', 'Received partition status update: Partition '+info[0]+' = '+mapping.partition.command[info[1]]+' password('+info[2]+')');
+            write('ok'+RN);
+
+            _.each(_data.status.pt, function(str, i){
+                inf = str.split(',');
+
+                if (inf[0] == info[0]) {
+                    var command = [info[0], info[1], '103'];
+                    var ptCmd   = command.join(',');
+
+                    _data.status.pt[i] = ptCmd;
+
+                    log('n', 'i', 'Inform server the partition is updated successfully: zn='+ptCmd);
+                    write('pt='+ptCmd+RN);
+                }
+            });
+        } else if (ps = iss(data, 'zn')) {
+            str  = gv(data, ps);
+            info = str.split(',');
+
+            if (info.length != 3) {
+                log('n', 'e', 'Invalid zone status update, improper format sent');
+                write('e2'+RN);
+                return;
+            }
+
+            log('n', 'i', 'Received zone status update: Zone '+info[0]+' = '+mapping.zone.command[info[1]]+' Partition('+info[2]+')');
+            write('ok'+RN);
+
+            _.each(_data.status.zn, function(str, i){
+                inf = str.split(',');
+
+                if (inf[0] == info[0]) {
+                    var status  = (info[1] == '1') ? '2' : inf[2];
+                    var command = [info[0], inf[1], status, info[2], '103'];
+                    var znCmd   = command.join(',');
+
+                    _data.status.zn[i] = znCmd;
+
+                    log('n', 'i', 'Inform server the zone is updated successfully: zn='+znCmd);
+                    write('zn='+znCmd+RN);
+                }
+            });
         } else if (ps = iss(data, 'li')) {
             str  = gv(data, ps);
             info = str.split(',');
@@ -330,7 +385,7 @@ socket.on('data', function(data) {
 
                     _data.status.li[i] = liCmd;
 
-                    log('n', 'i', 'Inform server light updated successfuly: li='+liCmd);
+                    log('n', 'i', 'Inform server the light is updated successfully: li='+liCmd);
                     write('li='+liCmd+RN);
                 }
             });

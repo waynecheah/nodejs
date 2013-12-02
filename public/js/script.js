@@ -136,7 +136,138 @@ var _mapping    = {
         }
     }
 };
-var socket, xmlhttp, userID;
+var currTopbar  = {
+    name: 'default',
+    created: false,
+    closeTime: false
+};
+var socket, sound, xmlhttp, userID;
+
+
+function addNotification (name, message, opts) {
+    if (_wsProcess.indexOf(name) < 0) {
+        _wsProcess.push(name); // register task name to progress list
+    } else {
+        innerzon.debug('['+name+'] is already showing on notification');
+        return;
+    }
+
+    var doTransitionFn = function(){
+        sound.play();
+
+        $('div.'+currTopbar.name).addClass('pt-page-rotateCubeTopOut pt-page-ontop');
+        $('div.'+name).addClass('pt-page-current pt-page-rotateCubeTopIn');
+
+        setTimeout(function(){
+            $('div.'+currTopbar.name).removeClass('pt-page-current pt-page-rotateCubeTopOut pt-page-ontop');
+            $('div.'+name).removeClass('pt-page-rotateCubeTopIn');
+            currTopbar.name    = name;
+            currTopbar.created = (new Date).getTime();
+
+            if (!_.isUndefined(opts.closeInMs) && opts.closeInMs) { // auto close in period set
+                currTopbar.closeTime = (new Date).getTime() + opts.closeInMs;
+                setTimeout(function(){
+                    closeNotification(name);
+                }, opts.closeInMs);
+            } else {
+                currTopbar.closeTime = false;
+            }
+            if (_.isFunction(opts.callback)) { // any callback function after process completed
+                opts.callback();
+            }
+        }, 600);
+    };
+    var html = '<div class="pt-page pt-topbar '+name+'">' +
+               '  <span class="ico-warning-empty"></span>&nbsp;' +
+               '  <span class="message"></span>' +
+               '</div>';
+    $('div.pt-perspective').append(html);
+
+    if ($('div.pt-perspective:visible').length > 0) { // no active notification
+        var padTop = $('div.ui-page-active').css('padding-top').replace('px', '');
+        var newPad = parseInt(padTop) + 25;
+
+        $('div.pt-perspective').slideDown(200);
+        $('div.ui-page-active').animate({
+            paddingTop: newPad+'px'
+        }, 200, function(){
+            $('div[data-role=page]').css('paddingTop', newPad+'px');
+            doTransitionFn();
+        });
+    } else { // active notification on showing
+        if (currTopbar.created) { // not default
+            var diff = (new Date).getTime() - currTopbar.created;
+
+            if (diff < 3000) { // old notification showing at least last for 3 seconds
+                setTimeout(doTransitionFn, diff);
+            } else {
+                doTransitionFn();
+            }
+        } else {
+            doTransitionFn();
+        }
+    }
+} // addNotification
+function openNotification (name, message, closeInMs, callback) {
+    if (_wsProcess.indexOf(name) < 0) {
+        _wsProcess.push(name); // register task name to progress list
+    } else {
+        innerzon.debug('['+name+'] is already showing on notification');
+        return;
+    }
+
+    var padTop = $('div.ui-page-active').css('padding-top').replace('px', '');
+    var newPad = parseInt(padTop) + 25;
+
+    $('div.pt-perspective span.message').html(message);
+
+    $('div.pt-perspective').slideDown(200);
+    $('div.ui-page-active').animate({
+        paddingTop: newPad+'px'
+    }, 200, function(){
+        sound.play();
+        $('div[data-role=page]').css('paddingTop', newPad+'px');
+
+        $('div.default').addClass('pt-page-rotateCubeTopOut pt-page-ontop');
+        $('div.notification').addClass('pt-page-current pt-page-rotateCubeTopIn');
+
+        setTimeout(function(){
+            $('div.default').removeClass('pt-page-current pt-page-rotateCubeTopOut pt-page-ontop');
+            $('div.notification').removeClass('pt-page-rotateCubeTopIn');
+            if (!_.isUndefined(closeInMs) && closeInMs) {
+                setTimeout(closeNotification, closeInMs);
+            }
+            if (_.isFunction(callback)) {
+                callback();
+            }
+        }, 600);
+    });
+} // openNotification
+function closeNotification (name) {
+    if (_wsProcess.indexOf(name) < 0) {
+        innerzon.debug('['+name+'] is not show on notification. Fail to perform closing');
+        return;
+    }
+
+    var padTop = $('div.ui-page-active').css('padding-top').replace('px', '');
+    var newPad = parseInt(padTop) - 25;
+
+    _.pull(_wsProcess, 'onNotification');
+    $('div.notification').addClass('pt-page-rotateCubeBottomOut pt-page-ontop');
+    $('div.default').addClass('pt-page-current pt-page-rotateCubeBottomIn');
+
+    setTimeout(function(){
+        $('div.notification').removeClass('pt-page-current pt-page-rotateCubeBottomOut pt-page-ontop');
+        $('div.default').removeClass('pt-page-rotateCubeBottomIn');
+        $('div.pt-perspective').slideUp(200);
+        $('div.ui-page-active').animate({
+            paddingTop: newPad+'px'
+        }, 200, function(){
+            $('div[data-role=page]').css('paddingTop', newPad+'px');
+            $('div.pt-perspective span.message').html('');
+        });
+    }, 600);
+} // closeNotification
 
 function appLogin () {
     if (!innerzon.serverOnline) {
@@ -176,6 +307,74 @@ function appLogout (appOnly) {
     fnSignInPage();
 } // appLogout
 
+
+function fbLoginStatus () {
+    innerzon.gdebug('Facebook API javascript client');
+    innerzon.debug('Getting authorize result from facebook..');
+    FB.init(fbParams);
+    FB.getLoginStatus(function(res){
+        if (res.status === 'connected') {
+            innerzon.debug('User has logged with Facebook');
+            var fn = function(){ // check which page user currently visit
+                if (!window.location.hash){ // if user in loading page
+                    $.mobile.changePage('#home', {
+                        transition: 'pop'
+                    });
+                }
+            };
+
+            userID = res.authResponse.userID;
+
+            if (!$.cookie('userID')) { // cookie probably has expired, renew one
+                var dateObj = addSec2DateObj(res.authResponse.expiresIn);
+                $.cookie('userID', userID, { expires:dateObj });
+                $.cookie('loggedBy', 'facebook', { expires:dateObj });
+                fbApi('loginInfo', function(data){
+                    emitFBRenewToken({
+                        username: data[0].email,
+                        fullname: data[0].name,
+                        services: { facebook: res.authResponse }
+                    });
+                    fn();
+                });
+            } else {
+                fn();
+            }
+        } else if (res.status === 'not_authorized') { // user isn't authorize to use Facebook sign-in
+            innerzon.debug('User has not sign-in with Facebook');
+            if (window.location.hash != '#page-sign-in') {
+                $.mobile.changePage('#page-sign-in', {
+                    transition: 'pop'
+                });
+            }
+        } else { // user isn't logged in to Facebook
+            innerzon.debug('User is not logged in to Facebook');
+            if (window.location.hash != '#page-sign-in') {
+                $.mobile.changePage('#page-sign-in', {
+                    transition: 'pop'
+                });
+            }
+        }
+        innerzon.gdebug(false);
+    });
+} // fbLoginStatus
+function fbApi (req, callback) {
+    var fql;
+
+    if (req == 'loginInfo') {
+        fql = 'SELECT email, first_name, last_name, name, username FROM user WHERE uid ='+userID;
+        FB.api({
+            method: 'fql.query',
+            query: fql
+        }, function(data) {
+            if (!data || data.error || _.isUndefined(data[0])) {
+                innerzon.debug('Error occurred', 'err');
+            } else {
+                callback(data);
+            }
+        });
+    }
+} // fbApi
 function fbLogin () {
     if (!window.onLine) {
         return;
@@ -198,25 +397,15 @@ function fbLogin () {
                 $.cookie('userID', res.authResponse.userID, { expires: dateObj });
                 $.cookie('loggedBy', 'facebook', { expires: dateObj });
 
-                userID  = res.authResponse.userID;
-                var fql = 'SELECT email, first_name, last_name, name, username ' +
-                          'FROM user WHERE uid ='+userID;
-                FB.api({
-                    method: 'fql.query',
-                    query: fql
-                }, function(data) {
-                    if (!data || data.error || _.isUndefined(data[0])) {
-                        innerzon.debug('Error occurred', 'err');
-                    } else {
-                        var client = {
-                            username: data[0].email,
-                            fullname: data[0].name,
-                            services: {
-                                facebook: res.authResponse
-                            }
-                        };
-                        emitFBSignin(client);
-                    }
+                userID = res.authResponse.userID;
+                fbApi('loginInfo', function(data){
+                    emitFBSignin({
+                        username: data[0].email,
+                        fullname: data[0].name,
+                        services: {
+                            facebook: res.authResponse
+                        }
+                    });
                 });
             } else {
                 innerzon.debug('User cancel the login process');
@@ -261,24 +450,47 @@ function fbLogout (appOnly) {
     }
 } // fbLogout
 
+
 function gapiOnload () {
     innerzon.gdebug('Google API javascript client');
     innerzon.debug('Client library is loaded');
     gapi.client.setApiKey(glParams.apiKey);
 
-    innerzon.debug('Getting authorize result from google..');
     window.setTimeout(function(){ // check authorization
+        innerzon.debug('Getting authorize result from google..');
         gapi.auth.authorize(glParams, function(authResult){
             innerzon.debug(authResult);
 
-            if (userID) {
-                innerzon.debug('User was logged before by Google+');
-            } else if (authResult && !authResult.error) {
-                innerzon.debug('User has just logged with Google+');
-                if (!window.location.hash){ // in loading page
-                    $.mobile.changePage('#home', {
-                        transition: 'pop'
+            if (authResult && !authResult.error) {
+                innerzon.debug('User has logged with Google+');
+                var fn = function(){ // check which page user currently visit
+                    if (!window.location.hash){ // if user in loading page
+                        $.mobile.changePage('#home', {
+                            transition: 'pop'
+                        });
+                    }
+                };
+
+                if (!$.cookie('userID')) { // cookie probably has expired, renew one
+                    var token   = gapi.auth.getToken();
+                    var dateObj = addSec2DateObj(token.expires_in);
+                    $.cookie('loggedBy', 'google', { expires:dateObj });
+
+                    glApi('loginInfo', function(res){
+                        userID = res.id;
+                        $.cookie('userID', userID, { expires:dateObj });
+
+                        emitGLRenewToken(client = {
+                            username: res.emails[0].value,
+                            fullname: res.displayName,
+                            services: {
+                                google: token
+                            }
+                        });
+                        fn();
                     });
+                } else {
+                    fn();
                 }
             } else {
                 innerzon.debug('User has not sign-in with Google+');
@@ -297,6 +509,24 @@ function gapiOnload () {
         });
     }, 1);
 } // gapiOnload
+function glApi (req, callback) {
+    if (req == 'loginInfo') {
+        var fn = function(){
+            gapi.client.plus.people.get({
+                userId: 'me',
+                fields: 'id,displayName,emails,image,name,nickname'
+            }).execute(function(res) {
+                callback(res);
+            });
+        };
+
+        if (_.isUndefined(gapi.client.plus)) {
+            gapi.client.load('plus', 'v1', fn);
+        } else {
+            fn();
+        }
+    }
+} // glApi
 function glLogin (service) {
     if (!window.onLine || $('a.google').hasClass('disallowed')) {
         return;
@@ -334,29 +564,24 @@ function glLogin (service) {
         } else {
             var dateObj = addSec2DateObj(token.expires_in);
 
-            gapi.client.load('plus', 'v1', function() {
-                gapi.client.plus.people.get({
-                    userId: 'me',
-                    fields: 'id,displayName,emails,image,name,nickname'
-                }).execute(function(res) {
-                    $.cookie('userID', res.id, { expires:dateObj });
-                    $.cookie('loggedBy', 'google', { expires:dateObj });
+            glApi('loginInfo', function(res){
+                $.cookie('userID', res.id, { expires:dateObj });
+                $.cookie('loggedBy', 'google', { expires:dateObj });
 
-                    userID = res.id;
+                userID = res.id;
 
-                    var client = {
-                        username: res.emails[0].value,
-                        fullname: res.displayName,
-                        services: {
-                            google: token
-                        }
-                    };
-                    emitGLSignin(client);
-                });
+                var client = {
+                    username: res.emails[0].value,
+                    fullname: res.displayName,
+                    services: {
+                        google: token
+                    }
+                };
+                emitGLSignin(client);
             });
         }
     });
-    $(window).one('focus',function(){
+    $(window).one('focus',function(){ // closing google consent screen won't trigger any event, quick fix for this
         setTimeout(function(){
             if (!token) {
                 statusNotifier('The sign in process has been cancelled', 'a', 3000, function(){
@@ -425,6 +650,7 @@ function makeRequest () {
         });
     });
 } // makeRequest
+
 
 function loggedSuccess () {
     var id = userID ? userID : $.cookie('userID');
@@ -511,6 +737,20 @@ function initSidePanel () {
         $('nav.sidepanel li.location').removeClass('mm-active');
         $(this).parent('li').addClass('mm-active');
     });
+
+    var html = '<div class="lastSync clicker"><span class="i-loading ico-spin4"></span>&nbsp;' +
+               ' Last Sync: <span class="txt"></span></div>';
+    $('#location div.lastSync').remove(); // remove duplicate dom
+    $('#location').append(html);
+    $('div.lastSync').on('update', function(){
+        if (_data.modified) {
+            var d = new Date();
+            d.setTime(_data.modified);
+            $('div.lastSync span.txt').html(d.toLocaleDateString()+' '+d.toLocaleTimeString());
+        } else {
+            $('div.lastSync').removeClass('clicker').addClass('pointer');
+        }
+    }).trigger('update');
 } // initSidePanel
 
 function absPositionHeader () {
@@ -533,6 +773,9 @@ function updateAppOnlineStatus () {
     if (innerzon.serverOnline) { // server is connected
         $('.connection').removeClass('text-danger text-default').addClass('text-success').html('Connected');
         $('div.header span.i-server').removeClass('ico-cloud '+_statusCls).addClass('ico-upload-cloud text-success');
+        $('div.lastSync span.i-loading').addClass('ico-spin4');
+        $('div.lastSync').removeClass('pointer').addClass('clicker');
+        disableLightsUpdate();
         if (_wsProcess.indexOf('connecting_websocket') < 0 && !socket.socket.connected) { // attempt reconnect socket if socket has disconnected
             socket.socket.connect();
         }
@@ -543,6 +786,8 @@ function updateAppOnlineStatus () {
         $('div.header span.i-health').removeClass(_statusCls).addClass('text-muted').show();
         $('div.header span.i-emergency').hide();
         $('div.header span.i-troubles').hide();
+        $('div.lastSync span.i-loading').removeClass('ico-spin4');
+        $('div.lastSync').removeClass('clicker').addClass('pointer');
         disableLightsUpdate();
     }
 
@@ -735,9 +980,10 @@ function updateZones () {
                 _data.status.zones[i] = info.join(',');
             }
         });
-        socket.emit('app update', 'zone', {
+        emitAppUpdate('zone', {
             no: no,
-            cmd: cmd
+            cmd: cmd,
+            ptid: ptid
         });
     });
     Holder.run();
@@ -883,7 +1129,7 @@ function armDisarmed () {
         });
         $('#page-how-to-arm div.countdown').fadeIn();
     } else { // do disarmed process
-        socket.emit('app update', 'partition', {
+        emitAppUpdate('partition', {
             no: ptid,
             cmd: 0,
             password: $('#patternlock').val()
@@ -947,7 +1193,7 @@ function armCountdown (sec) {
         });
         $('#page-how-to-arm input.passcode').val('');
         $.mobile.loading('hide');
-        socket.emit('app update', 'partition', {
+        emitAppUpdate('partition', {
             no: 1,
             cmd: armType,
             password: $('#patternlock').val()
@@ -1225,6 +1471,10 @@ function resGlSignIn (data) {
 } // resGlSignIn
 
 
+function emitAppUpdate (type, data) {
+    socket.emit('app update', type, data);
+} // emitAppUpdate
+
 function emitLightUpdate (no, command, value) {
     socket.emit('app update', 'light', {
         no: no,
@@ -1263,9 +1513,17 @@ function emitFBSignin (data) {
     socket.emit('app request', 'fb signin', data);
 } // emitFBSignin
 
+function emitFBRenewToken (data) {
+    socket.emit('app request', 'fb renew token', data);
+} // emitFBRenewToken
+
 function emitGLSignin (data) {
     socket.emit('app request', 'gl signin', data);
 } // emitGLSignin
+
+function emitGLRenewToken (data) {
+    socket.emit('app request', 'gl renew token', data);
+} // emitGLRenewToken
 
 
 function isOffline () {
@@ -1482,6 +1740,10 @@ function init () {
             clearTimeout(_timer[d.type]);
             delete _timer[d.type];
         }
+        if (d.time) { // update last sync time
+            _data.modified = d.time;
+            $('div.lastSync').trigger('update');
+        }
 
         _.each(_data.status[d.type], function(val, i){
             newVal = d.value.split(',');
@@ -1546,6 +1808,17 @@ function init () {
         }, 2000);
     });
 
+
+    // Initialization Page //
+    $('#page-initialization').on('pageshow', function(){
+        $.mobile.loading('show', {
+            text: 'Loading..',
+            textVisible: true,
+            theme: 'a'
+        });
+    }).on('pagehide', function(){
+        $.mobile.loading('hide');
+    });
 
     // Sign In //
     if (!$.mobile.path.get()) {
@@ -1915,6 +2188,7 @@ function init () {
 
 
 $(function() {
+    sound  = new Audio('chord.mp3');
     userID = $.cookie('userID');
     $.mobile.defaultPageTransition = _transition;
 
@@ -1952,11 +2226,12 @@ $(function() {
         }
     });
 
-    var internetStatusFn = function(status){
+    var setWebServicesStatusFn = function(status){
         if (status) {
             $('a.facebook').css('opacity', 1).removeClass('disallowed');
             $('a.google').css('opacity', 1).removeClass('disallowed');
             $('a.googleGlass').css('opacity', 1).removeClass('disallowed');
+            console.log('are you here?');
             $('a.i-logout').css('opacity', 1).removeClass('disallowed');
         } else {
             $('a.facebook').css('opacity', 0.4).addClass('disallowed');
@@ -1965,32 +2240,14 @@ $(function() {
             $('a.i-logout').css('opacity', 0.4).addClass('disallowed');
         }
     };
-    internetStatusFn(false);
-    var internetOkFn = function(){
-        FB.init(fbParams);
-        FB.getLoginStatus(function(res){
-            if (res.status === 'connected') {
-                userID = res.authResponse.userID;
+    setWebServicesStatusFn(false);
+    var initWebServicesFn = function(){
+        if (!window.onLine) {
+            $(window).one('internetOn', initWebServicesFn);
+            return false;
+        }
 
-                if (!window.location.hash){ // in loading page
-                    $.mobile.changePage('#home', {
-                        transition: 'pop'
-                    });
-                }
-            } else if (res.status === 'not_authorized') {
-                if (window.location.hash != '#page-sign-in') {
-                    $.mobile.changePage('#page-sign-in', {
-                        transition: 'pop'
-                    });
-                }
-            } else { // the user isn't logged in to Facebook.
-                if (window.location.hash != '#page-sign-in') {
-                    $.mobile.changePage('#page-sign-in', {
-                        transition: 'pop'
-                    });
-                }
-            }
-        });
+        fbLoginStatus();
 
         $('a.google').css('opacity', 0.4).addClass('disallowed');
         $('a.googleGlass').css('opacity', 0.4).addClass('disallowed');
@@ -2007,15 +2264,16 @@ $(function() {
     $(window).bind('online', updateAppOnlineStatus);
     $(window).bind('offline', updateAppOnlineStatus);
     $(window).on('internetOff', function(){
-        internetStatusFn(false);
+        setWebServicesStatusFn(false);
+        openNotification('noInternet', 'Trying to reach Innerzon...', false);
+
     });
     $(window).on('internetOn', function(){
-        internetStatusFn(true);
+        setWebServicesStatusFn(true);
+        //openNotification('internetReady', 'Connected to Innerzon', 3000, function(){  });
+        closeNotification('noInternet');
     });
 
-    if (window.onLine) {
-        internetOkFn();
-    } else {
-        $(window).one('internetOn', internetOkFn);
-    }
+    // one time initialization which need access to the internet
+    initWebServicesFn();
 });

@@ -74,6 +74,7 @@
 <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
 <![endif]-->
 
+
 <!-- Add your site or application content here -->
 
   <div id="body" style="display:none;">
@@ -291,6 +292,15 @@
     <!-- Home -->
     <div data-role="page" id="home">
       <div data-theme="c" data-role="header" data-position="fixed" class="header">
+        <div class="row notificationWrap">
+          <div id="pt-main" class="pt-perspective" style="display:none;">
+            <div class="pt-page pt-topbar default pt-page-current">&nbsp;</div>
+            <div class="pt-page pt-topbar notification">
+              <span class="ico-warning-empty"></span>&nbsp;
+              <span class="message"></span>
+            </div>
+          </div>
+        </div>
         <div class="row">
           <div class="pull-left">
             <a href="#location" class="icon-block-menu"></a>
@@ -315,16 +325,21 @@
         </div>
       </div>
       <div data-role="content">
+        <audio id="sound-alert" src="chord.mp3" preload="auto"></audio>
         <ul data-role="listview" data-divider-theme="c" data-inset="false">
           <li data-theme="c" class="iconThumbFormat">
             <a href="#page-security">
               <div class="ui-li-thumb"><span class="i-lock ico-lock icon80"></span></div>
-              <div class="ui-grid-a">
-                <div class="ui-block-a">
-                  <h3>Security</h3>
-                  <p class="armStatus">&nbsp;</p>
+              <div class="row">
+                <div class="col-xs-6">
+                  <div class="tableCell">
+                    <h3>Security</h3>
+                    <span class="armStatus">&nbsp;</span>
+                  </div>
                 </div>
-                <div class="ui-block-b"><p>Total Zones</p></div>
+                <div class="pull-right" style="padding-right:5px;">
+                  <div class="tableCell">Total Zones</div>
+                </div>
               </div>
               <span class="ui-li-count totalZones">0</span>
             </a>
@@ -345,9 +360,15 @@
           <li data-theme="c" class="iconThumbFormat">
             <a href="#page-history">
               <div class="ui-li-thumb"><span class="ico-calendar icon80"></span></div>
-              <div class="ui-grid-a nested">
-                <div class="ui-block-a"><h3>Event Logs</h3></div>
-                <div class="ui-block-b"><p>Available</p></div>
+              <div class="row">
+                <div class="col-xs-6">
+                  <div class="tableCell">
+                    <h3>Event Logs</h3>
+                  </div>
+                </div>
+                <div class="pull-right" style="padding-right:5px;">
+                  <div class="tableCell">Available</div>
+                </div>
               </div>
               <span class="ui-li-count">0</span>
             </a>
@@ -579,6 +600,15 @@
 
 
 <div id="header-tpl" class="header" style="display:none;">
+  <div class="row notificationWrap">
+    <div id="pt-main" class="pt-perspective" style="display:none;">
+      <div class="pt-page pt-topbar default pt-page-current">&nbsp;</div>
+      <div class="pt-page pt-topbar notification">
+        <span class="ico-warning-empty"></span>&nbsp;
+        <span class="message"></span>
+      </div>
+    </div>
+  </div>
   <div class="row">
     <div class="pull-left navBackWrap">
       <a href="#home" data-direction="reverse" class="ico-left-open-mini logoIcon">&nbsp;&nbsp;</a>
@@ -589,7 +619,7 @@
     <div class="pull-right">
       <a href="#main-menu" class="icon-three-points"></a>
     </div>
-    <div class="iconWrap col-xs-2 col-sm-4 pull-right">
+    <div class="iconWrap col-xs-2 col-sm-4 pull-right" style="padding-left:0;">
       <table class="iconWrap" align="right">
         <tr>
           <td align="right" valign="middle">

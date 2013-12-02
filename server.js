@@ -659,7 +659,7 @@ function getEventLogs (socket, data) {
                 user: info[4]
             });
 
-            event.save(function(err, data){
+            event.create(function(err, data){
                 if (err) {
                     log('s', 'e', 'Device event has logged failure');
                     socket.write('e6'+RN);
@@ -668,12 +668,12 @@ function getEventLogs (socket, data) {
                 log('s', 's', 'Device event has logged successfully');
                 log('s', 'd', data);
                 socket.write('ok'+RN);
-                socket.logs.datetime = info[3];
+                socket.logs.datetime = info[5];
                 socket.logs.count   += 1;
             });
         } else if (isc(dt, '-done-')) { // TODO(remove): to be removed since there won't be receive a -done- here
             var prevSync = socket.data.lastSync;
-            var lastSync = _.isUndefined(socket.logs.datetime) ? datetime() : socket.logs.datetime;
+            var lastSync = _.isUndefined(socket.logs.datetime) ? Date.now() : socket.logs.datetime;
 
             Device.findOneAndUpdate({ serial:socket.data.info.sn }, { lastSync:lastSync }, function(err){
                 if (err) {
@@ -713,6 +713,14 @@ function getDeviceUpdate (socket, data) {
                 return;
             }
 
+            _.each(socket.data.status.system, function(s, i){
+                var inf = s.split(',');
+                if (inf[0] == info[0]) {
+                    log('s', 's', 'Socket status data "system" has updated to ['+str+']');
+                    socket.data.status.system[i] = str;
+                }
+            });
+
             success = true;
             emitDeviceUpdate(socket.data.info.sn, 'system', str);
         } else if (ps = iss(dt, 'pt')) {
@@ -725,6 +733,14 @@ function getDeviceUpdate (socket, data) {
                 return;
             }
 
+            _.each(socket.data.status.partition, function(s, i){
+                var inf = s.split(',');
+                if (inf[0] == info[0]) {
+                    log('s', 's', 'Socket status data "partition" has updated to ['+str+']');
+                    socket.data.status.partition[i] = str;
+                }
+            });
+
             success = true;
             emitDeviceUpdate(socket.data.info.sn, 'partition', str);
         } else if (ps = iss(dt, 'zn')) {
@@ -736,6 +752,14 @@ function getDeviceUpdate (socket, data) {
                 socket.write('e5'+RN);
                 return;
             }
+
+            _.each(socket.data.status.zones, function(s, i){
+                var inf = s.split(',');
+                if (inf[0] == info[0]) {
+                    log('s', 's', 'Socket status data "zones" has updated to ['+str+']');
+                    socket.data.status.zones[i] = str;
+                }
+            });
 
             success = true;
             emitDeviceUpdate(socket.data.info.sn, 'zones', str);
@@ -759,6 +783,14 @@ function getDeviceUpdate (socket, data) {
                 socket.write('e5'+RN);
                 return;
             }
+
+            _.each(socket.data.status.lights, function(s, i){
+                var inf = s.split(',');
+                if (inf[0] == info[0]) {
+                    log('s', 's', 'Socket status data "lights" has updated to ['+str+']');
+                    socket.data.status.lights[i] = str;
+                }
+            });
 
             success = true;
             emitDeviceUpdate(socket.data.info.sn, 'lights', str);
@@ -818,14 +850,15 @@ function emitDeviceInfo (websocket) {
         websocket.emit('DeviceInformation', {
             deviceId: sk.deviceId,
             info: sk.info,
-            status: sk.status
+            status: sk.status,
+            modified: sk.modified.getTime()
         });
     };
 
     if (_.isUndefined(sockets[0])) { // device not online
         // Get device's last status update from database
         var cond    = {}; //{ //serial: '1234' }; // TODO(user): get user's device serial number
-        var fields  = 'deviceId info status';
+        var fields  = 'deviceId info status modified';
         var options = { sort: { modified: -1 } };
 
         var sk = {
@@ -833,7 +866,8 @@ function emitDeviceInfo (websocket) {
             info: null,
             status: {
                 system: null
-            }
+            },
+            modified: null
         };
 
         Status.findOne(cond, fields, options, function(err, doc){
@@ -846,10 +880,11 @@ function emitDeviceInfo (websocket) {
                 return;
             }
 
-            doc.deviceId = null;
+            doc.deviceId = null; // this mean device not online
             callback(doc);
         });
     } else {
+        sockets[0].data.modified = new Date();
         callback(sockets[0].data);
     }
 } // emitDeviceInfo
@@ -862,33 +897,93 @@ function emitDeviceUpdate (serial, type, value) {
         log('n', 'i', 'Emit device update to APP. Type: '+type+' | Value: '+value);
         websocket.emit('DeviceUpdate', {
             type: type,
-            value: value
+            value: value,
+            time: (new Date()).getTime()
         });
     });
 } // emitDeviceUpdate
 
-function appUpdate (type, data) {
-    var cmd;
+function appUpdate (type, data, callback) {
+    var cmd, eData;
+    var time = (new Date).getTime();
 
-    if (type == 'light') {
-        cmd = 'li='+data.no+','+data.cmd+','+data.val;
+    if (type == 'partition') {
+        cmd   = 'pt='+data.no+','+data.cmd+','+data.password;
+        eData = {
+            datetime: time,
+            device: sockets[0].data.deviceId,
+            category: type,
+            log: cmd,
+            number: data.no,
+            command: data.cmd,
+            value: data.password,
+            user: 103,
+            succeed: false
+        };
+    } else if (type == 'zone') {
+        cmd   = 'zn='+data.no+','+data.cmd+','+data.ptid;
+        eData = {
+            datetime: time,
+            device: sockets[0].data.deviceId,
+            category: type,
+            log: cmd,
+            number: data.no,
+            command: data.cmd,
+            partition: data.ptid,
+            user: 103,
+            succeed: false
+        };
+    } else if (type == 'device') {
+        cmd   = 'dv='+data.no+','+data.cmd+','+data.val;
+        eData = {
+            datetime: time,
+            device: sockets[0].data.deviceId,
+            category: type,
+            log: cmd,
+            number: data.no,
+            command: data.cmd,
+            user: 103,
+            succeed: false
+        };
 
-        _.each(sockets, function(s){
-            s.app.lastCommand = 'light';
-            s.app.light       = 'server sent';
-            s.write(cmd+RN);
-        });
-    } else if (type == 'partition') {
-        cmd = 'pt='+data.no+','+data.cmd+','+data.password;
-        _.each(sockets, function(s){
-            s.app.lastCommand = 'partition';
-            s.app.partition   = 'server sent';
-            s.write(cmd+RN);
-        });
+        if (data.val && data.val != '-') {
+            eData.value = data.val;
+        }
+    } else if (type == 'light') {
+        cmd   = 'li='+data.no+','+data.cmd+','+data.val;
+        eData = {
+            datetime: time,
+            device: sockets[0].data.deviceId,
+            category: type,
+            log: cmd,
+            number: data.no,
+            command: data.cmd,
+            user: 103,
+            succeed: false
+        };
+
+        if (data.val && data.val != '-') {
+            eData.value = data.val;
+        }
     }
 
     log('w', 'i', 'App update ['+type+'], command: '+cmd);
     log('w', 'd', data);
+    dbAddAppEvent(eData, function(err, doc){
+        callback(err, doc);
+
+        if (cmd) {
+            _.each(sockets, function(s){
+                s.app.lastCommand = type;
+                s.app[type]       = {
+                    status: 'server sent',
+                    eid: doc._id,
+                    time: time
+                };
+                s.write(cmd+RN);
+            });
+        }
+    });
 } // appUpdate
 
 function reportedOkay (socket, data) {
@@ -897,20 +992,21 @@ function reportedOkay (socket, data) {
     var cmd = socket.app.lastCommand;
 
     if (!cmd) {
-        log('n', 'e', 'Last command is empty');
+        log('n', 'e', 'Receive ok from hardware, but last command is empty');
     } else if (_.isUndefined(socket.app[cmd])) {
-        log('n', 'e', 'Last command ['+cmd+'] not found');
+        log('n', 'e', 'Receive ok from hardware, but last command ['+cmd+'] not found in list');
     } else {
-        log('n', 'i', 'Last command ['+cmd+'] has received by device');
-        socket.app[cmd]        = 'device received';
+        log('n', 'i', 'Receive ok from hardware, confirm last command ['+cmd+'] has received by device');
+        socket.app[cmd].status = 'device received';
         socket.app.lastCommand = null;
+        dbUpdateAppEvent(socket.app[cmd].eid);
     }
 
     // TODO(code structure): This line is not done in proper, think a better way to do it later
     var info = data.split(RN);
 
     _.each(info, function(dt){
-        if (isc(dt, 'ok')) {
+        if (isc(dt, 'ok')) { // yes , it should has 'ok' at first line
         } else if (lgt.indexOf(dt.substr(0,3)) >= 0) { // receive event logs from device
             // EVENT LOG RECEIVED WILL UPDATE SERVER DATABASE
             getEventLogs(socket, dt);
@@ -959,7 +1055,7 @@ function dbUserRegistration (o, callback) {
 } // dbUserRegistration
 
 function dbUpdateLastSync (serial, callback) {
-    var lastSync = datetime();
+    var lastSync = new Date;
 
     Device.findOneAndUpdate({ serial:serial }, { lastSync:lastSync }, function(err){
         if (err) {
@@ -968,7 +1064,8 @@ function dbUpdateLastSync (serial, callback) {
             return
         }
 
-        log('n', 'i', 'Update database of it last sync date & time: '+lastSync);
+        var datetime = lastSync.toLocaleDateString()+' '+lastSync.toLocaleTimeString();
+        log('n', 'i', 'Update database of it last sync date & time: '+datetime);
 
         if (!_.isUndefined(callback) && _.isFunction(callback)) {
             callback();
@@ -1008,6 +1105,49 @@ function dbStatusUpdate (socket, callback) {
         }
     });
 } // dbStatusUpdate
+
+function dbAddAppEvent (data, callback) {
+    if (!data) {
+        if (!_.isUndefined(callback) && _.isFunction(callback)) {
+            callback(null, false);
+        }
+        return;
+    }
+
+    Event.create(data, function(err, doc){
+        if (err) {
+            log('s', 'e', 'App event has logged failure');
+            log('s', 'd', err);
+        } else {
+            log('s', 's', 'App event has logged successfully');
+            log('s', 'd', doc);
+        }
+
+        if (!_.isUndefined(callback) && _.isFunction(callback)) {
+            callback(err, doc);
+        }
+    });
+} // dbAddAppEvent
+
+function dbUpdateAppEvent (eid) {
+    if (_.isUndefined(eid)) {
+        return;
+    }
+
+    var cond   = { _id: eid };
+    var update = {
+        $set: { succeed:true }
+    };
+
+    Event.findOneAndUpdate(cond, update, function(err, doc){
+        if (err) {
+            log('s', 'e', err);
+            return;
+        }
+        log('s', 's', 'Update App event delivered and execute at hardware side successfully');
+        log('s', 'd', doc);
+    });
+} // dbUpdateAppEvent
 
 
 
@@ -1049,7 +1189,7 @@ var Device = mongoose.model('Device', {
     name: String,
     macAdd: String,
     serial: { type:String, index:true },
-    lastSync: Number,
+    lastSync: Date,
     created: { type:Date, default:Date.now },
     modified: { type:Date, default:Date.now }
 });
@@ -1071,13 +1211,15 @@ var Event = mongoose.model('Event', {
     device: String,
     category: String,
     log: String,
-    number: Number,
-    condition: Number,
-    status: Number,
-    value: Number,
-    partition: Number,
-    type: Number,
-    user: String
+    number: Number, // [partition, zone, device, light, sensor, label]
+    command: String, // [for APP only]
+    condition: Number, // [zone]
+    status: Number, // [system, partition, zone, emergency, device, light, sensor]
+    value: String, // [device, light, sensor]
+    partition: Number, // [zone]
+    type: Number, // [system, zone, emergency, device, light, sensor]
+    user: String, // [partition, emergency, device, light]
+    succeed: Boolean // [for APP only]
 });
 
 
@@ -1288,7 +1430,9 @@ io.sockets.on('connection', function(websocket) {
         io.sockets.emit('user disconnected');
     });
     websocket.on('app update', function(type, data){
-        appUpdate(type, data);
+        appUpdate(type, data, function(err, doc){
+            // TODO(event): notify app the update is done successfully
+        });
     });
     websocket.on('app request', function(req, data){
         if (req == 'register') {
@@ -1308,7 +1452,7 @@ io.sockets.on('connection', function(websocket) {
                     taken  = true;
                 }
 
-                websocket.emit('ResponseOnRequest', 'register', {
+                websocket.emit('ResponseOnRequest', req, {
                     status: status,
                     usernameTaken: taken,
                     errMessage: errMsg
@@ -1334,7 +1478,7 @@ io.sockets.on('connection', function(websocket) {
                     }
                 }
 
-                websocket.emit('ResponseOnRequest', 'app signin', data);
+                websocket.emit('ResponseOnRequest', req, data);
             };
 
             Client.findOne(cond, fields, function(err, doc){
@@ -1382,6 +1526,12 @@ io.sockets.on('connection', function(websocket) {
                     log('s', 's', 'Login successfully and access token create to user '+data.username);
                     log('s', 'd', update.accessToken);
 
+                    websocket.data.info = {
+                        id: doc._id,
+                        name: doc.fullname,
+                        method: 'app',
+                        time: datetime()
+                    };
                     fnLogin(true, {
                         userId: doc._id,
                         name: doc.fullname,
@@ -1390,7 +1540,7 @@ io.sockets.on('connection', function(websocket) {
                     });
                 });
             });
-        } else if (req == 'fb signin') {
+        } else if (req == 'fb signin' || req == 'fb renew token') {
             log('w', 'i', 'Sign-in with facebook by web client '+websocket.id);
             log('w', 'd', data);
 
@@ -1400,7 +1550,7 @@ io.sockets.on('connection', function(websocket) {
                 select: 'id'
             };
             var fnLogin = function(status, mesg){
-                websocket.emit('ResponseOnRequest', 'fb signin', {
+                websocket.emit('ResponseOnRequest', req, {
                     status: status,
                     message: mesg
                 });
@@ -1428,7 +1578,7 @@ io.sockets.on('connection', function(websocket) {
                 };
                 fnLogin(true, '');
             });
-        } else if (req == 'gl signin') {
+        } else if (req == 'gl signin' || req == 'gl renew token') {
             log('w', 'i', 'Sign-in with google by web client '+websocket.id);
             log('w', 'd', data);
 
@@ -1438,7 +1588,7 @@ io.sockets.on('connection', function(websocket) {
                 select: 'id'
             };
             var fnLogin = function(status, mesg){
-                websocket.emit('ResponseOnRequest', 'gl signin', {
+                websocket.emit('ResponseOnRequest', req, {
                     status: status,
                     message: mesg
                 });
