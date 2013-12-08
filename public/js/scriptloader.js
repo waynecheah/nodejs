@@ -41,6 +41,9 @@
             online: '//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js',
             offline: 'js/socket.io.min.js'
         }, {
+            online: '//cdnjs.cloudflare.com/ajax/libs/SoundJS/0.5.0/soundjs.min.js',
+            offline: 'js/soundjs.min.js'
+        }, {
             online: '//cdnjs.cloudflare.com/ajax/libs/holder/2.0/holder.min.js',
             offline: 'js/holder.min.js'
         }, 'js/script.js']
@@ -162,6 +165,7 @@
 
     (loader = {
         useOnline: true,
+        loopCount: 0,
 
         init: function() {
             var xmlhttp;
@@ -198,6 +202,15 @@
         }, // loadHeadJs
 
         loadFootJs: function(){
+            if (typeof window.onLine == 'undefined' && this.loopCount < 100) {
+                var that = this;
+                setTimeout(function(){
+                    that.loopCount++;
+                    innerzon.debug('Wait window.onLine property to be set first. Time wait: '+(that.loopCount*200));
+                    innerzon.loader.loadFootJs();
+                }, 200);
+                return;
+            }
             innerzon.gdebug('Start footer script loader', true);
             loadFootJs();
             innerzon.gdebug(false);

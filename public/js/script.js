@@ -153,7 +153,7 @@ function addNotification (name, message, opts) {
     }
 
     var doTransitionFn = function(){
-        sound.play();
+        createjs.Sound.play('sound');
 
         $('div.'+currTopbar.name).addClass('pt-page-rotateCubeTopOut pt-page-ontop');
         $('div.'+name).addClass('pt-page-current pt-page-rotateCubeTopIn');
@@ -225,7 +225,7 @@ function openNotification (name, message, closeInMs, callback) {
     $('div.ui-page-active').animate({
         paddingTop: newPad+'px'
     }, 200, function(){
-        sound.play();
+        createjs.Sound.play('sound');
         $('div[data-role=page]').css('paddingTop', newPad+'px');
 
         $('div.default').addClass('pt-page-rotateCubeTopOut pt-page-ontop');
@@ -235,7 +235,9 @@ function openNotification (name, message, closeInMs, callback) {
             $('div.default').removeClass('pt-page-current pt-page-rotateCubeTopOut pt-page-ontop');
             $('div.notification').removeClass('pt-page-rotateCubeTopIn');
             if (!_.isUndefined(closeInMs) && closeInMs) {
-                setTimeout(closeNotification, closeInMs);
+                setTimeout(function(){
+                    closeNotification(name);
+                }, closeInMs);
             }
             if (_.isFunction(callback)) {
                 callback();
@@ -252,7 +254,7 @@ function closeNotification (name) {
     var padTop = $('div.ui-page-active').css('padding-top').replace('px', '');
     var newPad = parseInt(padTop) - 25;
 
-    _.pull(_wsProcess, 'onNotification');
+    _.pull(_wsProcess, name);
     $('div.notification').addClass('pt-page-rotateCubeBottomOut pt-page-ontop');
     $('div.default').addClass('pt-page-current pt-page-rotateCubeBottomIn');
 
@@ -2188,9 +2190,11 @@ function init () {
 
 
 $(function() {
-    sound  = new Audio('chord.mp3');
     userID = $.cookie('userID');
     $.mobile.defaultPageTransition = _transition;
+
+    createjs.Sound.addEventListener('fileload', createjs.proxy(function(){ sound = true; }, this));
+    createjs.Sound.registerSound('chord.mp3', 'sound');
 
     $(window).resize(function(){
         if ($(this).width()<598) {
@@ -2231,7 +2235,6 @@ $(function() {
             $('a.facebook').css('opacity', 1).removeClass('disallowed');
             $('a.google').css('opacity', 1).removeClass('disallowed');
             $('a.googleGlass').css('opacity', 1).removeClass('disallowed');
-            console.log('are you here?');
             $('a.i-logout').css('opacity', 1).removeClass('disallowed');
         } else {
             $('a.facebook').css('opacity', 0.4).addClass('disallowed');
