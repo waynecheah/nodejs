@@ -53,7 +53,8 @@
     "grunt-usemin": "~2.0.2",
     "grunt-concurrent": "~0.4.2",
     "time-grunt": "~0.2.5",
-    "jshint-stylish": "~0.1.4"
+    "jshint-stylish": "~0.1.4",
+    "load-grunt-tasks": "~0.2.1"
   },
   "dependencies": {
     "mongoose": ">= 2.6.5",
