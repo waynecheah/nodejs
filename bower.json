@@ -1,0 +1,11 @@
+{
+  "name": "innerzon",
+  "private": true,
+  "dependencies": {
+    "sass-bootstrap": "~3.0.0",
+    "modernizr": "~2.6.2",
+    "jquery": "~1.10.2",
+    "jQuery.mmenu": "~4.1.7"
+  },
+  "devDependencies": {}
+}

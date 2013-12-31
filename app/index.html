@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<!--[if IEMobile 7 ]>    <html class="no-js iem7"> <![endif]-->
+<!--[if (gt IEMobile 7)|!(IEMobile)]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>
+    Home Security and Automation
+  </title>
+  <meta name="description" content="here is the description of the mobile app">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+  <!-- build:css css/vendor.css -->
+  <!-- bower:css -->
+  <link rel="stylesheet" href="bower_components/sass-bootstrap/dist/css/bootstrap.css" />
+  <!-- endbower -->
+  <!-- endbuild -->
+  <!-- build:css(.tmp) css/style.css -->
+  <link rel="stylesheet" href="css/style.css">
+  <!-- endbuild -->
+  <script src="bower_components/modernizr/modernizr.js"></script>
+</head>
+<body class="ui-mobile-viewport">
+  <img id="internetChecker" style="visibility:hidden; width:36px;"
+   src="https://developers.google.com/_static/images/silhouette36.png"
+   onerror="innerzon.handleConnection.offline()" onload="innerzon.handleConnection.online()" />
+  <script>
+    var innerzon = {
+        env: 'dev',
+
+        handleConnection: {
+            online: function(){
+                innerzon.debug('Client has internet connectivity');
+                window.onLine = true;
+            },
+            offline: function(){
+                innerzon.debug('Client is disconnected from internet', 'err');
+                window.onLine = false;
+            }
+        },
+
+        gdebug: function(name, collapsed){
+            if (this.env == 'pro') {
+                return;
+            }
+
+            if (!name) {
+                console.groupEnd();
+            } else {
+                if (typeof collapsed == 'undefined') {
+                    console.group(name);
+                } else {
+                    console.groupCollapsed(name);
+                }
+            }
+        },
+
+        debug: function(data, type) {
+            if (this.env == 'pro') {
+                return;
+            }
+
+            if (typeof type == 'undefined') {
+                console.log(data);
+            } else if (type == 'err') {
+                console.error(data);
+            } else if (type == 'warn') {
+                console.warn(data);
+            } else if (type == 'table') {
+                console.table(data);
+            }
+        }
+    };
+  </script>
+
+<!--[if lt IE 7]>
+<p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
+<![endif]-->
+
+
+<!-- Add your site or application content here -->
+
+  <div id="body" style="display:none;">
+    <nav id="location" class="sidepanel hide">
+      <ul>
+        <li class="Label"><img src="img/logo.png" style="margin:5px 0 6px;" /></li>
+        <li class="Label group">Location List</li>
+        <li class="location mm-active">
+          <em class="Counter">4</em>
+          <a href="#home" class="changePage ico-home-outline"> Home</a>
+          <ul class="sn">
+            <li class="cameras">
+              <em class="Counter">3</em>
+              <a href="#page-cameras" class="changePage ico-camera"> Cameras</a>
+            </li>
+            <li class="lights">
+              <em class="Counter">0</em>
+              <a href="#page-lights" class="changePage ico-lightbulb"> Lights</a>
+            </li>
+          </ul>
+        </li>
+        <li class="location">
+          <em class="Counter">3</em>
+          <span class="ico-home-outline"> Office</span>
+          <ul>
+            <li>
+              <em class="Counter">5</em>
+              <span class="ico-bell"> Alarm</span>
+            </li>
+            <li class="cameras">
+              <em class="Counter">5</em>
+              <a href="#page-cameras" class="changePage ico-camera"> Cameras</a>
+            </li>
+          </ul>
+        </li>
+        <li class="location">
+          <span class="ico-shop"> Shop</span>
+          <ul></ul>
+        </li>
+        <li>
+          <a href="#settings" class="ico-cog"> Setting</a>
+        </li>
+        <li>
+          <a href="#feedback" class="ico-comment-1"> Feedback</a>
+        </li>
+        <li>
+          <a href="#about" class="ico-info-circled"> About</a>
+        </li>
+        <li>
+          <a href="#logout" class="i-logout ico-logout"> Logout</a>
+        </li>
+      </ul>
+    </nav>
+
+    <nav id="main-menu" class="sidepanel hide">
+      <ul>
+        <li class="Selected"><a href="#home">Home</a></li>
+        <li class="security"><a href="#page-security">Security</a></li>
+        <li class="cameras">
+          <em class="Counter">3</em>
+          <a href="#page-cameras">Cameras</a>
+        </li>
+        <li class="system-status"><a href="#page-system-status">System Status</a></li>
+        <li class="lights">
+          <em class="Counter">0</em>
+          <a href="#page-lights">Lights</a>
+        </li>
+        <li class="Label history">
+          <a href="#page-history">History</a>
+          <ul>
+            <li><a href="#page-history" data-tab="alarm">Alarm</a></li>
+            <li><a href="#page-history" data-tab="arm">Arm</a></li>
+            <li><a href="#page-history" data-tab="zone">Zone</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+
+
+    <!-- Initialize Loading -->
+    <div data-role="page" id="page-initialization">
+      <div data-role="content" style="text-align:center;">
+        <h1>loading..</h1>
+      </div>
+    </div>
+
+    <!-- Sign In -->
+    <div data-role="page" id="page-sign-in">
+      <div id="signin" data-theme="b" data-role="header" data-position="fixed" class="signin">
+        <h3>Sign In</h3>
+      </div>
+      <div data-role="content">
+        <div data-role="fieldcontain" class="text-center" style="padding:30px 0 15px;">
+            <img src="img/innerzon.png" />
+            <span style="font-size:30px; display:none;">
+              <span style="color:#7092BE;">INNER</span><span style="color:#7F7F7F;">ZON
+              <span style="font-size:18px; vertical-align:top;">&#174;</span></span>
+            </span>
+        </div>
+        <div class="authOptions">
+          <div class="authOption useSignin pull-left">
+            <h1 style="margin:6px 0 30px;">Sign-In</h1>
+            <div data-role="fieldcontain">
+              <div data-position-to="#username" class="errPop">
+                <a href="#" data-rel="back" class="ui-btn-right">Close</a>
+                <span class="msg">...Please enter your email here...</span>
+              </div>
+              <label for="username">
+                Email
+              </label>
+              <input name="username" id="username" placeholder="username" value="" type="text" data-mini="true">
+            </div>
+            <div data-role="fieldcontain">
+              <div data-position-to="#password" class="errPop">
+                <a href="#" data-rel="back" class="ui-btn-right">Close</a>
+                <span class="msg">...Please enter your password here...</span>
+              </div>
+              <label for="password">
+                Password
+              </label>
+              <input name="password" id="password" placeholder="password" value="" type="password" data-mini="true">
+            </div>
+            <div data-role="fieldcontain">
+              <label for="save-password">
+                Save Password
+              </label>
+              <select name="toggleswitch1" id="save-password" data-theme="" data-role="slider" data-mini="true">
+                <option value="off">No</option>
+                <option value="on">Yes</option>
+              </select>
+            </div>
+            <div data-role="fieldcontain">
+              <div style="width:37%; display:inline-block;">&nbsp;</div>
+              <div style="width:63%; display:inline-block;">
+                <a href="#" id="login" data-role="button" data-inline="true" data-transition="flip">
+                  <span class="ico-login"></span> Login
+                </a>
+              </div>
+            </div>
+            <div data-role="fieldcontain" style="padding-top:10px;">
+              <div class="text-right">Don't have an account?
+                <a href="#page-register" data-transition="slideup">Register Now</a>
+              </div>
+            </div>
+          </div>
+          <div class="authDivider"></div>
+          <div class="authOption withServices pull-right">
+            <a href="#" class="authButton facebook">
+              <span class="authIcon i-facbook ico-facebook"></span>
+              <span class="text">Sign in with <b>Facebook</b></span>
+            </a>
+            <a href="#" class="authButton google">
+              <span class="authIcon i-google ico-gplus"></span>
+              <span class="text">Sign in with <b>Google</b></span>
+            </a>
+            <a href="#" class="googleGlass">
+              <img src="img/getitonglass_172x60_action_button.png" />
+            </a>
+          </div>
+          <div class="clearfix"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New Register -->
+    <div data-role="page" id="page-register">
+      <div data-theme="b" data-role="header" data-position="fixed" class="register">
+        <h3>Register</h3>
+      </div>
+      <div data-role="content">
+        <div class="signinWrap" style="margin:0 auto;">
+          <div data-role="fieldcontain" class="text-center" style="padding:50px;">
+            <span style="font-size:30px;">
+              <span style="color:#7092BE;">INNER</span><span style="color:#7F7F7F;">ZON<span
+               style="font-size:18px; vertical-align:top;">&#174;</span></span>
+            </span>
+          </div>
+          <div data-role="fieldcontain">
+            <div data-position-to="#reg-username" class="errPop">
+              <a href="#" data-rel="back" class="ui-btn-right">Close</a>
+              <span class="msg">...Please enter your email here...</span>
+            </div>
+            <label for="reg-username">Email</label>
+            <input name="username" id="reg-username" placeholder="username" value="" type="email" data-mini="true" required="required">
+          </div>
+          <div data-role="fieldcontain">
+            <div data-position-to="#reg-password" class="errPop">
+              <a href="#" data-rel="back" class="ui-btn-right">Close</a>
+              ...Please enter your password here...
+            </div>
+            <label for="reg-password">Password</label>
+            <input name="password" id="reg-password" placeholder="password" value="" type="password" data-mini="true" required="required">
+          </div>
+          <div data-role="fieldcontain">
+            <div data-position-to="#reg-fullname" class="errPop">
+              <a href="#" data-rel="back" class="ui-btn-right">Close</a>
+              ...Please enter your fullname here...
+            </div>
+            <label for="reg-fullname">Full Name</label>
+            <input name="fullname" id="reg-fullname" placeholder="fullname" value="" type="text" data-mini="true" required="required">
+          </div>
+          <div data-role="fieldcontain">
+            <div style="width:37%; display:inline-block;">&nbsp;</div>
+            <div style="width:63%; display:inline-block;">
+              <button type="button" id="register-btn" data-role="button" data-inline="true">
+                <span class="ico-user-add"></span> Register
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Home -->
+    <div data-role="page" id="home">
+      <div data-theme="c" data-role="header" data-position="fixed" class="header">
+        <div class="row notificationWrap">
+          <div id="pt-main" class="pt-perspective" style="display:none;">
+            <div class="pt-page pt-topbar default pt-page-current">&nbsp;</div>
+            <div class="pt-page pt-topbar notification">
+              <span class="ico-warning-empty"></span>&nbsp;
+              <span class="message"></span>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="pull-left">
+            <a href="#location" class="icon-block-menu"></a>
+          </div>
+          <div class="col-xs-5 col-sm-4" style="padding:0;">
+            <h3 class="headerTitle">Home Security and Automation</h3>
+          </div>
+          <div class="pull-right">
+            <a href="#main-menu" class="icon-three-points"></a>
+          </div>
+          <div class="iconWrap col-xs-2 col-sm-4 pull-right">
+            <table class="iconWrap" align="right">
+              <tr>
+                <td align="right" valign="middle">
+                  <span class="i-internet ico-globe-1 text-muted"></span>
+                  <span class="i-server ico-cloud text-muted"></span>
+                  <span class="i-hardware ico-hdd text-muted"></span>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="c" data-inset="false">
+          <li data-theme="c" class="iconThumbFormat">
+            <a href="#page-security">
+              <div class="ui-li-thumb"><span class="i-lock ico-lock icon80"></span></div>
+              <div class="row">
+                <div class="col-xs-6">
+                  <div class="tableCell">
+                    <h3>Security</h3>
+                    <span class="armStatus">&nbsp;</span>
+                  </div>
+                </div>
+                <div class="pull-right" style="padding-right:5px;">
+                  <div class="tableCell">Total Zones</div>
+                </div>
+              </div>
+              <span class="ui-li-count totalZones">0</span>
+            </a>
+          </li>
+          <li data-theme="c" class="iconThumb">
+            <a href="#page-system-status">
+              <div class="ui-li-thumb"><span class="i-health ico-gauge icon80"></span></div>
+              <div class="ui-li-content"><h3>System Health</h3></div>
+            </a>
+          </li>
+          <li data-theme="c" class="iconThumb">
+            <a href="#page-alarm">
+              <div class="ui-li-thumb"><span class="i-emergency ico-megaphone icon80"></span></div>
+              <div class="ui-li-content"><h3>Alarm</h3></div>
+              <span class="ui-li-count">0</span>
+            </a>
+          </li>
+          <li data-theme="c" class="iconThumbFormat">
+            <a href="#page-history">
+              <div class="ui-li-thumb"><span class="ico-calendar icon80"></span></div>
+              <div class="row">
+                <div class="col-xs-6">
+                  <div class="tableCell">
+                    <h3>Event Logs</h3>
+                  </div>
+                </div>
+                <div class="pull-right" style="padding-right:5px;">
+                  <div class="tableCell">Available</div>
+                </div>
+              </div>
+              <span class="ui-li-count">0</span>
+            </a>
+          </li>
+        </ul>
+
+        <div class="gainPermissions" style="display:none; margin-top:35px;">
+          <button data-role="button" data-transition="none" href="#">
+            <span class="txt">Set notification permissions for this App</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- Security -->
+    <div data-role="page" id="page-security" data-render="0">
+      <div data-theme="c" data-role="header" data-position="fixed" class="header"></div>
+      <div data-role="content">
+        <div class="armBtnWrap" style="display:none;">
+          <a data-role="button" data-transition="slideup" class="armBtn">
+            <span class="i-lock ico-lock"></span> <span class="armTxt">Disarmed - Press to Arm</span>
+          </a>
+        </div>
+        <h2 class="grey normal">Home Security Zones</h2>
+        <ul data-role="listview" data-divider-theme="d" data-inset="false"></ul>
+      </div>
+    </div>
+
+    <!-- Alert Opened Zones -->
+    <div data-role="page" id="dialog-alert-opened-zones" data-close-btn="none">
+      <div data-role="header" data-theme="b">
+        <h2>Opened Zones Detected</h2>
+      </div>
+      <div data-role="content">
+        <h3>Unable to proceed arm when opened zones detected. You may bypass this zones to continue arm.</h3>
+        <a href="#page-security" data-role="button" data-rel="back" data-theme="c" class="">Ok, i get it</a>
+      </div>
+    </div>
+
+    <!-- How to Arm -->
+    <div data-role="page" id="page-how-to-arm">
+      <div data-theme="e" data-role="header" data-position="fixed">
+        <a href="#home" data-role="button" data-inline="true" data-direction="reverse" data-rel="back"
+           data-theme="c" data-icon="delete" data-iconpos="left" class="ui-btn-left back cancelArm">
+          Cancel
+        </a>
+        <h3 class="header">
+          Confirm Arm
+        </h3>
+      </div>
+      <div data-role="content">
+        <div class="armTypeWrap">
+          <h3 class="text-muted">Choose How To Arm</h3>
+          <div class="center">
+            <div data-role="controlgroup" data-mini="true" data-type="horizontal">
+              <a href="#" data-role="button" data-alarm="2" class="armType">Arm Stay</a>
+              <a href="#" data-role="button" data-alarm="1" class="armType ui-btn-active">Arm Away</a>
+              <a href="#" data-role="button" data-alarm="3" class="armType">Arm Night</a>
+            </div>
+          </div>
+        </div>
+        <div class="keypadArm" style="display:none;">
+          <h4 class="text-muted armCodeTxt">Enter Keypad Code To Arm</h4>
+          <div class="ui-grid-c" style="padding-left:5px;">
+            <div class="ui-block-a">
+              <div data-role="fieldcontain">
+                <input name="code1" id="code1" data-no="1" type="tel" data-mini="true" class="passcode">
+              </div>
+            </div>
+            <div class="ui-block-b">
+              <div data-role="fieldcontain">
+                <input name="code2" id="code2" data-no="2" type="tel" data-mini="true" class="passcode">
+              </div>
+            </div>
+            <div class="ui-block-c">
+              <div data-role="fieldcontain">
+                <input name="code3" id="code3" data-no="3" type="tel" data-mini="true" class="passcode">
+              </div>
+            </div>
+            <div class="ui-block-d">
+              <div data-role="fieldcontain">
+                <input name="code4" id="code4" data-no="4" type="tel" data-mini="true" class="passcode">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="patternArm">
+          <h4 class="text-muted armPatternTxt">Draw A Pattern To Arm</h4>
+          <form id="patternlock-form" method="get" action="#page-how-to-arm" onsubmit="return checkPattern()">
+            <input type="password" id="patternlock" class="patternlock" />
+          </form>
+        </div>
+        <div class="countdown" style="display:none; margin-top:30px;">
+          <div class="progress">
+            <div class="progress-bar progress-bar-success" style="width:100%;"
+             role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
+              <span class="sr-only">Arm in 10 Seconds</span>
+            </div>
+          </div>
+          <button data-role="button" data-icon="delete" data-iconpos="left" data-theme="e" class="cancelArm" >Cancel Arm</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- System Status -->
+    <div data-role="page" id="page-system-status">
+      <div data-theme="c" data-role="header" data-position="fixed" class="header"></div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="d" data-inset="true"></ul>
+      </div>
+    </div>
+
+
+    <!-- Alarm -->
+    <div data-role="page" id="page-alarm">
+      <div data-theme="c" data-role="header" data-position="fixed" class="header"></div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="d" data-inset="true"></ul>
+      </div>
+    </div>
+
+
+    <!-- Cameras -->
+    <div data-role="page" id="page-cameras">
+      <div data-theme="c" data-role="header" data-position="fixed" class="header"></div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="c" data-inset="false">
+          <li data-theme="c">
+            <a href="#page-cam1">
+              <img src="" width="120" height="80" alt="..." class="ui-li-thumb freesize" />
+              <h3 style="padding-left:40px;">Kitchen Camera</h3>
+              <p style="padding-left:40px;">linksys WVC80N</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Camera -->
+    <div data-role="page" id="page-camera" style="background:#000;">
+      <div data-theme="b" data-role="header" data-fullscreen="true" data-position="fixed" class="header">
+        <a data-role="button" data-inline="true" data-direction="reverse" data-rel="back"
+           data-theme="c" href="#home" data-icon="arrow-l" data-iconpos="left" class="ui-btn-left back">
+          Cameras
+        </a>
+        <h3 class="header">
+          Camera 1
+        </h3>
+        <div data-role="controlgroup" data-type="horizontal" data-mini="true" class="ui-btn-right">
+          <a href="#" data-role="button" data-theme="b">Pic</a>
+          <a href="#" data-role="button" data-theme="b">Video</a>
+        </div>
+      </div>
+      <div data-role="content">
+        <div class="cameraWrap" style="margin-top:-240px;"><img src="" alt="camera" class="cam" /></div>
+      </div>
+    </div>
+
+
+    <!-- Lights -->
+    <div data-role="page" id="page-lights">
+      <div data-theme="c" data-role="header" data-position="fixed" class="header"></div>
+      <div data-role="content">
+        <ul data-role="listview" data-divider-theme="c" data-inset="false"></ul>
+      </div>
+    </div>
+
+
+    <!-- History -->
+    <div data-role="page" id="page-history">
+      <div data-theme="c" data-role="header" data-position="fixed" class="header"></div>
+      <div data-role="content">
+        <div class="center">
+          <div data-role="controlgroup" data-type="horizontal">
+            <a href="#" data-role="button" class="ui-btn-active">All</a>
+            <a href="#" data-role="button">Alarm</a>
+            <a href="#" data-role="button">Arm</a>
+            <a href="#" data-role="button">Zone</a>
+          </div>
+        </div>
+        <h2 class="grey center normal">January 12, 2013</h2>
+        <ul data-role="listview" data-divider-theme="d" data-inset="false">
+          <li data-theme="c">
+            <a href="#page1">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <div class="ui-grid-a">
+                <div class="ui-block-a">
+                  <h3 class="listTitle">Event</h3>
+                  <p>Camera 1 (1 image)</p>
+                </div>
+                <div class="ui-block-b" style="line-height:45px; padding-top:13px; text-align:right;"><p>6:06 PM</p></div>
+              </div>
+            </a>
+          </li>
+          <li data-theme="d">
+            <a href="#page1">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Kitchen door</h3>
+              <p>communication restored</p>
+            </a>
+          </li>
+          <li data-theme="c">
+            <a href="#page1">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Kitchen door</h3>
+              <p>communication failure</p>
+            </a>
+          </li>
+          <li data-theme="d">
+            <a href="#page1">
+              <img data-src="holder.js/80x80" alt="..." class="ui-li-thumb" />
+              <h3>Zone door</h3>
+              <p>communication failure</p>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div id="fb-root"></div>
+  <!-- build:js scripts/vendor.js -->
+  <!-- bower:js -->
+  <script src="bower_components/jquery/jquery.js"></script>
+  <script src="bower_components/sass-bootstrap/dist/js/bootstrap.js"></script>
+  <script src="bower_components/jQuery.mmenu/src/js/jquery.mmenu.js"></script>
+  <!-- endbower -->
+  <!-- endbuild -->
+
+  <!-- build:js scripts/main.js -->
+  <script src="scripts/main.js"></script>
+  <!-- endbuild -->
+
+  <!-- build:js scripts/plugins.js -->
+  <!-- endbuild -->
+</body>
+
+
+<div id="header-tpl" class="header" style="display:none;">
+  <div class="row notificationWrap">
+    <div id="pt-main" class="pt-perspective" style="display:none;">
+      <div class="pt-page pt-topbar default pt-page-current">&nbsp;</div>
+      <div class="pt-page pt-topbar notification">
+        <span class="ico-warning-empty"></span>&nbsp;
+        <span class="message"></span>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="pull-left navBackWrap">
+      <a href="#home" data-direction="reverse" class="ico-left-open-mini logoIcon">&nbsp;&nbsp;</a>
+    </div>
+    <div class="col-xs-5 col-sm-4" style="padding:0;">
+      <h3 class="headerTitle">&nbsp;</h3>
+    </div>
+    <div class="pull-right">
+      <a href="#main-menu" class="icon-three-points"></a>
+    </div>
+    <div class="iconWrap col-xs-2 col-sm-4 pull-right" style="padding-left:0;">
+      <table class="iconWrap" align="right">
+        <tr>
+          <td align="right" valign="middle">
+            <span class="i-internet ico-globe-1 text-muted"></span>
+            <span class="i-server ico-cloud text-muted"></span>
+            <span class="i-hardware ico-hdd text-muted"></span>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<template id="light-list">
+  <li data-theme="c">
+    <div class="row">
+      <div class="bs col-xs-2 col-sm-1">
+        <img data-src="holder.js/55x100/industrial" alt="..." class="ui-li-thumb freesize2" />
+      </div>
+      <div class="bs col-xs-10 col-sm-11">
+        <div class="row">
+          <div class="bs col-xs-8">
+            <h3 class="listTitle" style="line-height:91px;">On/Off Light</h3>
+          </div>
+          <div class="bs col-xs-4">
+            <div data-role="fieldcontain" class="right" style="padding-top:20px;">
+              <select name="lightSwitch" id="lightSwitch" data-role="slider">
+                <option value="off">Off</option>
+                <option value="on">On</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </li>
+</template>
+<template id="dim-light-list">
+  <li data-theme="c">
+    <div class="row">
+      <div class="bs col-xs-2 col-sm-1">
+        <img data-src="holder.js/55x100/industrial" alt="..." class="ui-li-thumb freesize2" />
+      </div>
+      <div class="bs col-xs-10 col-sm-11">
+        <div class="row">
+          <div class="bs col-xs-8">
+            <h3 class="listTitle" style="line-height:41px;">Dimmable Light</h3>
+          </div>
+          <div class="bs col-xs-4">
+            <div data-role="fieldcontain" style="text-align:right;">
+              <select name="lightSwitch" id="lightSwitch" data-role="slider">
+                <option value="off">
+                  Off
+                </option>
+                <option value="on">
+                  On
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="bs clearfix col-xs-12">
+            <div data-role="fieldcontain" class="slider ui-hide-label">
+              <label for="light"> </label>
+              <input type="range" id="light" name="light" value="0" min="0" max="100" data-highlight="true">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </li>
+</template>
+
+</html>
