@@ -1,4 +1,6 @@
 'use strict';
+var LIVERELOAD_PORT = 35729;
+var SERVER_PORT     = 9000;
 
 module.exports = function (grunt) {
     // Load grunt tasks automatically
@@ -19,8 +21,12 @@ module.exports = function (grunt) {
 
         // Watches files for changes and runs tasks based on the changed files
         watch: {
+            coffee: {
+                files: ['<%= yeoman.app %>/scripts/{,*/}*.coffee'],
+                tasks: ['coffee:dist']
+            },
             js: {
-                files: ['<%= yeoman.app %>/scripts/{,*/}*.js'],
+                files: ['<%= yeoman.app %>/scripts/{,*/}*.js', '.tmp/js/{,*/}*.js'],
                 tasks: ['jshint'],
                 options: {
                     livereload: true
@@ -43,8 +49,10 @@ module.exports = function (grunt) {
                 },
                 files: [
                     '<%= yeoman.app %>/{,*/}*.html',
-                    '.tmp/styles/{,*/}*.css',
-                    '<%= yeoman.app %>/images/{,*/}*.{gif,jpeg,jpg,png,svg,webp}'
+                    '.tmp/css/{,*/}*.css',
+                    '.tmp/js/{,*/}*.js',
+                    '<%= yeoman.app %>/images/{,*/}*.{gif,jpeg,jpg,png,svg,webp}',
+                    '<%= yeoman.app %>/scripts/templates/*.{ejs,jade,mustache,hbs}'
                 ]
             }
         },
@@ -52,8 +60,8 @@ module.exports = function (grunt) {
         // The actual grunt server settings
         connect: {
             options: {
-                port: 9000,
-                livereload: 35729,
+                port: SERVER_PORT,
+                livereload: LIVERELOAD_PORT,
                 // Change this to '0.0.0.0' to access the server from outside
                 hostname: 'localhost'
             },
@@ -106,6 +114,20 @@ module.exports = function (grunt) {
 
 
 
+        // Compiles Coffee to JS
+        coffee: {
+            dist: {
+                files: [{
+                    // Rather than compiling multiple files here you should require them into your main .coffee file
+                    expand: true,
+                    cwd: '<%= yeoman.app %>/scripts',
+                    src: '{,*/}*.coffee',
+                    dest: '.tmp/js',
+                    ext: '.js'
+                }]
+            }
+        },
+
         // Compiles Sass to CSS and generates necessary files if requested
         compass: {
             options: {
@@ -137,14 +159,15 @@ module.exports = function (grunt) {
         // Add vendor prefixed styles
         autoprefixer: {
             options: {
-                browsers: ['last 1 version']
+                browsers: ['last 1 version', 'android >= 4', 'bb >= 10'],
+                diff: true
             },
             dist: {
                 files: [{
                     expand: true,
-                    cwd: '.tmp/styles/',
+                    cwd: '.tmp/css/',
                     src: '{,*/}*.css',
-                    dest: '.tmp/styles/'
+                    dest: '.tmp/css/'
                 }]
             }
         },
@@ -238,8 +261,8 @@ module.exports = function (grunt) {
         // cssmin: {
         //     dist: {
         //         files: {
-        //             '<%= yeoman.dist %>/styles/main.css': [
-        //                 '.tmp/styles/{,*/}*.css',
+        //             '<%= yeoman.dist %>/css/main.css': [
+        //                 '.tmp/css/{,*/}*.css',
         //                 '<%= yeoman.app %>/styles/{,*/}*.css'
         //             ]
         //         }
@@ -280,7 +303,7 @@ module.exports = function (grunt) {
                 expand: true,
                 dot: true,
                 cwd: '<%= yeoman.app %>/styles',
-                dest: '.tmp/styles/',
+                dest: '.tmp/css/',
                 src: '{,*/}*.css'
             }
         },
