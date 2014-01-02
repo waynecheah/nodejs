@@ -131,10 +131,12 @@ module.exports = function (grunt) {
         // Compiles Sass to CSS and generates necessary files if requested
         compass: {
             options: {
+                //config: 'config/config.rb'
                 sassDir: '<%= yeoman.app %>/styles',
                 cssDir: '.tmp/css',
-                generatedImagesDir: '.tmp/img/generated',
+                //specify: [], // ignores filenames starting with underscore
                 imagesDir: '<%= yeoman.app %>/images',
+                generatedImagesDir: '.tmp/img/generated',
                 javascriptsDir: '<%= yeoman.app %>/scripts',
                 fontsDir: '<%= yeoman.app %>/styles/fonts',
                 importPath: '<%= yeoman.app %>/bower_components',
@@ -146,7 +148,8 @@ module.exports = function (grunt) {
             },
             dist: {
                 options: {
-                    generatedImagesDir: '<%= yeoman.dist %>/images/generated'
+                    generatedImagesDir: '<%= yeoman.dist %>/images/generated',
+                    environment: 'production'
                 }
             },
             server: {
