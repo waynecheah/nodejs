@@ -54,7 +54,8 @@
     "grunt-concurrent": "~0.4.2",
     "time-grunt": "~0.2.5",
     "jshint-stylish": "~0.1.4",
-    "load-grunt-tasks": "~0.2.1"
+    "load-grunt-tasks": "~0.2.1",
+    "grunt-open": "~0.2.2"
   },
   "dependencies": {
     "mongoose": ">= 2.6.5",
@@ -66,7 +67,9 @@
     "moment": "~2.3.1",
     "random-string": "~0.1.1",
     "googleapis": "~0.4.6",
-    "readline": "0.0.3"
+    "readline": "0.0.3",
+    "consolidate": "~0.10.0",
+    "email-validator": "~1.0.0"
   },
   "main": "server.js"
 }

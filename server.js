@@ -4,6 +4,7 @@ var http         = require('http');
 var net          = require('net');
 var connect      = require('connect');
 var io           = require('socket.io');
+var cons         = require('consolidate');
 var fs           = require('fs');
 var crypto       = require('crypto');
 var colors       = require('colors');
@@ -11,6 +12,7 @@ var _            = require('lodash');
 var moment       = require('moment');
 var nodemailer   = require('nodemailer');
 var randomString = require('random-string');
+//var controllers  = require('./app/controllers'); // eg. controllers.clients.method();
 
 var environment = _.isUndefined(process.env.NODE_ENV) ? 'development' : process.env.NODE_ENV;
 var sockets     = [];
@@ -1185,6 +1187,7 @@ var Client = mongoose.model('Client', {
     created: { type:Date, default:Date.now },
     modified: { type:Date, default:Date.now }
 });
+// var Client = mongoose.model('Client');
 var Device = mongoose.model('Device', {
     name: String,
     macAdd: String,
