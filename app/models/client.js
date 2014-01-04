@@ -1,6 +1,6 @@
 
 var mongoose = require('mongoose');
-var upsertDate = require('plugins/upsertDate');
+var upsertDate = require('./plugins/upsertDate');
 var validEmail = require('../../lib/validate/email');
 var Mixed = mongoose.Schema.Types.Mixed;
 
