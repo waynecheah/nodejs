@@ -1,6 +1,7 @@
 fs = require 'fs'
 _  = require 'lodash'
 
+mongoose   = require 'mongoose'
 lifecycle  = require 'mongoose-lifecycle'
 upsertDate = require './plugins/upsertDate'
 
@@ -28,7 +29,7 @@ appModel =
     Model
   # END events
 
-  methods: (Schame, customMethods) ->
+  methods: (Schema, customMethods) ->
     methods =
       lastUpdate: (model, callback) ->
         @model(model).findOne {}, '-_id modified', sort: modified: -1, callback
@@ -52,6 +53,14 @@ appModel =
 fs.readdirSync(__dirname).forEach (file) ->
   moduleName = file.substr(0, file.indexOf('.'))
 
-  if moduleName isnt 'index' and moduleName isnt 'appModel'
-    model = require('./' + moduleName) appModel
-    exports[moduleName] = model
+  if moduleName isnt 'index' and moduleName isnt 'appModel' and moduleName isnt 'device'
+    obj = require './' + moduleName
+
+    if 'Name' of obj and 'Schema' of obj
+      Schema = obj.Schema;
+      Schema = appModel.methods Schema, obj.Methods if 'Methods' of obj # extend methods if any
+
+      Model = mongoose.model obj.Name, Schema # compile the model
+      Model = appModel.events Model, obj.Events if 'Events' of obj # extend events handle if any
+
+      exports[moduleName] = Model

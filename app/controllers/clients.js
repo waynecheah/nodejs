@@ -69,7 +69,7 @@ var Clients = {
         log('s', 'w', 'Showing something cool');
         log('s', 'd', data);
 
-        Client.findOne({}, 'username password fullname', function(err, doc){
+        Client.findOne({}, 'username password fullname', { skip:2 }, function(err, doc){
             if (err) throw err;
             log('s', 'd', doc);
             callback({ test:'callback' });

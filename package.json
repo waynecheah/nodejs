@@ -69,7 +69,9 @@
     "googleapis": "~0.4.6",
     "readline": "0.0.3",
     "consolidate": "~0.10.0",
-    "email-validator": "~1.0.0"
+    "email-validator": "~1.0.0",
+    "mongoose-lifecycle": "~1.0.0",
+    "coffee-script": "~1.6.3"
   },
   "main": "server.js"
 }

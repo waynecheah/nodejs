@@ -1,4 +1,5 @@
 
+var coffeeScript = require('coffee-script');
 var mongoose     = require('mongoose');
 var http         = require('http');
 var net          = require('net');
