@@ -14,8 +14,9 @@ appController =
   Modules are automatically loaded once they are declared in the controllers directory.
 ###
 fs.readdirSync(__dirname).forEach (file) ->
-  unless file is 'index.js'
-    moduleName = file.substr(0, file.indexOf('.'))
+  moduleName = file.substr(0, file.indexOf('.'))
+
+  if moduleName isnt 'index' and moduleName isnt 'appController'
     controller = require('./' + moduleName)
 
     if not _.isFunction(controller) and not _.isArray(controller) and _.isObject(controller) # extend if it's an Object
