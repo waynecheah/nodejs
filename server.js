@@ -12,7 +12,8 @@ var _            = require('lodash');
 var moment       = require('moment');
 var nodemailer   = require('nodemailer');
 var randomString = require('random-string');
-//var controllers  = require('./app/controllers'); // eg. controllers.clients.method();
+var models       = require('./app/models');
+var controllers  = require('./app/controllers');
 
 var environment = _.isUndefined(process.env.NODE_ENV) ? 'development' : process.env.NODE_ENV;
 var sockets     = [];
@@ -1178,16 +1179,7 @@ db.once('open', function(){
 });
 var ObjectId = mongoose.Schema.Types.ObjectId;
 var Mixed    = mongoose.Schema.Types.Mixed;
-var Client = mongoose.model('Client', {
-    username: String,
-    password: String,
-    fullname: String,
-    accessToken: Mixed,
-    services: Array,
-    created: { type:Date, default:Date.now },
-    modified: { type:Date, default:Date.now }
-});
-// var Client = mongoose.model('Client');
+var Client = mongoose.model('Client');
 var Device = mongoose.model('Device', {
     name: String,
     macAdd: String,
