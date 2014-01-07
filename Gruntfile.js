@@ -40,6 +40,10 @@ module.exports = function (grunt) {
                 files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
                 tasks: ['compass:server', 'autoprefixer']
             },
+//            sass: {
+//                files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
+//                tasks: ['sass:server', 'autoprefixer']
+//            },
             styles: {
                 files: ['<%= yeoman.app %>/styles/{,*/}*.css'],
                 tasks: ['newer:copy:styles', 'autoprefixer']
@@ -156,6 +160,29 @@ module.exports = function (grunt) {
             server: {
                 options: {
                     debugInfo: true
+                }
+            }
+        },
+        sass: {
+            dist: {
+                files: [{
+                    expand: true,
+                    cwd: '<%= yeoman.app %>/styles',
+                    src: ['*.scss'],
+                    dest: '<%= yeoman.dist %>/css',
+                    ext: '.css'
+                }]
+            },
+            server: {
+                files: [{
+                    expand: true,
+                    cwd: '<%= yeoman.app %>/styles',
+                    src: ['*.scss'],
+                    dest: '<%= yeoman.tmp %>/css',
+                    ext: '.css'
+                }],
+                options: {
+                    sourcemap: 'true'
                 }
             }
         },
