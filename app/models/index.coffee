@@ -53,7 +53,7 @@ appModel =
 fs.readdirSync(__dirname).forEach (file) ->
   moduleName = file.substr(0, file.indexOf('.'))
 
-  if moduleName isnt 'index' and moduleName isnt 'appModel' and moduleName isnt 'device'
+  if moduleName isnt 'index' and moduleName isnt 'appModel'
     obj = require './' + moduleName
 
     if 'Name' of obj and 'Schema' of obj

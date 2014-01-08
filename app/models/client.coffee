@@ -13,7 +13,7 @@ exports.Schema = mongoose.Schema
   fullname: type: String, required: true
   accessToken: Mixed
   services: Array
-# END Schama
+# END Schema
 
 exports.Events =
   beforeInsert: (data) ->

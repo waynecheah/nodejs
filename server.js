@@ -1179,44 +1179,10 @@ db.once('open', function(){
     log('s', 'i', 'MongoDB connected! host: '+db.host+', port: '+db.port);
 });
 var ObjectId = mongoose.Schema.Types.ObjectId;
-var Mixed    = mongoose.Schema.Types.Mixed;
 var Client = mongoose.model('Client');
-var Device = mongoose.model('Device', {
-    name: String,
-    macAdd: String,
-    serial: { type:String, index:true },
-    lastSync: Date,
-    created: { type:Date, default:Date.now },
-    modified: { type:Date, default:Date.now }
-});
-var Status = mongoose.model('Status', {
-    deviceId: String,
-    serial: String,
-    info: {
-        cn: String,
-        pn: String,
-        sn: String,
-        vs: Number
-    },
-    status: Mixed,
-    created: { type:Date, default:Date.now },
-    modified: { type:Date, default:Date.now }
-});
-var Event = mongoose.model('Event', {
-    datetime: String,
-    device: String,
-    category: String,
-    log: String,
-    number: Number, // [partition, zone, device, light, sensor, label]
-    command: String, // [for APP only]
-    condition: Number, // [zone]
-    status: Number, // [system, partition, zone, emergency, device, light, sensor]
-    value: String, // [device, light, sensor]
-    partition: Number, // [zone]
-    type: Number, // [system, zone, emergency, device, light, sensor]
-    user: String, // [partition, emergency, device, light]
-    succeed: Boolean // [for APP only]
-});
+var Device = mongoose.model('Device');
+var Status = mongoose.model('Status');
+var Event  = mongoose.model('Event');
 
 
 
@@ -1431,6 +1397,21 @@ io.sockets.on('connection', function(websocket) {
         });
     });
     websocket.on('app request', function(req, data){
+        if (req.indexOf('/')) {
+            var routes = req.split('/');
+            var contr  = routes[0];
+            var method = 'index';
+
+            if (routes.length > 1) {
+                method = routes[1];
+            }
+            if (contr in controllers && method in controllers[contr]) { // controller and method are found
+                controllers[contr][method](data, function(){ // call execution
+                    log('s', 'i', 'Processed controller ['+contr+'] and method ['+method+'] has completed');
+                });
+            }
+        }
+
         if (req == 'register') {
             log('w', 'i', 'New registration submitted by web cliend '+websocket.id);
             log('w', 'd', data);

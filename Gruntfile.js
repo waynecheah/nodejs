@@ -36,14 +36,14 @@ module.exports = function (grunt) {
             gruntfile: {
                 files: ['Gruntfile.js']
             },
-            compass: {
+            //compass: {
+            //    files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
+            //    tasks: ['compass:server', 'autoprefixer']
+            //},
+            sass: {
                 files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
-                tasks: ['compass:server', 'autoprefixer']
+                tasks: ['sass:server', 'autoprefixer']
             },
-//            sass: {
-//                files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
-//                tasks: ['sass:server', 'autoprefixer']
-//            },
             styles: {
                 files: ['<%= yeoman.app %>/styles/{,*/}*.css'],
                 tasks: ['newer:copy:styles', 'autoprefixer']
@@ -371,12 +371,14 @@ module.exports = function (grunt) {
         // Run some tasks in parallel to speed up build process
         concurrent: {
             server: [
-                'compass:server',
+                //'compass:server',
+                'sass:server',
                 'copy:styles',
                 'imagemin:server'
             ],
             dist: [
-                'compass',
+                //'compass',
+                'sass:dist',
                 'copy:styles',
                 'imagemin',
                 'svgmin'

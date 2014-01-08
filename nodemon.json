@@ -1,0 +1,15 @@
+{
+    "verbose": true,
+    "watch": [
+        "app/controllers",
+        "app/models",
+        "app/models/plugins",
+        "app/views/*",
+        "config",
+        "lib/*"
+    ],
+    "ext": "ejs handlebars html jade",
+    "ignore": [
+        ".idea", ".sass-cache", ".tmp", "dist", "aes.js", "app.js", "bower.json", "gapis.js", "app/assets", "public"
+    ]
+}

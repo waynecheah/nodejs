@@ -2,28 +2,23 @@
 mongoose = require 'mongoose'
 # validate = require '../../lib/validate'
 
-Mixed  = mongoose.Schema.Types.Mixed
-Schema = mongoose.Schema
-  name: String
-  macAdd: String
-  serial: type:String, index:true
-  lastSync: Date
+exports.Name = 'Device'
 
-Events =
+exports.Schema = mongoose.Schema
+  name: String
+  macAdd: type: String, require: true
+  serial: type:String, require: true, index:true
+  lastSync: Date
+# END Schema
+
+exports.Events =
   beforeInsert: (data) ->
   afterInsert: (data) ->
+# END Events
 
-Methods =
+exports.Methods =
   findDevice: (id, callback) ->
     @model('Device').find email:id, callback
 
   otherMethod: (data) ->
-
-
-module.exports = (appModel) ->
-  # compile the model
-  Schema = appModel.methods Schema, Methods
-  Device = mongoose.model 'Device', Schema
-
-  # handle events
-  appModel.events Client, Events
+# END Methods
