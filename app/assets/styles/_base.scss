@@ -1,0 +1,64 @@
+
+$perpective: 1200px;
+$transform-style: preserve-3d;
+
+
+.abs {
+  position: absolute;
+}
+.rel {
+  position: relative;
+}
+
+.bold {
+  font-weight: bold;
+}
+.normal {
+  font-weight: normal;
+}
+.italic {
+  font-style: italic;
+}
+.center {
+  text-align: center;
+}
+.right {
+  text-align: right;
+}
+.grey {
+  color: #808080;
+}
+.clicker {
+  cursor: pointer;
+}
+.pointer {
+  cursor: default;
+}
+.disallowed {
+  cursor: not-allowed;
+}
+
+.bs, .bs:before, .bs:after {
+  box-sizing: border-box;
+}
+.divcenter {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.p5 {
+  padding: 5px;
+}
+.pl5 {
+  padding-left: 5px;
+}
+.s12 {
+  font-size: 12px;
+  font-weight: normal;
+}
+.whiteBg {
+  background-color: #fff;
+}
+.noTxtShadow {
+  text-shadow: none;
+}
