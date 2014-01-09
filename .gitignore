@@ -1,5 +1,7 @@
 node_modules
 dist
+.DS_Store
+.idea
 .tmp
 .sass-cache
 app/assets/bower_components
