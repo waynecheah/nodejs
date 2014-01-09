@@ -2,6 +2,35 @@
 $perpective: 1200px;
 $transform-style: preserve-3d;
 
+@mixin dimen ($width:100%, $height:100%) {
+    @if $width != 'none' {
+        width: $width;
+    }
+    @if $height != 'none' {
+        height: $height;
+    }
+}
+@mixin dimenPos ($width:100%, $height:100%, $position:absolute) {
+    @include dimen($width, $height);
+    position: $position;
+}
+@mixin position ($top:none, $left:none, $bottom:none, $right:none) {
+    @if $top != 'none' {
+        top: $top;
+    }
+    @if $left != 'none' {
+        left: $left;
+    }
+    @if $bottom != 'none' {
+        bottom: $bottom;
+    }
+    @if $right != 'none' {
+        right: $right;
+    }
+}
+@mixin bgGradient ($bg...) {
+    background-image: gradient($bg);
+}
 
 .abs {
   position: absolute;

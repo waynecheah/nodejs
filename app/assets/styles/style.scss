@@ -24,9 +24,8 @@ input.passcode {
     text-align: center;
 }
 div.cameraWrap {
-    position: absolute;
+    @include dimenPos(100%, none);
     top: 50%;
-    width: 100%;
     text-align: center;
 }
 div.tableCell {
@@ -47,22 +46,11 @@ div.tableCell {
 
 
 /* Page Transition */
-@mixin bgGradient($bg...) {
-    background-image: gradient($bg);
-}
-@mixin pageDimension($width:100%, $height:100%, $position:absolute) {
-    width: $width;
-    height: $height;
-    position: $position;
-}
-
 .notificationWrap {
     background-color: #000;
 }
 .pt-perspective {
-    position: relative;
-    width: 100%;
-    height: 25px;
+    @include dimenPos(100%, 25px, relative);
     -webkit-perspective: $perpective;
     -webkit-transform-style: $transform-style;
 
@@ -75,9 +63,8 @@ div.tableCell {
 }
 
 .pt-page {
-    @include pageDimension;
-    top: 0;
-    left: 0;
+    @include dimenPos;
+    @include position(0, 0);
     visibility: hidden;
     overflow: hidden;
     backface-visibility: hidden;
@@ -141,10 +128,8 @@ h3.headerTitle {
 }
 
 div.lastSync {
-    position: absolute;
-    width: 100%;
-    bottom: 0;
-    left: 0;
+    @include dimenPos(100%, none);
+    @include position($bottom:0, $left:0);
     color: rgba(0, 0, 0, 0.6);
     padding-left: 5px;
     line-height: 28px;
@@ -155,48 +140,52 @@ div.lastSync {
 .icon80 {
     font-size: 60px;
 }
-li.iconThumb a.ui-link-inherit {
+li.iconThumb {
+  a.ui-link-inherit {
     padding: 0 !important;
-}
-li.iconThumb div.ui-li-thumb {
+  }
+  div.ui-li-thumb {
     position: static;
     padding: 1px;
-}
-li.iconThumb div.ui-li-content {
+  }
+  div.ui-li-content {
     padding: 20px 0 0 8px;
+  }
 }
-li.iconThumbFormat div.ui-block-a {
-    padding-left: 86px;
-}
-li.iconThumbFormat div.nested h3 {
-    padding-top: 9px;
-}
-li.iconThumbFormat div.ui-block-b {
-    line-height: 45px;
-    padding-top: 13px;
-    text-align: right;
-}
-li.iconThumbFormat div.row {
-    margin-left: 70px;
-    height: 59px;
-    line-height: 22px;
-}
-li.iconThumbFormat div.tableCell {
-    height: 59px;
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-li.iconThumbFormat div.tableCell h3 {
-    margin: 5px 0 0;
-}
-li.iconThumbFormat div.row div, li.iconThumbFormat div.row span {
-    font-size: 12px;
-    font-weight: normal;
-}
+li.iconThumbFormat {
+    div.ui-block-a {
+        padding-left: 86px;
+    }
+    div.nested h3 {
+        padding-top: 9px;
+    }
+    div.ui-block-b {
+        line-height: 45px;
+        padding-top: 13px;
+        text-align: right;
+    }
+    div.row {
+        margin-left: 70px;
+        height: 59px;
+        line-height: 22px;
 
+        div, span {
+            font-size: 12px;
+            font-weight: normal;
+        }
+    }
+    div.tableCell {
+        height: 59px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+
+        h3 {
+            margin: 5px 0 0;
+        }
+    }
+}
 div.authOptions {
-    position: relative;
-    width: 900px;
+    @include dimenPos(900px, none, relative);
     margin: 0 auto;
 }
 div.useSignin {
@@ -205,22 +194,19 @@ div.useSignin {
     padding-left: 15px;
 }
 div.authDivider {
-    position: absolute;
-    width: 1px;
-    height: 100%;
-    top: 0;
-    left: 50%;
+    @include dimenPos(1px);
+    @include position(0, 50%);
     background: #ddd;
+    &:before {
+        content: 'OR';
+        position: absolute;
+        @include position(110px, -15px);
+        padding: 5px;
+        background-color: #f6f6f6;
+        color: #222;
+    }
 }
-div.authDivider:before {
-    content: 'OR';
-    position: absolute;
-    top: 110px;
-    left: -15px;
-    padding: 5px;
-    background-color: #f6f6f6;
-    color: #222;
-}
+
 div.withServices {
     width: 360px;
     padding-right: 25px;
@@ -228,22 +214,16 @@ div.withServices {
 @media (max-width: 910px) {
     div.authOptions {
         width: 420px;
+        float: none !important;
     }
     div.authDivider {
-        position: relative;;
-        width: 100%;
-        height: 1px;
-        top: initial;
-        left: initial;
+        @include dimenPos(100%, 1px, relative);
+        @include position(initial, initial);
         margin: 50px 0;
-    }
-    div.authDivider:before {
-        top: -15px;
-        left: 50%;
-        margin-left: -16px;
-    }
-    div.authOption {
-        float: none !important;
+        &:before {
+            @include position(-15px, 50%);
+            margin-left: -16px;
+        }
     }
     div.withServices {
         margin: 0 auto;
@@ -309,64 +289,71 @@ a.authButton {
     font-weight: normal !important;
     text-shadow: none;
     transition: background 0.8s ease;
-}
-a.authButton span.text {
-    font-size: 16px;
-    line-height: 18px;
+
+    span.text {
+        font-size: 16px;
+        line-height: 18px;
+    }
 }
 a.facebook {
     background-color: #3c5a98;
-}
-a.facebook:hover {
-    background-color: #4365aa;
+
+    &:hover {
+        background-color: #4365aa;
+    }
 }
 a.google {
     background-color: #dd4b39;
-}
-a.google:hover {
-    background-color: #e15f4f;
+
+    &:hover {
+        background-color: #e15f4f;
+    }
 }
 span.authIcon {
-    position: absolute; top: 0; left: 0; display: block;
-    width: 50px;
-    height: 100%;
+    @include dimenPos(50px);
+    @include position(0, 0);
+    display: block;
     font-size: 25px;
     line-height: 60px;
     text-align: center;
     background-color: rgba(255,255,255,0.1);
 }
 
-div.useSignin .ui-field-contain label {
-    width: 28%;
-}
-div.useSignin .ui-field-contain div.ui-input-text {
-    width: 70%;
+div.useSignin .ui-field-contain {
+    label {
+        width: 28%;
+    }
+    div.ui-input-text {
+        width: 70%;
+    }
 }
 
-div.header div.navBackWrap {
-    width: 80px;
-    padding-top: 5px;
+div.header {
+    div.navBackWrap {
+        width: 80px;
+        padding-top: 5px;
+    }
+    a.ico-left-open, a.ico-left-open-mini {
+        margin-left: 5px;
+        font-size: 32px;
+    }
+    a.logoIcon {
+        background: url(../img/icon.png) 32px 1px no-repeat;
+    }
+    a.icon-block-menu {
+        color: #999;
+        line-height: 55px;
+        font-size: 32px;
+    }
+    a.icon-three-points {
+        @extend a.icon-block-menu;
+    }
+    a.icon-block-menu {
+        padding-left: 22px;
+        padding-right: 8px;
+    }
 }
-div.header a.ico-left-open, div.header a.ico-left-open-mini {
-    margin-left: 5px;
-    font-size: 32px;
-}
-div.header a.logoIcon {
-    background: url(../img/icon.png) 32px 1px no-repeat;
-}
-div.header a.icon-block-menu, div.header a.icon-three-points {
-    color: #999;
-    line-height: 55px;
-    font-size: 32px;
-}
-div.header a.icon-block-menu {
-    padding-left: 22px;
-    padding-right: 8px;
-}
-div.header a.icon-three-points {
-    padding-right: 22px;
-    padding-left: 8px;
-}
+
 span.zoneStatus {
     padding: 5px;
     background-color: rgba(255,255,255,0.7);
@@ -376,12 +363,13 @@ span.zoneStatus {
 table.iconWrap {
     min-width: 94px;
     height: 55px;
-}
-table.iconWrap tr td:first-child {
-    padding-top: 1px;
-}
-table.iconWrap span {
-    font-size: 19px;
+
+    tr td:first-child {
+        padding-top: 1px;
+    }
+    span {
+        font-size: 19px;
+    }
 }
 
 .errPop {
