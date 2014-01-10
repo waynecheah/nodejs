@@ -18,10 +18,15 @@
   <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
   <!-- build:css css/vendor.css -->
   <!-- bower:css -->
+  <link rel="stylesheet" href="bower_components/jquery-mobile-bower/css/jquery.mobile-1.4.0.css" />
   <link rel="stylesheet" href="bower_components/sass-bootstrap/dist/css/bootstrap.css" />
   <!-- endbower -->
   <!-- endbuild -->
   <!-- build:css(.tmp) css/style.css -->
+  <link rel="stylesheet" href="css/jquery.mobile.flatui.css" />
+  <link rel="stylesheet" href="css/mmenu.all.css" />
+  <link rel="stylesheet" href="css/fontello.css">
+  <link rel="stylesheet" href="css/fontello-ie7.css">
   <link rel="stylesheet" href="css/style.css">
   <!-- endbuild -->
   <script src="bower_components/modernizr/modernizr.js"></script>
@@ -172,7 +177,7 @@
 
     <!-- Sign In -->
     <div data-role="page" id="page-sign-in">
-      <div id="signin" data-theme="b" data-role="header" data-position="fixed" class="signin">
+      <div id="signin" data-theme="f" data-role="header" data-position="fixed" class="signin">
         <h3>Sign In</h3>
       </div>
       <div data-role="content">
@@ -210,7 +215,7 @@
               <label for="save-password">
                 Save Password
               </label>
-              <select name="toggleswitch1" id="save-password" data-theme="" data-role="slider" data-mini="true">
+              <select name="toggleswitch1" id="save-password" data-theme="c" data-role="slider" data-mini="true">
                 <option value="off">No</option>
                 <option value="on">Yes</option>
               </select>
@@ -604,10 +609,17 @@
   <!-- build:js js/vendor.js -->
   <!-- bower:js -->
   <script src="bower_components/jquery/jquery.js"></script>
-  <script src="bower_components/sass-bootstrap/dist/js/bootstrap.js"></script>
+  <script src="bower_components/jquery-mobile-bower/js/jquery.mobile-1.4.0.js"></script>
   <script src="bower_components/jQuery.mmenu/src/js/jquery.mmenu.js"></script>
   <script src="bower_components/jquery.cookie/jquery.cookie.js"></script>
+  <script src="bower_components/sass-bootstrap/dist/js/bootstrap.js"></script>
+  <script src="bower_components/hammerjs/hammer.js"></script>
+  <script src="bower_components/lodash/dist/lodash.compat.js"></script>
+  <script src="bower_components/holderjs/holder.js"></script>
   <!-- endbower -->
+  <script src="//connect.facebook.net/en_US/all.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/SoundJS/0.5.0/soundjs.min.js"></script>
   <!-- endbuild -->
 
   <!-- build:js js/main.js -->

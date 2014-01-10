@@ -1,9 +1,7 @@
 
 @import 'base';
 
-template {
-    display: none;
-}
+
 li.ui-li-static.ui-li-has-thumb {
     min-height: 60px;
 }
@@ -197,6 +195,7 @@ div.authDivider {
     @include dimenPos(1px);
     @include position(0, 50%);
     background: #ddd;
+
     &:before {
         content: 'OR';
         position: absolute;
@@ -220,6 +219,7 @@ div.withServices {
         @include dimenPos(100%, 1px, relative);
         @include position(initial, initial);
         margin: 50px 0;
+
         &:before {
             @include position(-15px, 50%);
             margin-left: -16px;

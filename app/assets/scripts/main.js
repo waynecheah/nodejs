@@ -162,10 +162,10 @@ function addNotification (name, message, opts) {
             $('div.'+currTopbar.name).removeClass('pt-page-current pt-page-rotateCubeTopOut pt-page-ontop');
             $('div.'+name).removeClass('pt-page-rotateCubeTopIn');
             currTopbar.name    = name;
-            currTopbar.created = (new Date).getTime();
+            currTopbar.created = (new Date()).getTime();
 
             if (!_.isUndefined(opts.closeInMs) && opts.closeInMs) { // auto close in period set
-                currTopbar.closeTime = (new Date).getTime() + opts.closeInMs;
+                currTopbar.closeTime = (new Date()).getTime() + opts.closeInMs;
                 setTimeout(function(){
                     closeNotification(name);
                 }, opts.closeInMs);
@@ -196,7 +196,7 @@ function addNotification (name, message, opts) {
         });
     } else { // active notification on showing
         if (currTopbar.created) { // not default
-            var diff = (new Date).getTime() - currTopbar.created;
+            var diff = (new Date()).getTime() - currTopbar.created;
 
             if (diff < 3000) { // old notification showing at least last for 3 seconds
                 setTimeout(doTransitionFn, diff);
@@ -310,6 +310,23 @@ function appLogout (appOnly) {
 } // appLogout
 
 
+function fbApi (req, callback) {
+    var fql;
+
+    if (req == 'loginInfo') {
+        fql = 'SELECT email, first_name, last_name, name, username FROM user WHERE uid ='+userID;
+        FB.api({
+            method: 'fql.query',
+            query: fql
+        }, function(data) {
+            if (!data || data.error || _.isUndefined(data[0])) {
+                innerzon.debug('Error occurred', 'err');
+            } else {
+                callback(data);
+            }
+        });
+    }
+} // fbApi
 function fbLoginStatus () {
     innerzon.gdebug('Facebook API javascript client');
     innerzon.debug('Getting authorize result from facebook..');
@@ -360,23 +377,6 @@ function fbLoginStatus () {
         innerzon.gdebug(false);
     });
 } // fbLoginStatus
-function fbApi (req, callback) {
-    var fql;
-
-    if (req == 'loginInfo') {
-        fql = 'SELECT email, first_name, last_name, name, username FROM user WHERE uid ='+userID;
-        FB.api({
-            method: 'fql.query',
-            query: fql
-        }, function(data) {
-            if (!data || data.error || _.isUndefined(data[0])) {
-                innerzon.debug('Error occurred', 'err');
-            } else {
-                callback(data);
-            }
-        });
-    }
-} // fbApi
 function fbLogin () {
     if (!window.onLine) {
         return;
@@ -453,6 +453,24 @@ function fbLogout (appOnly) {
 } // fbLogout
 
 
+function glApi (req, callback) {
+    if (req == 'loginInfo') {
+        var fn = function(){
+            gapi.client.plus.people.get({
+                userId: 'me',
+                fields: 'id,displayName,emails,image,name,nickname'
+            }).execute(function(res) {
+                    callback(res);
+                });
+        };
+
+        if (_.isUndefined(gapi.client.plus)) {
+            gapi.client.load('plus', 'v1', fn);
+        } else {
+            fn();
+        }
+    }
+} // glApi
 function gapiOnload () {
     innerzon.gdebug('Google API javascript client');
     innerzon.debug('Client library is loaded');
@@ -511,34 +529,19 @@ function gapiOnload () {
         });
     }, 1);
 } // gapiOnload
-function glApi (req, callback) {
-    if (req == 'loginInfo') {
-        var fn = function(){
-            gapi.client.plus.people.get({
-                userId: 'me',
-                fields: 'id,displayName,emails,image,name,nickname'
-            }).execute(function(res) {
-                callback(res);
-            });
-        };
-
-        if (_.isUndefined(gapi.client.plus)) {
-            gapi.client.load('plus', 'v1', fn);
-        } else {
-            fn();
-        }
-    }
-} // glApi
 function glLogin (service) {
     if (!window.onLine || $('a.google').hasClass('disallowed')) {
         return;
     }
+
+    var scope;
+
     if (_.isUndefined(service)) {
-        var scope = glParams.scope;
+        scope = glParams.scope;
     } else if (service == 'glass') {
-        var scope = glParams.scope+' https://www.googleapis.com/auth/glass.timeline';
+        scope = glParams.scope+' https://www.googleapis.com/auth/glass.timeline';
     } else {
-        var scope = glParams.scope;
+        scope = glParams.scope;
     }
 
     $('#page-sign-in').animate({opacity:0.4}, 800);
@@ -688,7 +691,7 @@ function notification (title, content, timeclose) {
     if (typeof window.webkitNotifications == 'undefined') {
         return;
     }
-    if (window.webkitNotifications.checkPermission() == 0) { // 0 is PERMISSION_ALLOWED
+    if (window.webkitNotifications.checkPermission() === 0) { // 0 is PERMISSION_ALLOWED
         var ntf  = window.webkitNotifications.createNotification('img/warning.png', title, content);
         var time = (typeof timeclose == 'undefined') ? 8000 : timeclose;
 
@@ -709,7 +712,7 @@ function notification (title, content, timeclose) {
 } // notification
 
 function permissionCheck () {
-    if (window.webkitNotifications.checkPermission() == 0) {
+    if (window.webkitNotifications.checkPermission() === 0) {
         $('div.gainPermissions').fadeOut('normal', function(){
             $(this).remove();
         });
@@ -917,7 +920,7 @@ function updateZones () {
             if (info[2] == '2') { // it's bypassed zone
                 s1 = '';
                 s2 = ' selected';
-                thm = 'b'
+                thm = 'b';
             } else {
                 thm = 'e';
             }
@@ -1028,7 +1031,7 @@ function updateSystemStatus () {
         type = info[0];
         sts  = parseInt(info[1]);
 
-        if (sts == 0) {
+        if (sts === 0) {
             css = ' text-success';
         } else if (sts == 1) {
             css = ' text-danger';
@@ -1118,7 +1121,7 @@ function armDisarmed () {
         }
     });
 
-    if (sts == '0' || sts == 0) { // do arm process
+    if (sts == '0' || sts === 0) { // do arm process
         // TODO(secure update): check current zones status if it can really arm
 
         $('div.patternArm').hide();
@@ -1299,7 +1302,7 @@ function updateLights () {
         if (type == 2) { // dimmable light
             tpl = $(html2);
 
-            if (!_data.deviceId || status == 0) { // device is not online or dimmable light in off mode, disabled by default
+            if (!_data.deviceId || status === 0) { // device is not online or dimmable light in off mode, disabled by default
                 status = 'off';
                 tpl.find('div.slider input[type=range]').attr('disabled', true);
             } else {
@@ -1318,7 +1321,7 @@ function updateLights () {
         } else {
             tpl = $(html1);
 
-            if (status == 0) {
+            if (status === 0) {
                 status = 'off';
                 type   = ' ('+_mapping.light.type[type]+')';
             } else if (status == 1) {
@@ -1354,7 +1357,7 @@ function updateLights () {
         var command = (event.target.value == 'off') ? 0 : 1;
         var value   = '-';
 
-        if (command == 0) { // disable dimming when light is turn off
+        if (command === 0) { // disable dimming when light is turn off
             $('#'+event.target.id).parents('li').find('div.slider input').slider('disable').addClass('ui-disabled');
         } else {
             $('#'+event.target.id).parents('li').find('div.slider input').slider('enable').removeAttr('disabled').removeClass('ui-disabled');
@@ -1380,7 +1383,7 @@ function updateLights () {
 } // updateLights
 
 function disableLightsUpdate (no) {
-    if ($('#page-lights.ui-page').length == 0) { // the page is not rendered yet
+    if ($('#page-lights.ui-page').length === 0) { // the page is not rendered yet
         return;
     }
 
@@ -1415,7 +1418,7 @@ function resRegistered (data) {
         $('#register-btn').button('enable');
         window.history.back();
         setTimeout(function(){
-            $('#password').focus()
+            $('#password').focus();
         }, 1000);
     });
 } // resRegistered
@@ -1535,11 +1538,11 @@ function isOffline () {
     checkServer();
     checkInternet();
     setTimeout(function(){
-        if (window.onLine == false) {
+        if (window.onLine === false) {
             innerzon.debug('Confirm client is disconnected from internet', 'err');
             $(window).trigger('offline'); // confirm internet is offline now, trigger offline event
             $(window).trigger('internetOff');
-        } else if (innerzon.serverOnline == false) {
+        } else if (innerzon.serverOnline === false) {
             innerzon.debug('Confirm server is offline', 'err');
             $(window).trigger('offline'); // confirm server is offline now, trigger offline event
         }
@@ -1570,7 +1573,7 @@ function checkServer (loop) {
         _wsProcess.push('checkServerStatus'); // register task name to progress list
     }
 
-    xmlhttp.open('GET', 'js/online.status.js?t='+(new Date).getTime(), true);
+    xmlhttp.open('GET', 'js/online.status.js?t='+(new Date()).getTime(), true);
     xmlhttp.send();
 
     setTimeout(function(){
@@ -1598,7 +1601,7 @@ function checkInternet (loop) {
         });
     }
 
-    $('#internetChecker').attr('src', 'http://www.google.com.my/images/srpr/logo11w.png?t='+(new Date).getTime());
+    $('#internetChecker').attr('src', 'http://www.google.com.my/images/srpr/logo11w.png?t='+(new Date()).getTime());
 
     setTimeout(function(){
         if (!window.onLine) { // internet still down
@@ -1642,7 +1645,9 @@ function statusNotifier (text, theme, closeInSec, callback) {
 
     setTimeout(function(){
         $.mobile.loading('hide');
-        callback && callback();
+        if (_.isFunction(callback)) {
+            callback();
+        }
     }, closeInSec);
 } // statusNotifier
 
@@ -1679,7 +1684,7 @@ function init () {
 
     _wsProcess.push('connecting_websocket');
 
-    socket = io.connect('http://'+document.domain+':'+window.location.port, {
+    socket = io.connect('http://'+document.domain+':8080', {
         'max reconnection attempts': 100
     });
 
@@ -1926,7 +1931,7 @@ function init () {
         loggedSuccess();
 
         $('div.mm-page').on('dragright', function(e){
-            if (startX == 0) {
+            if (startX === 0) {
                 startX = e.gesture.center.pageX;
                 if (startX < 150) {
                     valid = true;

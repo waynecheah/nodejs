@@ -24,11 +24,11 @@ module.exports = function (grunt) {
         watch: {
             coffee: {
                 files: ['<%= yeoman.app %>/scripts/{,*/}*.coffee'],
-                tasks: ['coffee:dist']
+                tasks: ['coffee:dist', 'jshint']
             },
             js: {
-                files: ['<%= yeoman.app %>/scripts/{,*/}*.js', '<%= yeoman.tmp %>/js/{,*/}*.js'],
-                tasks: ['jshint', 'newer:copy:scripts'],
+                files: ['<%= yeoman.app %>/scripts/{,*/}*.js'],
+                tasks: ['newer:copy:scripts', 'jshint'],
                 options: {
                     livereload: true
                 }
@@ -89,6 +89,40 @@ module.exports = function (grunt) {
             }
         },
 
+        nodemon: {
+            server: {
+                options: {
+                    file: 'server.js',
+                    args: ['l'],
+                    //nodeArgs: ['--debug'],
+                    ignoredFiles: [
+                        '.idea', '.sass-cache', '.tmp', 'app/assets', 'dist', 'node_modules/**', 'public',
+                        'aes.js', 'app.js', 'bower.json', 'gapis.js'
+                    ],
+                    watchedExtensions: ['ejs','handlebars','html','jade'],
+                    watchedFolders: [
+                        'app/controllers',
+                        'app/models',
+                        'app/models/plugins',
+                        'app/views/*',
+                        'config',
+                        'lib/*'
+                    ],
+                    //delayTime: 1,
+                    cwd: __dirname,
+                    env: {
+                        PORT: '8080'
+                    }
+                }
+            },
+            exec: {
+                options: {
+                    exec: 'less'
+                }
+            }
+        },
+
+
         // Empties folders to start fresh
         clean: {
             dist: {
@@ -112,8 +146,10 @@ module.exports = function (grunt) {
             },
             all: [
                 'Gruntfile.js',
-                '<%= yeoman.app %>/scripts/{,*/}*.js',
-                '!<%= yeoman.app %>/scripts/vendor/*'
+                //'<%= yeoman.app %>/scripts/{,*/}*.js',
+                //'!<%= yeoman.app %>/scripts/vendor/*',
+                '<%= yeoman.tmp %>/js/{,*/}*.js',
+                '!<%= yeoman.tmp %>/js/vendor/*'
             ]
         },
 
@@ -153,7 +189,7 @@ module.exports = function (grunt) {
             },
             dist: {
                 options: {
-                    generatedImagesDir: '<%= yeoman.dist %>/images/generated',
+                    generatedImagesDir: '<%= yeoman.dist %>/img/generated',
                     environment: 'production'
                 }
             },
@@ -191,7 +227,7 @@ module.exports = function (grunt) {
         autoprefixer: {
             options: {
                 browsers: ['last 1 version', 'android >= 4', 'bb >= 10'],
-                diff: true
+                diff: false
             },
             dist: {
                 files: [{
@@ -219,7 +255,7 @@ module.exports = function (grunt) {
                         '<%= yeoman.dist %>/js/{,*/}*.js',
                         '<%= yeoman.dist %>/css/{,*/}*.css',
                         '<%= yeoman.dist %>/img/{,*/}*.{gif,jpeg,jpg,png,webp}',
-                        '<%= yeoman.dist %>/fonts/{,*/}*.*'
+                        '<%= yeoman.dist %>/fonts/{,*/}*.{eot,svg,ttf,woff}'
                     ]
                 }
             }
@@ -238,7 +274,10 @@ module.exports = function (grunt) {
         // Performs rewrites based on rev and the useminPrepare configuration
         usemin: {
             options: {
-                assetsDirs: ['<%= yeoman.dist %>']
+                assetsDirs: [
+                    '<%= yeoman.dist %>', '<%= yeoman.dist %>/css', '<%= yeoman.dist %>/fonts',
+                    '<%= yeoman.dist %>/img', '<%= yeoman.dist %>/js'
+                ]
             },
             html: ['<%= yeoman.dist %>/{,*/}*.html'],
             css: ['<%= yeoman.dist %>/css/{,*/}*.css']
@@ -329,12 +368,13 @@ module.exports = function (grunt) {
                     cwd: '<%= yeoman.app %>',
                     dest: '<%= yeoman.dist %>',
                     src: [
-                        '*.{ico,png,txt}',
+                        '*.{ico,mp3,png,txt}',
                         '.htaccess',
-                        'images/{,*/}*.webp',
                         '{,*/}*.html',
-                        'styles/fonts/{,*/}*.*',
-                        'bower_components/sass-bootstrap/fonts/*.*'
+                        'bower_components/sass-bootstrap/fonts/*.{eot,svg,ttf,woff}',
+                        'fonts/{,*/}*.{eot,svg,ttf,woff}',
+                        'images/{,*/}*.webp',
+                        'styles/fonts/{,*/}*.{eot,svg,ttf,woff}'
                     ]
                 }]
             },
@@ -343,7 +383,15 @@ module.exports = function (grunt) {
                 dot: true,
                 cwd: '<%= yeoman.app %>/styles',
                 dest: '<%= yeoman.tmp %>/css/',
-                src: '{,*/}*.css'
+                src: [
+                    '{,*/}*.css',
+                    'images/{,*/}*.{gif,jpeg,jpg,png}',
+                    'fonts/{,*/}*.{eot,svg,ttf,woff}'
+                ]
+            },
+            online: {
+                src: '<%= yeoman.app %>/scripts/online.status.js',
+                dest: '<%= yeoman.tmp %>/js/online.status.js'
             },
             scripts: {
                 expand: true,
@@ -374,13 +422,16 @@ module.exports = function (grunt) {
                 //'compass:server',
                 'sass:server',
                 'copy:styles',
+                'copy:online',
                 'imagemin:server'
+                //'svgmin:server'
             ],
+            background: ['watch','nodemon:server'],
             dist: [
                 //'compass',
                 'sass:dist',
                 'copy:styles',
-                'imagemin',
+                'imagemin:dist',
                 'svgmin'
             ]
         }
@@ -411,6 +462,7 @@ module.exports = function (grunt) {
         'cssmin',
         'uglify',
         'copy:dist',
+        'copy:scripts',
         'modernizr',
         'rev',
         'usemin',
