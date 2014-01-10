@@ -4,6 +4,7 @@ dist
 .idea
 .tmp
 .sass-cache
+.nodemonignore
 app/assets/bower_components
 test/bower_components
 npm-debug.log
