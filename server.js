@@ -33,7 +33,7 @@ _.each(config, function(v, name){
 _.each(commonFn, function(fn, name){ // temporary fix
     this[name] = fn;
 });
-console.log(mapping.serverErr);
+
 var i, ps;
 
 
@@ -1143,7 +1143,9 @@ io.configure('development', function(){
 log('s', 'i', 'Socket.io listening to '+host+':8080');
 io.sockets.on('connection', function(websocket) {
     log('w', 'i', 'web client '+websocket.id+' connected');
-    websocket.data = {};
+    websocket.data = {
+        wsid: websocket.id
+    };
     websockets.push(websocket); // assign websocket to global variable
 
 
@@ -1172,11 +1174,21 @@ io.sockets.on('connection', function(websocket) {
                 method = routes[1];
             }
             if (contr in controllers && method in controllers[contr]) { // controller and method are found
-                controllers[contr][method](data, function(){ // call execution
+                var data = {
+                  form: data,
+                    ws: websocket.data
+                };
+                controllers[contr][method](data, function(res, sessions){ // call execution
                     log('s', 'i', 'Processed controller ['+contr+'] and method ['+method+'] has completed');
+                    websocket.emit('ResponseOnRequest', req, res);
+
+                    if (!_.isUndefined(sessions) && _.isObject(sessions)) {
+                        _.assign(websocket.data, sessions);
+                    }
                 });
             }
         }
+
 
         if (req == 'register') {
             log('w', 'i', 'New registration submitted by web cliend '+websocket.id);
