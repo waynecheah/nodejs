@@ -148,6 +148,11 @@ Clients =
     log 'w', 'd', form
 
     resFn = (status, mesg, sessions) ->
+      data = status: status
+
+      data.message = mesg if mesg?
+
+      if sessions? then callback data, sessions else callback data
       null
 
     Client.findOneAndUpdate cond, form, opts, (err, doc) ->
@@ -160,10 +165,61 @@ Clients =
         resFn false, msg
         return null
 
+      log 's', 's', 'User sign-in info has save to DB successfully.'
+
+      sessions =
+        id: doc._id,
+        name: doc.fullname,
+        method: 'facebook',
+        time: commonFn.datetime()
+
+      resFn true, null, sessions
       null
 
     null
   # END fbSignin
+
+  glSignin: (data, callback) ->
+    form = data.form
+    cond = username: form.username
+    opts =
+      upsert: true,
+      select: 'id'
+
+    log 'w', 'i', 'Sign-in with google by web client '+data.ws.wsid
+    log 'w', 'd', form
+
+    resFn = (status, mesg, sessions) ->
+      data = status: status
+
+      data.message = mesg if mesg?
+
+      if sessions? then callback data, sessions else callback data
+      null
+
+    Client.findOneAndUpdate cond, form, opts, (err, doc) ->
+      if err
+        msg = 'Fail upsert user sign-in info to database'
+
+        log 's', 'e', msg
+        log 's', 'd', err
+
+        resFn false, msg
+        return null
+
+      log 's', 's', 'User sign-in info has save to DB successfully.'
+
+      sessions =
+        id: doc._id,
+        name: doc.fullname,
+        method: 'facebook',
+        time: commonFn.datetime()
+
+      resFn true, null, sessions
+      null
+
+    null
+  # END glSignin
 
   testing: (data, callback) ->
     log 's', 'w', 'Showing something really cool'
@@ -175,5 +231,6 @@ Clients =
       callback test: 'this is callback'
 
     test: 'output'
+  # END testing
 
 module.exports = Clients
