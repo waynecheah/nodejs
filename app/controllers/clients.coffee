@@ -137,6 +137,34 @@ Clients =
     null
   # END appSignin
 
+  fbSignin: (data, callback) ->
+    form = data.form
+    cond = username: form.username
+    opts =
+      upsert: true,
+      select: 'id'
+
+    log 'w', 'i', 'Sign-in with facebook by web client '+data.ws.wsid
+    log 'w', 'd', form
+
+    resFn = (status, mesg, sessions) ->
+      null
+
+    Client.findOneAndUpdate cond, form, opts, (err, doc) ->
+      if err
+        msg = 'Fail upsert user sign-in info to database'
+
+        log 's', 'e', msg
+        log 's', 'd', err
+
+        resFn false, msg
+        return null
+
+      null
+
+    null
+  # END fbSignin
+
   testing: (data, callback) ->
     log 's', 'w', 'Showing something really cool'
     log 's', 'd', data
