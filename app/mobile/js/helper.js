@@ -403,3 +403,58 @@
     };
 
 })(document);
+
+
+
+var current = 0;
+var lastAngle = 0;
+
+function mod(x,n) {
+    return ((x%n)+n)%n;
+}
+
+(function () {
+    var $container = $('div.body4 div.sliderCircle');
+    var $slider = $('div.body4 div.slider');
+    var sliderW2 = $slider.width()/2;
+    var sliderH2 = $slider.height()/2;
+    var radius = 200;
+    var deg = 0;
+    var elP = $('div.body4 div.sliderCircle').offset();
+    var elPos = { x: elP.left, y: elP.top};
+    var X = 0, Y = 0;
+    var mdown = false;
+    $('div.body4 div.sliderCircle')
+        .mousedown(function(){ mdown = true; })
+        .mouseup(function(){ mdown = false; })
+        .mousemove(function(e) {
+            if (mdown) {
+                var mPos = {x: e.clientX-elPos.x, y: e.clientY-elPos.y};
+                var atan = Math.atan2(mPos.x-radius, mPos.y-radius);
+                deg = -atan/(Math.PI/180) + 180; // final (0-360 positive) degrees from mouse position
+
+                X = Math.round(radius* Math.sin(deg*Math.PI/180));
+                Y = Math.round(radius*  -Math.cos(deg*Math.PI/180));
+                $slider.css({ left: X+radius-sliderW2, top: Y+radius-sliderH2 });
+
+                // AND FINALLY apply exact degrees to ball rotation
+                $slider.css({ WebkitTransform: 'rotate(' + deg + 'deg)'});
+                $slider.css({ '-moz-transform': 'rotate(' + deg + 'deg)'});
+
+                // PRINT DEGREES
+                var delta = 0;
+                var dir = 0;
+                var rawDelta = mod(deg-lastAngle,360.0);
+                if(rawDelta < 180) {
+                    dir = 1;
+                    delta = rawDelta;
+                } else {
+                    dir = -1;
+                    delta = rawDelta-360.0;
+                }
+                current += delta;
+                lastAngle = deg;
+                $('#degree').html('angle deg= '+current);
+            }
+        });
+})();
