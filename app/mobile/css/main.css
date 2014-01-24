@@ -22,7 +22,7 @@ body {
     font-family: Helvetica;
     background: #303131;
     color: #fff;
-    font-size: 1em;
+    font-size: 2em;
     line-height: 1.4;
 }
 
@@ -72,6 +72,19 @@ textarea {
     font-style: normal;
     font-weight: 100;
     src: local('Helvetica Neue'), local('Helvetica'), url(../fonts/HelveticaNeue-UltraLight.woff) format('woff');
+}
+
+.pt-page-moveToLeft {
+    animation: moveToLeft .4s cubic-bezier(0.230, 0.635, 0.355, 1.000) both;
+}
+.pt-page-moveFromLeft {
+    animation: moveFromLeft .4s cubic-bezier(0.230, 0.635, 0.355, 1.000) both;
+}
+.pt-page-moveToRight {
+    animation: moveToRight .4s cubic-bezier(0.230, 0.635, 0.355, 1.000) both;
+}
+.pt-page-moveFromRight {
+    animation: moveFromRight .4s cubic-bezier(0.230, 0.635, 0.355, 1.000) both;
 }
 
 .pt-perspective {
@@ -126,11 +139,17 @@ ul.mainmenu li:first-child {
 div.header {
     position: fixed;
     width: 100%;
-    height: 150px;
+    height: 60px;
     background-color: #303131;
 }
+div.header .row {
+    margin: 10px 2px;
+}
+div.header .row .pageTitle {
+    line-height: 2em;
+}
 div.body {
-    margin-top: 150px;
+    margin-top: 60px;
     height: 100%;
     background-color: #EE5567;
 }

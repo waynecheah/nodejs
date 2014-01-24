@@ -9,7 +9,7 @@
         <meta name="description" content="here is the description of the mobile app">
         <meta name="HandheldFriendly" content="True">
         <meta name="MobileOptimized" content="320">
-        <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
+        <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, minimal-ui">
         <meta http-equiv="cleartype" content="on">
 
         <link rel="apple-touch-icon-precomposed" sizes="144x144" href="img/touch/apple-touch-icon-144x144-precomposed.png">
@@ -41,9 +41,11 @@
         -->
 
         <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.0.3/css/bootstrap.css">
-        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/bootstrap.css">
+        <link rel="stylesheet" href="css/fontello.css">
+        <link rel="stylesheet" href="css/fontello-ie7.css">
         <link rel="stylesheet" href="css/animations.css">
+        <link rel="stylesheet" href="css/main.css">
         <script src="js/vendor/modernizr-2.7.1.min.js"></script>
     </head>
     <body>
@@ -51,26 +53,53 @@
         <!-- Add your site or application content here -->
         <div style="position:absolute; width:100%; height:100%;">
           <div id="pt-main" class="pt-perspective">
-            <div class="pt-page pt-page-1">
+
+            <div class="pt-page pt-page-1 pt-page-current">
               <div style="text-align:center; margin:20px 0;">
                 <img src="img/logo.png" />
               </div>
               <ul class="mainmenu">
-                <li>Waves</li>
+                <li id="test" data-page="1-2" class="ln">Waves</li>
                 <li>Profile</li>
                 <li>Scheduling</li>
                 <li>Settings</li>
                 <li>Add Device</li>
               </ul>
             </div>
-            <div class="pt-page pt-page-2 pt-page-current">
-              <div class="header">header</div>
+            <div class="pt-page pt-page-2">
+              <div class="header">
+                <div class="row">
+                  <div class="col-xs-2 col-md-1" style="padding-left:0;">
+                    <span data-page="2-1-r" class="ln icon-menu-1"></span>
+                  </div>
+                  <div class="pageTitle col-xs-8 col-md-10 text-center">Alarm Dashboard</div>
+                  <div class="col-xs-2 col-md-1" style="padding-left:10px;">
+                    <span class="icon-th-large-outline"></span>
+                  </div>
+                </div>
+              </div>
               <div class="body">
                 <ul>
-                  <li>Security</li>
-                  <li>System Health</li>
-                  <li>Alarm</li>
-                  <li>Event Logs</li>
+                  <li class="row">
+                    <div class="col-xs-3 col-md-2"><span class="icon-lock"></span></div>
+                    <div class="col-xs-6 col-md-8">Security</div>
+                    <div class="col-xs-3 col-md-2">Armed</div>
+                  </li>
+                  <li class="row">
+                    <div class="col-xs-3 col-md-2"><span class="icon-heart"></span></div>
+                    <div class="col-xs-6 col-md-8">System Health</div>
+                    <div class="col-xs-3 col-md-2">8 OK 2 Fail</div>
+                  </li>
+                  <li class="row">
+                    <div class="col-xs-3 col-md-2"><span class="icon-bell"></span></div>
+                    <div class="col-xs-6 col-md-8">Alarm</div>
+                    <div class="col-xs-3 col-md-2">OK</div>
+                  </li>
+                  <li class="row">
+                    <div class="col-xs-3 col-md-2"><span class="icon-calendar"></span></div>
+                    <div class="col-xs-6 col-md-8">Event Logs</div>
+                    <div class="col-xs-3 col-md-2">9 new</div>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -88,7 +117,9 @@
           </div>
         </div>
 
-        <script src="js/vendor/jquery-2.0.3.min.js"></script>
+        <script src="js/vendor/jquery-2.0.3.js"></script>
+        <script src="js/vendor/lodash.js"></script>
+        <script src="js/vendor/hammer.js"></script>
         <script src="js/helper.js"></script>
         <script src="js/main.js"></script>
 
