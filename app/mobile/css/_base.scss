@@ -1,0 +1,100 @@
+
+$perpective: 1200px;
+$transform-style: preserve-3d;
+$opacity: 0.2;
+
+@mixin dimen ($width:100%, $height:100%) {
+    @if $width != 'none' {
+        width: $width;
+    }
+    @if $height != 'none' {
+        height: $height;
+    }
+}
+@mixin dimenPos ($width:100%, $height:100%, $position:absolute) {
+    @include dimen($width, $height);
+    position: $position;
+}
+@mixin boxModel ($margin:null, $padding:null, $border:null) {
+    @if $border != null {
+        border: $border;
+    }
+    @if $margin != null {
+        margin: $margin;
+    }
+    @if $padding != null {
+        padding: $padding;
+    }
+}
+@mixin position ($top:none, $left:none, $bottom:none, $right:none) {
+    @if $top != 'none' {
+        top: $top;
+    }
+    @if $left != 'none' {
+        left: $left;
+    }
+    @if $bottom != 'none' {
+        bottom: $bottom;
+    }
+    @if $right != 'none' {
+        right: $right;
+    }
+}
+@mixin bgGradient ($bg...) {
+    background-image: gradient($bg);
+}
+@mixin animation ($name, $duration:null, $easing:null, $fillMode:null, $delay:null, $count:null, $direction:null) {
+    animation: $name $duration $easing $fillMode $delay $count $direction;
+}
+
+@mixin abs {
+    position: absolute;
+}
+@mixin rel {
+    position: relative;
+}
+
+@mixin bold {
+    font-weight: bold;
+}
+@mixin normal {
+    font-weight: normal;
+}
+@mixin italic {
+    font-style: italic;
+}
+@mixin center {
+    text-align: center;
+}
+@mixin right {
+    text-align: right;
+}
+@mixin grey {
+    color: #808080;
+}
+@mixin clicker {
+    cursor: pointer;
+}
+@mixin pointer {
+    cursor: default;
+}
+@mixin disallowed {
+    cursor: not-allowed;
+}
+
+@mixin bs {
+    box-sizing: border-box;
+
+    &:before, &:after {
+        @extend .bs;
+    }
+}
+
+@mixin divcenter {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+@mixin noTxtShadow {
+    text-shadow: none;
+}
