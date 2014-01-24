@@ -18,7 +18,7 @@ textarea {
 }
 
 body {
-    font-family: Helvetica;
+    font-family: 'UltraLight', sans-serif;
     background: #303131;
     color: #fff;
     font-size: 2em;
@@ -57,10 +57,22 @@ textarea {
    Author's custom styles
    ========================================================================== */
 @font-face {
-    font-family: 'Helvetica';
+    font-family: 'Lato';
     font-style: normal;
     font-weight: 100;
-    src: local('Helvetica Neue'), local('Helvetica'), url(../fonts/HelveticaNeue-UltraLight.woff) format('woff');
+    src: local('Lato Hairline'), local('Lato-Hairline'), url(../fonts/Lato.woff) format('woff');
+}
+@font-face {
+    font-family: 'Josefin Sans';
+    font-style: normal;
+    font-weight: 100;
+    src: local('Josefin Sans Thin'), local('JosefinSans-Thin'), url(../fonts/Josefin-Sans.woff) format('woff');
+}
+@font-face {
+    font-family: 'UltraLight';
+    font-style: normal;
+    font-weight: 100;
+    src: local('Helvetica Neue UltraLight'), local('Helvetica-Neue-UltraLight'), url(../fonts/HelveticaNeue-UltraLight.woff) format('woff');
 }
 
 $pageFxDuration: .4s;
