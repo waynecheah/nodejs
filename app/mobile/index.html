@@ -51,146 +51,147 @@
     <body>
 
         <!-- Add your site or application content here -->
-        <div style="position:absolute; width:100%; height:100%;">
-          <div id="pt-main" class="pt-perspective">
+        <div id="fixHeader"></div>
 
-            <div class="pt-page pt-page-1 pt-page-current">
-              <div style="text-align:center; margin:20px 0;">
-                <img src="img/logo.png" />
+        <div id="pt-main" class="pt-perspective">
+          <div class="pt-page pt-page-1 pt-page-current">
+            <div style="text-align:center; margin:20px 0;">
+              <img src="img/logo.png" />
+            </div>
+            <ul class="mainmenu">
+              <li id="test" data-page="1-2" class="ln">Waves</li>
+              <li>Profile</li>
+              <li>Scheduling</li>
+              <li>Settings</li>
+              <li>Add Device</li>
+            </ul>
+          </div>
+          <div class="pt-page pt-page-2">
+            <div class="header">
+              <div class="row">
+                <div class="col-xs-2 col-md-1" style="padding-left:0;">
+                  <span data-page="2-1-r" class="ln icon-menu-1"></span>
+                </div>
+                <div class="pageTitle col-xs-8 col-md-10 text-center">Alarm Dashboard</div>
+                <div class="col-xs-2 col-md-1" style="padding-left:10px;">
+                  <span data-page="2-3" class="ln icon-th-large-outline"></span>
+                </div>
               </div>
-              <ul class="mainmenu">
-                <li id="test" data-page="1-2" class="ln">Waves</li>
-                <li>Profile</li>
-                <li>Scheduling</li>
-                <li>Settings</li>
-                <li>Add Device</li>
+            </div>
+            <div class="body body2">
+              <ul>
+                <li class="row">
+                  <div class="col-xs-3 col-md-2"><span class="icon-lock"></span></div>
+                  <div class="col-xs-6 col-md-8">Security</div>
+                  <div class="col-xs-3 col-md-2">Armed</div>
+                </li>
+                <li class="row">
+                  <div class="col-xs-3 col-md-2"><span class="icon-heart"></span></div>
+                  <div class="col-xs-6 col-md-8">System Health</div>
+                  <div class="col-xs-3 col-md-2">8 OK 2 Fail</div>
+                </li>
+                <li class="row">
+                  <div class="col-xs-3 col-md-2"><span class="icon-bell"></span></div>
+                  <div class="col-xs-6 col-md-8">Alarm</div>
+                  <div class="col-xs-3 col-md-2">OK</div>
+                </li>
+                <li class="row">
+                  <div class="col-xs-3 col-md-2"><span class="icon-calendar"></span></div>
+                  <div class="col-xs-6 col-md-8">Event Logs</div>
+                  <div class="col-xs-3 col-md-2">9 new</div>
+                </li>
               </ul>
             </div>
-            <div class="pt-page pt-page-2">
-              <div class="header">
-                <div class="row">
-                  <div class="col-xs-2 col-md-1" style="padding-left:0;">
-                    <span data-page="2-1-r" class="ln icon-menu-1"></span>
-                  </div>
-                  <div class="pageTitle col-xs-8 col-md-10 text-center">Alarm Dashboard</div>
-                  <div class="col-xs-2 col-md-1" style="padding-left:10px;">
-                    <span data-page="2-3" class="ln icon-th-large-outline"></span>
-                  </div>
+          </div>
+          <div class="pt-page pt-page-3">
+            <div class="header">
+              <div class="row">
+                <div class="col-xs-2 col-md-1" style="padding-left:0;">
+                  <span data-page="3-2-r" class="ln icon-th-large-outline"></span>
                 </div>
-              </div>
-              <div class="body2">
-                <ul>
-                  <li class="row">
-                    <div class="col-xs-3 col-md-2"><span class="icon-lock"></span></div>
-                    <div class="col-xs-6 col-md-8">Security</div>
-                    <div class="col-xs-3 col-md-2">Armed</div>
-                  </li>
-                  <li class="row">
-                    <div class="col-xs-3 col-md-2"><span class="icon-heart"></span></div>
-                    <div class="col-xs-6 col-md-8">System Health</div>
-                    <div class="col-xs-3 col-md-2">8 OK 2 Fail</div>
-                  </li>
-                  <li class="row">
-                    <div class="col-xs-3 col-md-2"><span class="icon-bell"></span></div>
-                    <div class="col-xs-6 col-md-8">Alarm</div>
-                    <div class="col-xs-3 col-md-2">OK</div>
-                  </li>
-                  <li class="row">
-                    <div class="col-xs-3 col-md-2"><span class="icon-calendar"></span></div>
-                    <div class="col-xs-6 col-md-8">Event Logs</div>
-                    <div class="col-xs-3 col-md-2">9 new</div>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            <div class="pt-page pt-page-3">
-              <div class="header">
-                <div class="row">
-                  <div class="col-xs-2 col-md-1" style="padding-left:0;">
-                    <span data-page="3-2-r" class="ln icon-th-large-outline"></span>
-                  </div>
-                  <div class="pageTitle col-xs-8 col-md-10 text-center">Location List</div>
-                  <div class="col-xs-2 col-md-1" style="padding-left:10px;">
-                    <span class="icon-info"></span>
-                  </div>
-                </div>
-              </div>
-              <div class="body" style="padding:4px;">
-                <div class="col-xs-6 fixPad">
-                  <div class="location">
-                    <div class="ico icon-home-outline"></div>
-                    <div class="line"></div>
-                    Home
-                  </div>
-                </div>
-                <div class="col-xs-6 fixPad">
-                  <div data-page="3-4-r" class="ln location">
-                    <div class="ico icon-cloud"></div>
-                    <div class="line"></div>
-                    Office
-                  </div>
-                </div>
-                <div class="col-xs-6 fixPad">
-                  <div class="location">
-                    <div class="ico icon-shop"></div>
-                    <div class="line"></div>
-                    Shop
-                  </div>
-                </div>
-                <div class="col-xs-6 fixPad">
-                  <div class="location">
-                    <div class="ico icon-globe"></div>
-                    <div class="line"></div>
-                    Factory
-                  </div>
-                </div>
-                <div class="col-xs-6 fixPad">
-                  <div class="location">
-                    <div class="ico icon-location"></div>
-                    <div class="line"></div>
-                    Villa
-                  </div>
-                </div>
-                <div class="col-xs-6 fixPad">
-                  <div class="location">
-                    <div class="ico icon-home-outline"></div>
-                    <div class="line"></div>
-                    Condo
-                  </div>
+                <div class="pageTitle col-xs-8 col-md-10 text-center">Location List</div>
+                <div class="col-xs-2 col-md-1" style="padding-left:10px;">
+                  <span class="icon-info"></span>
                 </div>
               </div>
             </div>
-            <div class="pt-page pt-page-4">
-              <div class="headerTall">
-                <div class="row">
-                  <div class="col-xs-2 col-md-1" style="padding-left:0;">
-                    <span data-page="4-1-r" class="ln icon-menu-1"></span>
-                  </div>
-                  <div class="pageTitle col-xs-8 col-md-10 text-center">
+            <div class="body" style="padding:4px;">
+              <div class="col-xs-6 fixPad">
+                <div class="location">
+                  <div class="ico icon-home-outline"></div>
+                  <div class="line"></div>
+                  Home
+                </div>
+              </div>
+              <div class="col-xs-6 fixPad">
+                <div data-page="3-4-r" class="ln location">
+                  <div class="ico icon-cloud"></div>
+                  <div class="line"></div>
+                  Office
+                </div>
+              </div>
+              <div class="col-xs-6 fixPad">
+                <div class="location">
+                  <div class="ico icon-shop"></div>
+                  <div class="line"></div>
+                  Shop
+                </div>
+              </div>
+              <div class="col-xs-6 fixPad">
+                <div class="location">
+                  <div class="ico icon-globe"></div>
+                  <div class="line"></div>
+                  Factory
+                </div>
+              </div>
+              <div class="col-xs-6 fixPad">
+                <div class="location">
+                  <div class="ico icon-location"></div>
+                  <div class="line"></div>
+                  Villa
+                </div>
+              </div>
+              <div class="col-xs-6 fixPad">
+                <div class="location">
+                  <div class="ico icon-home-outline"></div>
+                  <div class="line"></div>
+                  Condo
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pt-page pt-page-4">
+            <div class="header tallerHead">
+              <div class="row">
+                <div class="col-xs-2 col-md-1" style="padding-left:0;">
+                  <span data-page="4-1-r" class="ln icon-menu-1"></span>
+                </div>
+                <div class="pageTitle col-xs-8 col-md-10 text-center">
                   <div class="icon-cloud"></div>
-                    <div class="line"></div>
-                    Office
-                  </div>
-                  <div class="col-xs-2 col-md-1" style="padding-left:10px;">
-                    <span data-page="4-3" class="ln icon-th-large-outline"></span>
-                  </div>
+                  <div class="line"></div>
+                  Office
+                </div>
+                <div class="col-xs-2 col-md-1" style="padding-left:10px;">
+                  <span data-page="4-3" class="ln icon-th-large-outline"></span>
                 </div>
               </div>
-              <div class="body4">
+            </div>
+            <div class="body body4 tallerMargin">
+              <div style="min-height:450px;">
                 <div id="degree"></div>
                 <div class="sliderCircle"><div class="slider"></div></div>
               </div>
             </div>
-            <div class="pt-page pt-page-5">
-              <div class="header"></div>
-              <div class="body"></div>
-            </div>
-            <div class="pt-page pt-page-6">page 6</div>
           </div>
+          <div class="pt-page pt-page-5">
+            <div class="header"></div>
+            <div class="body"></div>
+          </div>
+          <div class="pt-page pt-page-6">page 6</div>
+        </div>
 
-          <div class="pt-message" style="display:none;">
-            <p>Your browser does not support CSS animations.</p>
-          </div>
+        <div class="pt-message" style="display:none;">
+          <p>Your browser does not support CSS animations.</p>
         </div>
 
         <script src="js/vendor/jquery-2.0.3.js"></script>

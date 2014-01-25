@@ -3,12 +3,18 @@ $perpective: 1200px;
 $transform-style: preserve-3d;
 $opacity: 0.2;
 
-@mixin dimen ($width:100%, $height:100%) {
-    @if $width != 'none' {
+@mixin dimen ($width:100%, $height:100%, $minWidth:null, $minHeight:null) {
+    @if $width != null {
         width: $width;
     }
-    @if $height != 'none' {
+    @if $height != null {
         height: $height;
+    }
+    @if $minWidth != null {
+        min-width: $minWidth;
+    }
+    @if $minHeight != null {
+        min-height: $minHeight;
     }
 }
 @mixin dimenPos ($width:100%, $height:100%, $position:absolute) {

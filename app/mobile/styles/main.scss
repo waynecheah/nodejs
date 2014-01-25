@@ -16,13 +16,18 @@ select,
 textarea {
     color: #222;
 }
-
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
 body {
     font-family: 'UltraLight', sans-serif;
     background: #303131;
     color: #fff;
     font-size: 2em;
     line-height: 1.4;
+    overflow-x: hidden;
 }
 
 a {
@@ -78,6 +83,7 @@ textarea {
 $pageFxDuration: .4s;
 $pageFxEaseCB: cubic-bezier(0.230, 0.635, 0.355, 1.000);
 $pageFxFillMode: both;
+$minHeight: 320px;
 
 .pt-page-moveToLeft {
     @include animation(moveToLeft, $pageFxDuration, $pageFxEaseCB, $pageFxFillMode);
@@ -95,19 +101,22 @@ $pageFxFillMode: both;
 .pt-perspective {
     @include dimenPos(100%, 100%, relative);
     perspective: $perpective;
-    transform-style: $transform-style;
 }
 .pt-page {
-    @include dimenPos;
+    @include dimen(100%, null, null, $minHeight);
     @include position(0, 0);
+    @include abs;
     visibility: hidden;
+    display: none;
     overflow: hidden;
     backface-visibility: hidden;
     transform: translate3d(0, 0, 0);
     transform-style: preserve-3d;
+
 }
 .pt-page-current, .no-js .pt-page {
     visibility: visible;
+    display: block;
     z-index: 1;
 }
 .no-js body {
@@ -117,21 +126,6 @@ $pageFxFillMode: both;
     z-index: 999;
 }
 
-ul {
-    list-style-type: none;
-    @include boxModel(0, 0);
-}
-ul.mainmenu {
-    li {
-        padding: 20px 0;
-        text-align: center;
-        cursor: pointer;
-
-        &:first-child {
-            color: darkorange;
-        }
-    }
-}
 
 @mixin line ($height:5px, $marginBottom:0) {
     width: 25px;
@@ -140,9 +134,11 @@ ul.mainmenu {
     margin: 0 auto $marginBottom;
 }
 
+
 div.header {
     @include dimenPos(100%, 60px, fixed);
-    background-color: #303131;
+    background-color: rgba(48, 48, 48, .99);
+    z-index: 10;
 
     .row {
         margin: 10px 2px;
@@ -156,10 +152,14 @@ div.header {
         }
     }
 }
-div.headerTall {
+div.tallerHead {
     @extend div.header;
     height: 100px;
 }
+div.tallerMargin {
+    margin-top: 100px !important;
+}
+
 div.body {
     margin-top: 60px;
     height: 100%;
@@ -183,6 +183,24 @@ div.fixPad {
     padding-left: 4px;
     padding-right: 4px;
 }
+
+
+ul {
+    list-style-type: none;
+    @include boxModel(0, 0);
+}
+ul.mainmenu {
+    li {
+        padding: 20px 0;
+        text-align: center;
+        cursor: pointer;
+
+        &:first-child {
+            color: darkorange;
+        }
+    }
+}
+
 div.location {
     @include dimen(100%, 9em);
     @include boxModel(4px 0, 1em);
@@ -200,7 +218,7 @@ div.location {
 
 div.sliderCircle {
     @include dimenPos(300px, 300px);
-    @include position(210px, 30px);
+    @include position(160px, 30px);
     margin: 0 auto;
     border: 40px solid #80B2CC;
     border-radius: 1000px;
