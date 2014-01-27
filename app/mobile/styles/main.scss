@@ -226,19 +226,51 @@ div.location {
     }
 }
 
-div.sliderCircle {
-    @include dimenPos(300px, 300px);
-    @include position(130px, 50%);
-    margin: 0 -150px;
-    border: 40px solid #80B2CC;
-    border-radius: 1000px;
+#degree, #info {
+    @include boxModel(5px, 3px);
+    @include position(412px, 100px);
+    position: absolute;
+    background-color: white;
+    width: 210px;
+    color: gray;
+    font-size: 16px;
+    line-height: 25px;
 }
-div.slider {
+#info .position {
+    padding-left: 10px;
+}
+#degree {
+    top: 378px;
+    width: 230px;
+}
+
+#sliderWrap {
+    @include dimenPos(300px, 300px);
+    @include position(30px, 30px);
+    border: 1px solid #999;
+    border-radius: 500px;
+}
+#slider {
     @include dimenPos(40px, 40px, relative);
-    @include position(-40px, 95px);
+    @include position(-20px, 130px);
     background: white url(http://img707.imageshack.us/img707/6060/arrh.png) no-repeat center 20px;
     border-radius: 20px;
 }
+#sliderWrap .track {
+    @include dimenPos(340px, 340px);
+    @include position(-20px, -20px);
+    border: 40px solid #82B2CB;
+    border-radius: 500px;
+}
+#sliderWrap .percent {
+    @include dimenPos(260px, 147px);
+    @include position(50%, 50%);
+    color: white;
+    font-size: 8em;
+    text-align: center;
+    margin: 0 0 0 -130px;
+}
+
 
 /* ==========================================================================
    Helper classes
