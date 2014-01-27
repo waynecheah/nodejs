@@ -44,6 +44,24 @@ iz =
     , 400
 
     null
+  # END changePage
+
+  changeIcon: (selector, from, to) ->
+    $(selector).addClass('pt-icon-moveInBack').css 'margin-top', '100px'
+    setTimeout () ->
+      $(selector).removeClass("pt-icon-moveInBack #{from}")
+        .addClass("pt-icon-moveOutBack #{to}").css 'margin-top', '2px'
+
+      setTimeout () ->
+        $(selector).removeClass 'pt-icon-moveOutBack'
+        null
+      , 400
+
+      null
+    , 400
+
+    null
+  # END changeIcon
 
 $ () ->
   _.each $('.pt-page .ln'), (el) ->

@@ -417,7 +417,7 @@ function mod(x,n) {
     var $slider = $('#slider');
     var sliderW2 = $slider.width() / 2;
     var sliderH2 = $slider.height() / 2;
-    var radius = 150;
+    var radius = 130;
     var deg = 0;
     var elP = $('#sliderWrap').offset();
     var elPos = {
@@ -430,7 +430,7 @@ function mod(x,n) {
 
     var element = document.getElementById('sliderWrap');
     var slider = document.getElementById('slider');
-    Hammer(element).on('drag', function(e) {
+    var hammertime = Hammer(element).on('drag', function(e) {
         if (!tdown) {
             return;
         }
@@ -476,9 +476,15 @@ function mod(x,n) {
         lastAngle = deg;
         $('#degree').html('Degree: <span class="gray">'+ current)+'</span>';
     });
+    hammertime.options.prevent_default = true;
 
     Hammer(element).on('dragstart', function(e){
         tdown = true;
+        elP   = $('#sliderWrap').offset();
+        elPos = {
+            x: elP.left,
+            y: elP.top
+        };
         $('#info .status').removeClass('red').addClass('green').html('[drag started]');
     }).on('dragend', function(e){
         tdown = false;
