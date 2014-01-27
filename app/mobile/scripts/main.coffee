@@ -13,7 +13,7 @@ iz =
     fxOut = if reverse then ts.fxRevOut else ts.fxOut
     mrgn  = $("#{tPage} div.header").height()
 
-    sHeight = $(document).height() - mrgn
+    sHeight = $(window).height()
     $("#{tPage} div.body").css 'min-height', "#{sHeight}px"
 
     fixedHeader = $('#fixHeader div.header')
@@ -27,19 +27,17 @@ iz =
 
     setTimeout () ->
       $("#{tPage} div.body").css 'min-height', 200
+      #console.log 'callback page '+tPage+' compare sHeight '+sHeight
+      #console.log $("#{tPage}").height()
       $(fPage).removeClass "pt-page-current #{fxOut}"
       $(tPage).removeClass "#{fxIn} pt-page-ontop"
 
       header = $("#{tPage} div.header")
       if header.length > 0
-        #if $("#{tPage} div.header").hasClass 'tallerHead'
-        #  $('#fixHeader').addClass 'tallerHead'
-
         $('#fixHeader').html(header).show()
         $('#fixHeader div.header').attr 'data-page', to
 
-      console.log $("#{tPage} div.body").height()
-      if sHeight > $("#{tPage} div.body").height()
+      if sHeight > $("#{tPage}").height()
         $("#{tPage} div.body").css 'height', "#{sHeight}px"
 
       null

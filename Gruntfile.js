@@ -231,7 +231,7 @@ module.exports = function (grunt) {
                     ext: '.css'
                 }],
                 options: {
-                    sourcemap: 'true'
+                    sourcemap: false
                 }
             }
         },

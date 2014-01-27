@@ -51,7 +51,9 @@
     <body>
 
         <!-- Add your site or application content here -->
-        <div id="fixHeader"></div>
+        <div id="fixHeader">
+          <div class="blur"></div>
+        </div>
 
         <div id="pt-main" class="pt-perspective">
           <div class="pt-page pt-page-1 pt-page-current">
@@ -115,47 +117,63 @@
                 </div>
               </div>
             </div>
-            <div class="body" style="padding:4px;">
-              <div class="col-xs-6 fixPad">
-                <div class="location">
-                  <div class="ico icon-home-outline"></div>
-                  <div class="line"></div>
-                  Home
+            <div class="body">
+              <div style="padding:4px;">
+                <div class="col-xs-6 fixPad">
+                  <div data-page="3-5-r" class="ln location">
+                    <div class="ico icon-home-outline"></div>
+                    <div class="line"></div>
+                    Home
+                  </div>
                 </div>
-              </div>
-              <div class="col-xs-6 fixPad">
-                <div data-page="3-4-r" class="ln location">
-                  <div class="ico icon-cloud"></div>
-                  <div class="line"></div>
-                  Office
+                <div class="col-xs-6 fixPad">
+                  <div data-page="3-4-r" class="ln location">
+                    <div class="ico icon-cloud"></div>
+                    <div class="line"></div>
+                    Office
+                  </div>
                 </div>
-              </div>
-              <div class="col-xs-6 fixPad">
-                <div class="location">
-                  <div class="ico icon-shop"></div>
-                  <div class="line"></div>
-                  Shop
+                <div class="col-xs-6 fixPad">
+                  <div class="location">
+                    <div class="ico icon-shop"></div>
+                    <div class="line"></div>
+                    Shop
+                  </div>
                 </div>
-              </div>
-              <div class="col-xs-6 fixPad">
-                <div class="location">
-                  <div class="ico icon-globe"></div>
-                  <div class="line"></div>
-                  Factory
+                <div class="col-xs-6 fixPad">
+                  <div class="location">
+                    <div class="ico icon-globe"></div>
+                    <div class="line"></div>
+                    Factory
+                  </div>
                 </div>
-              </div>
-              <div class="col-xs-6 fixPad">
-                <div class="location">
-                  <div class="ico icon-location"></div>
-                  <div class="line"></div>
-                  Villa
+                <div class="col-xs-6 fixPad">
+                  <div class="location">
+                    <div class="ico icon-location"></div>
+                    <div class="line"></div>
+                    Villa
+                  </div>
                 </div>
-              </div>
-              <div class="col-xs-6 fixPad">
-                <div class="location">
-                  <div class="ico icon-home-outline"></div>
-                  <div class="line"></div>
-                  Condo
+                <div class="col-xs-6 fixPad">
+                  <div class="location">
+                    <div class="ico icon-home-outline"></div>
+                    <div class="line"></div>
+                    Condo
+                  </div>
+                </div>
+                <div class="col-xs-6 fixPad">
+                  <div class="location">
+                    <div class="ico icon-location"></div>
+                    <div class="line"></div>
+                    Villa
+                  </div>
+                </div>
+                <div class="col-xs-6 fixPad">
+                  <div class="location">
+                    <div class="ico icon-home-outline"></div>
+                    <div class="line"></div>
+                    Condo
+                  </div>
                 </div>
               </div>
             </div>
@@ -177,15 +195,80 @@
               </div>
             </div>
             <div class="body body4 tallerMargin">
-              <div style="min-height:450px;">
+              <div>
                 <div id="degree"></div>
                 <div class="sliderCircle"><div class="slider"></div></div>
               </div>
             </div>
           </div>
           <div class="pt-page pt-page-5">
-            <div class="header"></div>
-            <div class="body"></div>
+            <div class="header tallerHead">
+              <div class="row">
+                <div class="col-xs-2 col-md-1" style="padding-left:0;">
+                  <span data-page="5-1-r" class="ln icon-menu-1"></span>
+                </div>
+                <div class="pageTitle col-xs-8 col-md-10 text-center">
+                  <div class="icon-home-outline"></div>
+                  <div class="line"></div>
+                  Home
+                </div>
+                <div class="col-xs-2 col-md-1" style="padding-left:10px;">
+                  <span data-page="5-3" class="ln icon-th-large-outline"></span>
+                </div>
+              </div>
+            </div>
+            <div class="body body5">
+              <canvas id="myCanvas" width="300" height="300"></canvas>
+              <script>
+                var c = document.getElementById("myCanvas");
+                var ctx = c.getContext("2d");
+
+                // centre (x,y), radius, value (angle)
+                var cX = 200; var cY = 200; var r = 100; var value = 0;
+
+                // x,y for slider "knob", selection variable
+                var x = cX; var y = cY-r;  var selected = null;
+
+                var mousePressed = function () {
+                  if (dist (mouseX, mouseY, x, y) < 10 ) {
+                    selected = true;
+                  }
+                };
+
+                var mouseReleased = function () {
+                  selected = false;
+                };
+
+                var moveSlider = function () {
+                  var d = dist (cX, cY, mouseX, mouseY);
+                  if (mouseX >= cX) {
+                    value = acos (-(mouseY - cY) / d);
+                    // or: value = atan2 (mouseX-cX, -(mouseY-cY));
+                  }
+                  else {
+                    value = 360 - acos (-(mouseY - cY) / d);
+                    // or: value = 360 + atan2 (mouseX-cX, -(mouseY-cY));
+                  }
+                  x = cos (value - 90) * r + cX;
+                  y = sin (value - 90) * r + cY;
+                };
+
+                draw = function() {
+                  background (255, 255, 255);
+                  fill (255, 255, 255);
+                  ellipse (cX, cY, r * 2, r * 2);
+                  ellipse (x, y, 20, 20);
+                  fill (0, 0, 0);
+                  text ("Value : " + round(value), cX-35, 50);
+                  if (selected) {
+                    moveSlider ();
+                  }
+                  if (dist (x, y, mouseX, mouseY) > 75) {
+                    selected = false;
+                  }
+                };
+              </script>
+            </div>
           </div>
           <div class="pt-page pt-page-6">page 6</div>
         </div>
