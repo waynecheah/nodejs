@@ -86,6 +86,11 @@ $pageFxFillMode: both;
 $minHeight: 320px;
 $headerHeight: 60px;
 $tallerHeaderHeight: 100px;
+$statusHeight: 100px;
+$summarySttHeight: 3px;
+$on: #3DB094;
+$off: #d74352;
+$dis: gray;
 
 .pt-page-moveToLeft {
     @include animation(moveToLeft, $pageFxDuration, $pageFxEaseCB, $pageFxFillMode);
@@ -151,6 +156,7 @@ div.blur {
 div.header {
     @include dimenPos(100%, $headerHeight, fixed);
     background-color: rgba(48, 48, 48, .99);
+    top: $summarySttHeight;
     z-index: 10;
 
     .row {
@@ -178,6 +184,92 @@ div.tallerMargin {
     padding-top: $tallerHeaderHeight !important;
 }
 
+
+#fixHeader {
+    position: absolute;
+    top: $summarySttHeight;
+}
+#status-summary {
+    @include dimenPos(100%, $summarySttHeight, fixed);
+    z-index: 5;
+
+    div.row {
+        margin: auto;
+    }
+    .on, .off, .dis {
+        height: $summarySttHeight;
+    }
+    .on {
+        background-color: $on;
+    }
+    .off {
+        background-color: $off;
+    }
+    .dis {
+        background-color: $dis;
+    }
+}
+div.fixedStatus {
+    $height: $statusHeight - 4px;
+    $bg: #232424;
+    $disabled: .18;
+
+    @include dimenPos(100%, $height, fixed);
+    @include position($headerHeight, 0);
+    border: 0 solid #4a4b53;
+    border-top-width: 2px;
+    border-bottom-width: 2px;
+    margin: auto;
+    background-color: $bg;
+    z-index: 2;
+
+    .dis {
+        opacity: $disabled;
+
+        .text {
+            font-size: .8em;
+            padding: 6px 0;
+        }
+        .status {
+            @include dimenPos(50px, 50px, relative);
+            @include boxModel(auto, 0, 1px solid white);
+            border-radius: 30px;
+
+            .ico {
+                @include dimenPos();
+                font-size: .8em;
+                line-height: 2.9em;
+                background-color: $bg;
+                border: 4px solid transparent;
+                border-radius: 30px;
+            }
+        }
+    }
+
+    .on, .off {
+        @extend .dis;
+        opacity: 1;
+    }
+    .on .text {
+        color: #3DB094;
+    }
+    .on .status {
+        border-color: #3DB094;
+        color: $bg;
+    }
+    .off .text {
+        color: #d74352;
+    }
+    .off .status {
+        border-color: #d74352;
+        color: $bg;
+    }
+    .on .status .ico, .off .status .ico {
+        background-color: white;
+        border-color: $bg;
+    }
+}
+
 div.body {
     padding-top: $headerHeight;
     width: 100%;
@@ -192,6 +284,7 @@ div.body {
 }
 div.body2 {
     @extend div.body;
+    padding-top: $headerHeight+$statusHeight;
     background-color: #EE5567;
 }
 div.body4 {
