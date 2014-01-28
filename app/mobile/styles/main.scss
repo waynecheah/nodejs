@@ -80,6 +80,7 @@ textarea {
     src: local('Helvetica Neue UltraLight'), local('Helvetica-Neue-UltraLight'), url(../fonts/HelveticaNeue-UltraLight.woff) format('woff');
 }
 
+$fxDuration: 400ms;
 $pageFxDuration: .4s;
 $pageFxEaseCB: cubic-bezier(0.230, 0.635, 0.355, 1.000);
 $pageFxFillMode: both;
@@ -134,10 +135,10 @@ $dis: gray;
 }
 
 .pt-icon-moveInBack {
-    transition: all 400ms cubic-bezier(0.600, -0.280, 0.735, 0.045);
+    transition: all $fxDuration cubic-bezier(0.600, -0.280, 0.735, 0.045);
 }
 .pt-icon-moveOutBack {
-    transition: all 400ms cubic-bezier(0.680, -0.550, 0.265, 1.550);
+    transition: all $fxDuration cubic-bezier(0.680, -0.550, 0.265, 1.550);
 }
 
 @mixin line ($height:5px, $marginBottom:0) {
@@ -157,7 +158,7 @@ div.header {
     @include dimenPos(100%, $headerHeight, fixed);
     background-color: rgba(48, 48, 48, .99);
     top: $summarySttHeight;
-    z-index: 10;
+    z-index: 3;
 
     .row {
         margin: 10px 2px;
@@ -191,22 +192,33 @@ div.tallerMargin {
 }
 #status-summary {
     @include dimenPos(100%, $summarySttHeight, fixed);
-    z-index: 5;
+    z-index: 10;
 
-    div.row {
+    div.short {
+        @include dimenPos(100%, $summarySttHeight);
         margin: auto;
+        z-index: 8;
+
+        .on, .off, .dis {
+            height: $summarySttHeight;
+        }
+        .on {
+            background-color: $on;
+        }
+        .off {
+            background-color: $off;
+        }
+        .dis {
+            background-color: $dis;
+        }
     }
-    .on, .off, .dis {
-        height: $summarySttHeight;
+    div.showDown {
+        margin-top: 0;
+        transition: all $fxDuration cubic-bezier(0.680, -0.550, 0.265, 1.550);
     }
-    .on {
-        background-color: $on;
-    }
-    .off {
-        background-color: $off;
-    }
-    .dis {
-        background-color: $dis;
+    div.hideUp {
+        margin-top: -100px;
+        transition: all $fxDuration cubic-bezier(0.600, -0.280, 0.735, 0.045);
     }
 }
 div.fixedStatus {
@@ -214,14 +226,13 @@ div.fixedStatus {
     $bg: #232424;
     $disabled: .18;
 
-    @include dimenPos(100%, $height, fixed);
-    @include position($headerHeight, 0);
+    @include dimenPos(100%, $height);
+    @include position($summarySttHeight, 0);
     border: 0 solid #4a4b53;
-    border-top-width: 2px;
     border-bottom-width: 2px;
     margin: auto;
     background-color: $bg;
-    z-index: 2;
+    z-index: 5;
 
     .dis {
         opacity: $disabled;
@@ -284,7 +295,7 @@ div.body {
 }
 div.body2 {
     @extend div.body;
-    padding-top: $headerHeight+$statusHeight;
+    padding-top: $headerHeight;
     background-color: #EE5567;
 }
 div.body4 {

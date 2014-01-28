@@ -64,6 +64,22 @@ iz =
   # END changeIcon
 
 $ () ->
+  _.each $('.fixHeader,.header'), (el) ->
+    Hammer(el).on 'dragdown', () ->
+      if $('div.fixedStatus').hasClass 'hideUp'
+        $('div.fixedStatus').removeClass('hideUp').addClass 'showDown'
+
+      null
+    null
+
+  _.each $('.pt-page'), (el) ->
+    Hammer(el).on 'tap', () ->
+      if $('div.fixedStatus').hasClass 'showDown'
+        $('div.fixedStatus').removeClass('showDown').addClass 'hideUp'
+
+      null
+    null
+
   _.each $('.pt-page .ln'), (el) ->
     Hammer(el).on 'tap', () ->
       pages = $(@).attr('data-page').split '-'
