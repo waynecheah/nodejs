@@ -9,6 +9,10 @@ module.exports =
 
   db: process.env.MONGOHQ_URL
 
+  aesKey: 'MtKKLowsPeak4095'
+
+  aesIv: 'ConnectingPeople'
+
   clientErr:
     e0: 'Invalid input'
     e3: 'Invalid light status update, improper format sent'

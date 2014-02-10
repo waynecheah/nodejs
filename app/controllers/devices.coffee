@@ -6,12 +6,15 @@ config   = require '../../config/config'
 commonFn = require '../../lib/common'
 log      = require '../../lib/log'
 Device   = mongoose.model 'Device'
+Event    = mongoose.model 'Event'
 Status   = mongoose.model 'Status'
 socket   = null
 sockets  = []
 RN       = '\r\n';
 
 encryption = (data) ->
+  str = commonFn.decryption data, config.aesKey, config.aesIv, 'hex'
+  dataRoutes str if str
   return
 # END encryption
 
@@ -78,13 +81,13 @@ getDeviceInfo = (data) ->
           info: t
           lastSync: lastSync
         socket.tmp = # initialize variable for next coming status update
-          system: [],
-          partition: [],
-          zones: [],
-          emergency: [],
-          devices: [],
-          lights: [],
-          sensors: [],
+          system: []
+          partition: []
+          zones: []
+          emergency: []
+          devices: []
+          lights: []
+          sensors: []
           labels: []
 
         socketResp 'sr?' # ask device's status report
@@ -223,11 +226,182 @@ getCurrentStatus = (data) ->
 # END getCurrentStatus
 
 getEventLogs = (data) ->
+  cond =
+    datetime: null
+    device: socket.data.deviceId
+    category: null
+  event =
+    datetime: null
+    device: socket.data.deviceId
+    category: null
+    log: data
+
+  if ps = commonFn.iss data, 'lsi'
+    str = commonFn.gv data, ps
+    key = getKeys str, 'system info event log', 4
+
+    unless key
+      socketResp 'e5'
+      return
+
+    cond.datetime = key[3]
+    cond.category = 'system'
+
+    event.datetime = key[3]
+    event.category = 'system'
+    event.status   = key[1]
+    event.type     = key[0]
+    event.user     = key[2]
+
+    dbEventUpdate socket, cond, event, 'System Info'
+  else if ps = commonFn.iss data, 'lpt'
+    str = commonFn.gv data, ps
+    key = getKeys str, 'partition event log', 4
+
+    unless key
+      socketResp 'e5'
+      return
+
+    cond.datetime = key[3]
+    cond.category = 'partition'
+
+    event.datetime = key[3]
+    event.category = 'partition'
+    event.number   = key[0]
+    event.status   = key[1]
+    event.user     = key[2]
+
+    dbEventUpdate socket, cond, event, 'Partition'
+  else if ps = commonFn.iss data, 'lzn'
+    str = commonFn.gv data, ps
+    key = getKeys str, 'zone event log', 6
+
+    unless key
+      socketResp 'e5'
+      return
+
+    cond.datetime = key[5]
+    cond.category = 'zone'
+
+    event.datetime  = key[5]
+    event.category  = 'zone'
+    event.number    = key[0]
+    event.status    = key[2]
+    event.partition = key[3]
+    event.type      = key[4]
+
+    dbEventUpdate socket, cond, event, 'Zone'
+  else if ps = commonFn.iss data, 'lem'
+    str = commonFn.gv data, ps
+    key = getKeys str, 'emergency event log', 4
+
+    unless key
+      socketResp 'e5'
+      return
+
+    cond.datetime = key[3]
+    cond.category = 'emergency'
+
+    event.datetime = key[3]
+    event.category = 'emergency'
+    event.status   = key[1]
+    event.type     = key[0]
+    event.user     = key[2]
+
+    dbEventUpdate socket, cond, event, 'Emergency'
+  else if ps = commonFn.iss data, 'ldv'
+    str = commonFn.gv data, ps
+    key = getKeys str, 'device event log', 6
+
+    unless key
+      socketResp 'e5'
+      return
+
+    cond.datetime = key[5]
+    cond.category = 'device'
+
+    event.datetime = key[5]
+    event.category = 'device'
+    event.number   = key[0]
+    event.status   = key[2]
+    event.value    = key[3]
+    event.type     = key[1]
+    event.user     = key[4]
+
+    dbEventUpdate socket, cond, event, 'Device'
+  else if data
+    log 'n', 'e', "Invalid input: #{data}"
+    socketResp 'e0'
 
   return
 # END getEventLogs
 
 getDeviceUpdate = (data) ->
+  loopUpdate = (type, key, str) ->
+    _.each socket.data.status[type], (s, i) ->
+      k = s.split ','
+
+      if key and k[0] is key
+        log 's', 's', "Socket status data '#{type}' has updated to [#{str}]"
+        socket.data.status[type][i] = str
+
+        log 'n', 'i', "Server reply 'ok' to device for the status update:- #{data}"
+        key = null
+        socketResp 'ok'
+        dbStatusUpdate socket
+      return
+    return
+  # END loopUpdate
+
+  if ps = commonFn.iss data, 'si'
+    str = commonFn.gv data, ps
+    key = getKeys str, 'system info update', 2
+
+    unless key
+      socketResp 'e5'
+      return
+
+    loopUpdate 'system', key[0], str
+  else if ps = commonFn.iss data, 'pt'
+    str = commonFn.gv data, ps
+    key = getKeys str, 'partition update', 3
+
+    unless key
+      socketResp 'e5'
+      return
+
+    loopUpdate 'partition', key[0], str
+  else if ps = commonFn.iss data, 'zn'
+    str = commonFn.gv data, ps
+    key = getKeys str, 'zone update', 5
+
+    unless key
+      socketResp 'e5'
+      return
+
+    loopUpdate 'zones', key[0], str
+  else if ps = commonFn.iss data, 'em'
+    str = commonFn.gv data, ps
+    key = getKeys str, 'emergency update', 3
+
+    unless key
+      socketResp 'e5'
+      return
+
+    loopUpdate 'emergency', key[0], str
+  else if ps = commonFn.iss data, 'li'
+    str = commonFn.gv data, ps
+    key = getKeys str, 'light update', 5
+
+    unless key
+      socketResp 'e5'
+      return
+
+    loopUpdate 'lights', key[0], str
+  else if data
+    log 'n', 'e', "invalid input: #{data}"
+    socketResp 'e0'
+    return
 
   return
 # END getDeviceUpdate
@@ -317,6 +491,31 @@ dbStatusUpdate = (socket, callback) ->
   return
 # END dbStatusUpdate
 
+dbEventUpdate = (socket, cond, event, type, callback) ->
+  options =
+    upsert: true
+
+  Event.findOneAndUpdate cond, event, options, (err, doc) ->
+    if err
+      log 's', 'e', "#{type} event has logged failure"
+      socketResp 'e6'
+      return
+
+    log 's', 's', "#{type} event has logged successfully"
+    log 's', 'd', doc
+
+    socketResp 'ok'
+    socket.logs.datetime = cond.datetime
+    socket.logs.count   += 1
+
+    if callback? and _.isFunction callback
+      callback()
+
+    return
+
+  return
+# END dbEventUpdate
+
 
 dataHandler = (data) ->
   info = data.split RN
@@ -352,7 +551,7 @@ dataHandler = (data) ->
 getKeys = (str, err, length) ->
   key = str.split ','
 
-  if key.length not length
+  if key.length isnt length
     log 'n', 'e', "Invalid #{err}, improper format sent"
     return false
 
