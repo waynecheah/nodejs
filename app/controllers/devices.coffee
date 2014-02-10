@@ -46,12 +46,22 @@ dataRoutes = (data) ->
 getDeviceInfo = (data) ->
   if ps = commonFn.iss data, 'cn'
     socket.tmp.cn = commonFn.gv data, ps
+    socketResp 'ok'
   else if ps = commonFn.iss data, 'sn'
-    socket.tmp.sn = commonFn.gv data, ps
+    value = commonFn.gv data, ps
+    log 'n', 'i', "Received serial: #{value}"
+    socket.tmp.sn = value
+    socketResp 'ok'
   else if ps = commonFn.iss data, 'pn'
-    socket.tmp.pn = commonFn.gv data, ps
+    value = commonFn.gv data, ps
+    log 'n', 'i', "Received product name: #{value}"
+    socket.tmp.pn = value
+    socketResp 'ok'
   else if ps = commonFn.iss data, 'vs'
-    socket.tmp.vs = commonFn.gv data, ps
+    value = commonFn.gv data, ps
+    log 'n', 'i', "Received version: #{value}"
+    socket.tmp.vs = value
+    socketResp 'ok'
   else if commonFn.isc data, '-done-'
     t = socket.tmp
 
@@ -65,7 +75,7 @@ getDeviceInfo = (data) ->
         log 'n', 'e', err
         log 'n', 'd', t
         socketResp 'e2'
-      else if not doc or 'id' of doc is true # unrecognized serial
+      else if not doc or 'id' of doc is false # unrecognized serial
         log 'n', 'w', "Device ID [#{socket.id}] made an invalid access. Unrecognized serial #{t.sn}"
         log 'n', 'd', t
         socketResp 'e4'
@@ -434,7 +444,20 @@ getMap = (category, m1=null, m2=null, m3=null, m4=null) ->
     else false
 # END getMap
 
-reportedOkay = (data) ->
+reportedOkay = () ->
+  cmd = socket.app.lastCommand
+
+  if not cmd
+    log 'n', 'e', 'Receive ok from hardware, but last command is empty'
+  else if cmd of socket.app is false
+    log 'n', 'e', "Receive ok from hardware, but last command [#{cmd}] not found in last"
+  else if 'eid' of socket.app[cmd] is false or not socket.app[cmd].eid
+    log 'n', 'e', "Receive ok from hardware, but last command [#{cmd}] has no event id recorded"
+  else
+    log 'n', 'i', "Receive ok from hardware, confirm last command [#{cmd}] has received by device"
+    socket.app[cmd].status = 'device receive'
+    socket.app.lastCommand = null
+    dbUpdateAppEvent socket.app[cmd].eid
 
   return
 # END reportedOkay
@@ -516,28 +539,57 @@ dbEventUpdate = (socket, cond, event, type, callback) ->
   return
 # END dbEventUpdate
 
+dbUpdateAppEvent = (eid) ->
+  if not eid?
+    return
+
+  cond =
+    _id: eid
+  update =
+    $set:
+      success: true
+
+  Event.findOneAndUpdate cond, update, (err, doc) ->
+    if err
+      log 's', 'e', err
+      return
+
+    log 's', 's', 'Update App event delivered and execute at hardware side successfully'
+    log 's', 'd', doc
+    return
+
+  return
+# END dbUpdateAppEvent
+
 
 dataHandler = (data) ->
+  data = data.toString()
   info = data.split RN
   end  = false
 
   _.each info, (dt, i) ->
     return if end
-
-    dt = dt.toString
+    return if not dt
 
     if commonFn.isc dt, 'quit' # device is asking self termination
       end = true
+      i   = 0
       socketResp 'See ya ;)'
+
+      while i < sockets.length
+        if sockets[i] is socket
+          sockets[i].end()
+          i = sockets.length
+        i++
     else if dt.substr 0,7 == '-hello-' # device is checking if server alive and responding
       log 'n', 'i', "#{socket.id} says hello"
       socketResp 'ok'
-    else if 'tmp' of socket is false and not commonFn.iss dt, 'sn'
+    else if not socket.tmp and not commonFn.iss dt, 'cn'
       log 'n', 'i', 'Probably this is welcome message sent from device when initial connect'
       log 'n', 'd', dt
       socket.tmp =
         welcome: dt
-    else if ps = commonFn.iss 'en'
+    else if ps = commonFn.iss dt, 'en'
       encryption commonFn.gv dt, ps
     else
       dataRoutes dt
@@ -570,6 +622,7 @@ Devices =
     socket.id   = socket._handle.fd
     socket.app  = {}
     socket.data = {}
+    socket.tmp  = null
     socket.logs =
       count: 0
 
@@ -594,7 +647,7 @@ Devices =
 
       i = sockets.indexOf socket
       if i >= 0
-        socket.splice i, 1
+        sockets.splice i, 1
 
       return
 
