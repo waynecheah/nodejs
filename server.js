@@ -1000,7 +1000,7 @@ log('s', 'i', 'Webserver running at http://'+host+':8080');
 //
 // Net Server
 //
-var server = net.createServer(function (socket) {
+/*var server = net.createServer(function (socket) {
     socket.id   = socket._handle.fd;
     socket.app  = {};
     socket.data = {};
@@ -1118,7 +1118,8 @@ var server = net.createServer(function (socket) {
             websockets[i].emit('Offline');
         }
     });
-});
+});*/
+var server = net.createServer(controllers.devices.main);
 
 server.listen(1470, host);
 log('s', 'i', 'Net listening to '+host+':1470');
