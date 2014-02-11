@@ -291,7 +291,7 @@ _.each(process.argv, function(v, i){
 var socket = net.createConnection(port, host);
 socket.setEncoding('utf8');
 socket.cmd = function(dt){
-    socket.swrite(dt+RN);
+    swrite(dt+RN);
 };
 socket.get = function(type, item) {
     log('n', 'd', _data[type][item]);

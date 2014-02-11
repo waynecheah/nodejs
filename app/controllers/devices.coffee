@@ -8,234 +8,201 @@ log      = require '../../lib/log'
 Device   = mongoose.model 'Device'
 Event    = mongoose.model 'Event'
 Status   = mongoose.model 'Status'
-socket   = null
 sockets  = []
 RN       = '\r\n';
 
-encryption = (data) ->
+encryption = (socket, data) ->
   str = commonFn.decryption data, config.aesKey, config.aesIv, 'hex'
-  dataRoutes str if str
+  dataRoutes socket, str if str
   return
 # END encryption
 
-dataRoutes = (data) ->
+dataRoutes = (socket, data) ->
   stt = ['si','pt','zn','em','dv','li','ss']
   lgt = ['lsi','lpt','lzn','lem','ldv','lli','lss']
 
   if 'info' of socket.data is false # when device has not logged, all data sent will go here
     # PROCESS OF AUTHORISATION
-    getDeviceInfo data
+    getDeviceInfo socket, data
   else if 'status' of socket.data is false # get all current status from device
     # PROCESS OF ALL STATUS UPDATE
-    getCurrentStatus data
+    getCurrentStatus socket, data
   else if lgt.indexOf(data.substr 0,3) >= 0 # receive event logs from device
     # EVENT LOG RECEIVED WILL UPDATE SERVER DATABASE
-    getEventLogs data
+    getEventLogs socket, data
   else if stt.indexOf(dt.substr 0,2) >= 0 # receive status update from device
     # SOME STATUS HAS CHANGED ON DEVICE, APP MIGHT NEED TO REFRESH WITH THE UPDATE
-    getDeviceUpdate data
+    getDeviceUpdate socket, data
   else if commonFn.isc data, 'ok' # device reply 'ok' to confirm it received of previous sent command
-    reportedOkay data
+    reportedOkay socket
   else # send error to other and don't try to make funny thing to server
     log 'n', 'e', "Client #{socket.id} just sent an invalid input: #{data}"
-    socketResp 'e0'
+    socketWrite socket, 'e0'
 
   return
 # END dataRoutes
 
-getDeviceInfo = (data) ->
+getDeviceInfo = (socket, data) ->
   if ps = commonFn.iss data, 'cn'
     socket.tmp.cn = commonFn.gv data, ps
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if ps = commonFn.iss data, 'sn'
     value = commonFn.gv data, ps
     log 'n', 'i', "Received serial: #{value}"
     socket.tmp.sn = value
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if ps = commonFn.iss data, 'pn'
     value = commonFn.gv data, ps
     log 'n', 'i', "Received product name: #{value}"
     socket.tmp.pn = value
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if ps = commonFn.iss data, 'vs'
     value = commonFn.gv data, ps
     log 'n', 'i', "Received version: #{value}"
     socket.tmp.vs = value
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if commonFn.isc data, '-done-'
     t = socket.tmp
 
     if 'cn' of t is false or 'sn' of t is false or 'pn' of t is false or 'vs' of t is false
       log 'n', 'w', 'Device has not submitted all required authorization data'
-      socketResp 'e3'
+      socketWrite socket, 'e3'
       return
 
-    Device.findOne serial: t.sn, 'id macAdd lastSync', (err, doc) ->
-      if err
-        log 'n', 'e', err
-        log 'n', 'd', t
-        socketResp 'e2'
-      else if not doc or 'id' of doc is false # unrecognized serial
-        log 'n', 'w', "Device ID [#{socket.id}] made an invalid access. Unrecognized serial #{t.sn}"
-        log 'n', 'd', t
-        socketResp 'e4'
-      else
-        lastSync = if 'lastSync' of doc is true then doc.lastSync else ''
-
-        log 'n', 'i', "Device ID [#{socket.id}] has logged successfully"
-        log 'n', 'd', t
-        log 'n', 'd', doc
-
-        socket.data =
-          deviceId: doc.id
-          info: t
-          lastSync: lastSync
-        socket.tmp = # initialize variable for next coming status update
-          system: []
-          partition: []
-          zones: []
-          emergency: []
-          devices: []
-          lights: []
-          sensors: []
-          labels: []
-
-        socketResp 'sr?' # ask device's status report
-
-      return
+    dbFindDevice socket, t
   else if data
     log 'n', 'e', "Invalid input #{data}"
-    socketResp 'e0'
+    socketWrite socket, 'e0'
 
   return
 # END getDeviceInfo
 
-getCurrentStatus = (data) ->
+getCurrentStatus = (socket, data) ->
   if ps = commonFn.iss data, 'si' # system info
     str = commonFn.gv data, ps
     key = getKeys str, 'system info', 2
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     info = getMap 'system', key[0], key[1]
     log 'n', 'i', "Received system info update: #{info}"
     socket.tmp.system.push str
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if ps = commonFn.iss data, 'pt' # partition status
     str = commonFn.gv data, ps
     key = getKeys str, 'partition status', 3
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     info = getMap 'partition', key[1], key[2]
     log 'n', 'i', "Received partition status update: Partition #{key[0]} = #{info}"
     socket.tmp.partition.push str
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if ps = commonFn.iss data, 'zn' # zones status
     str = commonFn.gv data, ps
     key = getKeys str, 'zone status', 5
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     info = getMap 'zone', key[1], key[2], key[4]
     log 'n', 'i', "Received zone status update: Partition #{key[3]} Zone #{key[0]} = #{info}"
     socket.tmp.zones.push str
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if ps = commonFn.iss data, 'em' # emergency status
     str = commonFn.gv data, ps
     key = getKeys str, 'emergency status', 3
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     info = getMap 'emergency', key[0], key[1], key[2]
     log 'n', 'i', "Received emergency status update: #{info}"
     socket.tmp.emergency.push str
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if ps = commonFn.iss data, 'dv' # device status
     str = commonFn.gv data, ps
     key = getKeys str, 'device status', 5
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     info = getMap 'light', key[1], key[2], key[3], key[4]
     log 'n', 'i', "Received device status update: Device #{key[0]} = #{info}"
     socket.tmp.devices.push str
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if ps = commonFn.iss data, 'li' # lights status
     str = commonFn.gv data, ps
     key = getKeys str, 'light status', 5
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     info = getMap 'light', key[1], key[2], key[3], key[4]
     log 'n', 'i', "Received light status update: Light #{key[0]} = #{info}"
     socket.tmp.lights.push str
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if ps = commonFn.iss data, 'ss' # sensor status
     str = commonFn.gv data, ps
     key = getKeys str, 'sensor status', 4
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     info = getMap 'sensor', key[1], key[2], key[3]
     log 'n', 'i', "Received sensor status update: Sensor #{key[0]} = #{info}"
     socket.tmp.sensors.push str
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if ps = commonFn.iss data, 'lb' # label status
     str = commonFn.gv data, ps
     key = getKeys str, 'label list', 3
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     info = getMap 'label', key[0], key[1], key[2]
     log 'n', 'i', "Received label update: #{info}"
     socket.tmp.labels.push str
-    socketResp 'ok'
+    socketWrite socket, 'ok'
   else if commonFn.isc data, '-done-'
     t = socket.tmp
 
     if t.system.length < 5
       log 'n', 'w', 'Reported system status found incomplete'
-      socketResp 'e7'
+      socketWrite socket, 'e7'
     else if t.partition.length is 0
       log 'n', 'w', 'No any partition status reported'
-      socketResp 'e8'
+      socketWrite socket, 'e8'
     else if t.zones.length is 0
       log 'n', 'w', 'No any zone status reported'
-      socketResp 'e9'
+      socketWrite socket, 'e9'
     else
       log 'n', 'i', 'All current status have updated successfully'
       socket.data.status = socket.tmp
       socket.tmp         = {}
 
-      dbUpdateLastSync socket.data.info.sn
+      dbUpdateLastSync socket, socket.data.info.sn
       dbStatusUpdate socket, () ->
-        # emit device info to clients who connect to it
+        # TODO(system): emit device info to clients who connect to it
         return
   else if data
     log 'n', 'e', "Invalid input #{data}"
-    socketResp 'e0'
+    socketWrite socket, 'e0'
 
   return
 # END getCurrentStatus
 
-getEventLogs = (data) ->
+getEventLogs = (socket, data) ->
   cond =
     datetime: null
     device: socket.data.deviceId
@@ -251,7 +218,7 @@ getEventLogs = (data) ->
     key = getKeys str, 'system info event log', 4
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     cond.datetime = key[3]
@@ -269,7 +236,7 @@ getEventLogs = (data) ->
     key = getKeys str, 'partition event log', 4
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     cond.datetime = key[3]
@@ -287,7 +254,7 @@ getEventLogs = (data) ->
     key = getKeys str, 'zone event log', 6
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     cond.datetime = key[5]
@@ -306,7 +273,7 @@ getEventLogs = (data) ->
     key = getKeys str, 'emergency event log', 4
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     cond.datetime = key[3]
@@ -324,7 +291,7 @@ getEventLogs = (data) ->
     key = getKeys str, 'device event log', 6
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     cond.datetime = key[5]
@@ -340,13 +307,14 @@ getEventLogs = (data) ->
 
     dbEventUpdate socket, cond, event, 'Device'
   else if data
+    # TODO(plan): not sure if there need a -done- when all event logs sent completed
     log 'n', 'e', "Invalid input: #{data}"
-    socketResp 'e0'
+    socketWrite socket, 'e0'
 
   return
 # END getEventLogs
 
-getDeviceUpdate = (data) ->
+getDeviceUpdate = (socket, data) ->
   loopUpdate = (type, key, str) ->
     _.each socket.data.status[type], (s, i) ->
       k = s.split ','
@@ -357,7 +325,7 @@ getDeviceUpdate = (data) ->
 
         log 'n', 'i', "Server reply 'ok' to device for the status update:- #{data}"
         key = null
-        socketResp 'ok'
+        socketWrite socket, 'ok'
         dbStatusUpdate socket
       return
     return
@@ -368,7 +336,7 @@ getDeviceUpdate = (data) ->
     key = getKeys str, 'system info update', 2
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     loopUpdate 'system', key[0], str
@@ -377,7 +345,7 @@ getDeviceUpdate = (data) ->
     key = getKeys str, 'partition update', 3
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     loopUpdate 'partition', key[0], str
@@ -386,7 +354,7 @@ getDeviceUpdate = (data) ->
     key = getKeys str, 'zone update', 5
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     loopUpdate 'zones', key[0], str
@@ -395,7 +363,7 @@ getDeviceUpdate = (data) ->
     key = getKeys str, 'emergency update', 3
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     loopUpdate 'emergency', key[0], str
@@ -404,13 +372,13 @@ getDeviceUpdate = (data) ->
     key = getKeys str, 'light update', 5
 
     unless key
-      socketResp 'e5'
+      socketWrite socket, 'e5'
       return
 
     loopUpdate 'lights', key[0], str
   else if data
     log 'n', 'e', "invalid input: #{data}"
-    socketResp 'e0'
+    socketWrite socket, 'e0'
     return
 
   return
@@ -444,7 +412,7 @@ getMap = (category, m1=null, m2=null, m3=null, m4=null) ->
     else false
 # END getMap
 
-reportedOkay = () ->
+reportedOkay = (socket) ->
   cmd = socket.app.lastCommand
 
   if not cmd
@@ -462,13 +430,49 @@ reportedOkay = () ->
   return
 # END reportedOkay
 
-dbUpdateLastSync = (serial, callback) ->
+dbFindDevice = (socket, data) ->
+  Device.findOne serial: data.sn, 'id macAdd lastSync', (err, doc) ->
+    if err
+      log 'n', 'e', err
+      log 'n', 'd', data
+      socketWrite socket, 'e2'
+    else if not doc or 'id' of doc is false # unrecognized serial
+      log 'n', 'w', "Device ID [#{socket.id}] made an invalid access. Unrecognized serial #{data.sn}"
+      log 'n', 'd', data
+      socketWrite socket, 'e4'
+    else
+      lastSync = if 'lastSync' of doc is true then doc.lastSync else ''
+
+      log 'n', 'i', "Device ID [#{socket.id}] has logged successfully"
+      log 'n', 'd', data
+      log 'n', 'd', doc
+
+      socket.data =
+        deviceId: doc.id
+        info: data
+        lastSync: lastSync
+      socket.tmp = # initialize variable for next coming status update
+        system: []
+        partition: []
+        zones: []
+        emergency: []
+        devices: []
+        lights: []
+        sensors: []
+        labels: []
+
+      socketWrite socket, 'sr?' # ask device's status report
+    return
+  return
+# END
+
+dbUpdateLastSync = (socket, serial, callback) ->
   lastSync = new Date
 
   Device.findOneAndUpdate serial: serial, lastSync:lastSync, (err) ->
     if err
       log 'n', 'e', err
-      socketResp 'e2'
+      socketWrite socket, 'e2'
       return
 
     datetime = lastSync.toLocaleDateString()+' '+lastSync.toLocaleTimeString()
@@ -496,7 +500,7 @@ dbStatusUpdate = (socket, callback) ->
   Status.update cond, update, options, (err, updated, rawResponse) ->
     if err
       log 's', 'e', 'Fail update device last status info to DB'
-      socketResp 'e10'
+      socketWrite socket, 'e10'
       return
 
     if rawResponse.updatedExisting
@@ -521,13 +525,13 @@ dbEventUpdate = (socket, cond, event, type, callback) ->
   Event.findOneAndUpdate cond, event, options, (err, doc) ->
     if err
       log 's', 'e', "#{type} event has logged failure"
-      socketResp 'e6'
+      socketWrite socket, 'e6'
       return
 
     log 's', 's', "#{type} event has logged successfully"
     log 's', 'd', doc
 
-    socketResp 'ok'
+    socketWrite socket, 'ok'
     socket.logs.datetime = cond.datetime
     socket.logs.count   += 1
 
@@ -562,7 +566,7 @@ dbUpdateAppEvent = (eid) ->
 # END dbUpdateAppEvent
 
 
-dataHandler = (data) ->
+dataHandler = (socket, data) ->
   data = data.toString()
   info = data.split RN
   end  = false
@@ -574,7 +578,7 @@ dataHandler = (data) ->
     if commonFn.isc dt, 'quit' # device is asking self termination
       end = true
       i   = 0
-      socketResp 'See ya ;)'
+      socketWrite socket, 'See ya ;)'
 
       while i < sockets.length
         if sockets[i] is socket
@@ -583,6 +587,7 @@ dataHandler = (data) ->
         i++
     else if commonFn.isc dt, 'debug' # temporary for debug purposes
       i = 0
+      log 'n', 'i', "Client id: #{socket.id}"
 
       while i < sockets.length
         log 'n', 'i', "Socket id: #{sockets[i].id}"
@@ -590,16 +595,16 @@ dataHandler = (data) ->
         i++
     else if dt.substr 0,7 == '-hello-' # device is checking if server alive and responding
       log 'n', 'i', "#{socket.id} says hello"
-      socketResp 'ok'
+      socketWrite socket, 'ok'
     else if not socket.tmp and not commonFn.iss dt, 'cn'
       log 'n', 'i', 'Probably this is welcome message sent from device when initial connect'
       log 'n', 'd', dt
       socket.tmp =
         welcome: dt
     else if ps = commonFn.iss dt, 'en'
-      encryption commonFn.gv dt, ps
+      encryption socket, commonFn.gv dt, ps
     else
-      dataRoutes dt
+      dataRoutes socket, dt
 
     return
   # END each loop
@@ -617,15 +622,14 @@ getKeys = (str, err, length) ->
   key
 # END getKeys
 
-socketResp = (msg) ->
+socketWrite = (socket, msg) ->
   socket.write msg+RN
   return
-# END socketResp
+# END socketWrite
 
 
 Devices =
-  main: (sock) ->
-    socket      = sock
+  main: (socket) ->
     socket.id   = socket._handle.fd
     socket.app  = {}
     socket.data = {}
@@ -636,15 +640,21 @@ Devices =
     log 'n', 'i', "Client #{socket.id} connected"
     sockets.push socket # assign socket to global variable
     socket.setKeepAlive true, 90000
-    socketResp 'id?'
+    socketWrite socket, 'id?'
 
-    socket.on 'data', dataHandler
+    socket.on 'data', (data) ->
+      dataHandler socket, data
+      return
     socket.on 'end', () ->
       log 'n', 'i', "Client #{socket.id} has sent FIN packet to close connection, host acknowledge by send back FIN"
       return
-    socket.on 'error', (data) ->
-      log 'n', 'i', "The connection for client #{socket.id} has error occur"
-      log 'n', 'd', data
+    socket.on 'timeout', () ->
+      log 'n', 'w', "Client #{socket.id} has times out from inactivity"
+      # TODO(system): manually close the connection
+      return
+    socket.on 'error', (err) ->
+      log 'n', 'i', "The connection for client #{socket.id} has an error occur"
+      log 'n', 'd', err
       return
     socket.on 'close', (hasErr) ->
       msg = if hasErr then 'Error occur before connection closed' else 'No error was found'

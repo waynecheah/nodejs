@@ -1121,6 +1121,15 @@ log('s', 'i', 'Webserver running at http://'+host+':8080');
 });*/
 var server = net.createServer(controllers.devices.main);
 
+server.on('error', function(err){
+    if (err.code == 'EADDRINUSE') {
+        log('s', 'e', 'Host address in use, retry in 5 seconds...');
+        setTimeout(function () {
+            server.close();
+            server.listen(1470, host);
+        }, 5000);
+    }
+});
 server.listen(1470, host);
 log('s', 'i', 'Net listening to '+host+':1470');
 
