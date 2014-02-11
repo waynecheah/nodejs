@@ -10,13 +10,13 @@ var RN        = '\r\n';
 var _timer    = 0;
 var host      = 'cheah.homeip.net';
 var port      = 1470;
-var clientErr  = {
+var clientErr = {
     e0: 'Invalid input',
     e1: 'Invalid partition status update, improper format sent',
     e2: 'Invalid zone status update, improper format sent',
     e3: 'Invalid light status update, improper format sent'
 };
-var serverErr  = {
+var serverErr = {
     e0: 'Invalid input',
     e1: 'System error',
     e2: 'Error found while query made to database',
@@ -32,7 +32,9 @@ var serverErr  = {
     e12: '',
     e13: ''
 };
-var mapping = {
+var aesKey    = 'MtKKLowsPeak4095';
+var aesIv    = 'ConnectingPeople';
+var mapping   = {
     partition: {
         command: {
             0: 'Disarm',
@@ -101,7 +103,7 @@ var _sdcmd = '';
 var _cmdcn = 0;
 
 
-function write (cmd, lg, type, stage) {
+function write (cmd, lg, type, stage, encrypt) {
     setTimeout(function(){
         _timer += 5;
 
@@ -112,10 +114,20 @@ function write (cmd, lg, type, stage) {
         if (!_.isUndefined(stage)) { // change stage
             _stage = stage;
         }
+        if (encrypt === null || encrypt !== false) {
+            var enc = 'en='+encryption(cmd, aesKey, aesIv, 'hex');
+            log('n', 's', 'Encrypted data: '+enc);
+            socket.write(enc+RN);
+        } else {
+            socket.write(cmd+RN);
+        }
 
-        socket.write(cmd+RN);
     }, _timer);
 } // write
+
+function swrite (cmd, lg, type, stage) {
+    write(cmd, lg, type, stage, false);
+} // swrite
 
 function resetTime () {
     _timer = 0;
@@ -184,21 +196,25 @@ function g2 (cmd, i) {
 function encryption (data, key, iv, format) {
     var cipher = crypto.createCipheriv('aes-128-cbc', key, iv);
     var strlen = data.length;
+    var bytes  = ' > 48 bytes';
     var random;
 
     if (strlen <= 11) { // use 16 bytes
         random = 15 - strlen;
+        bytes  = '16 bytes';
     } else if (strlen <= 27) { // use 32 bytes
         random = 31 - strlen;
+        bytes  = '32 bytes';
     } else if (strlen <= 43) { // use 48 bytes
         random = 47 - strlen;
+        bytes  = '48 bytes';
     } else {
         return false;
     }
 
     random = randomString({ length:random });
     data   = random+'|'+data;
-    log('n', 'i', 'Encrypt data: '+data);
+    log('n', 'i', 'Encrypt data ('+bytes+'): '+data);
 
     cipher.setAutoPadding(false);
     return cipher.update(data, 'utf8', format);
@@ -275,7 +291,7 @@ _.each(process.argv, function(v, i){
 var socket = net.createConnection(port, host);
 socket.setEncoding('utf8');
 socket.cmd = function(dt){
-    socket.write(dt+RN);
+    socket.swrite(dt+RN);
 };
 socket.get = function(type, item) {
     log('n', 'd', _data[type][item]);
@@ -286,7 +302,7 @@ socket.aes = function(str){
     if (secret) {
         _stage = 'aes';
         log('n', 's', 'Sent encrypted data: '+secret);
-        socket.write('aes='+secret+RN);
+        socket.swrite('aes='+secret+RN);
     }
 }
 
@@ -316,12 +332,12 @@ socket.on('data', function(data) {
 
             if (info.length != 3) {
                 log('n', 'e', 'Invalid partition status update, improper format sent');
-                write('e1'+RN);
+                swrite('e1'+RN);
                 return;
             }
 
             log('n', 'i', 'Received partition status update: Partition '+info[0]+' = '+mapping.partition.command[info[1]]+' password('+info[2]+')');
-            write('ok'+RN);
+            swrite('ok'+RN);
 
             _.each(_data.status.pt, function(str, i){
                 inf = str.split(',');
@@ -342,12 +358,12 @@ socket.on('data', function(data) {
 
             if (info.length != 3) {
                 log('n', 'e', 'Invalid zone status update, improper format sent');
-                write('e2'+RN);
+                swrite('e2'+RN);
                 return;
             }
 
             log('n', 'i', 'Received zone status update: Zone '+info[0]+' = '+mapping.zone.command[info[1]]+' Partition('+info[2]+')');
-            write('ok'+RN);
+            swrite('ok'+RN);
 
             _.each(_data.status.zn, function(str, i){
                 inf = str.split(',');
@@ -369,12 +385,12 @@ socket.on('data', function(data) {
 
             if (info.length != 3) {
                 log('n', 'e', 'Invalid light status update, improper format sent');
-                write('e3'+RN);
+                swrite('e3'+RN);
                 return;
             }
 
             log('n', 'i', 'Received light status update: Light '+info[0]+' = '+mapping.light.command[info[1]]+' value('+info[2]+')');
-            write('ok'+RN);
+            swrite('ok'+RN);
 
             _.each(_data.status.li, function(str, i){
                 inf = str.split(',');
@@ -397,7 +413,7 @@ socket.on('data', function(data) {
 
                 _.each(_data.info, function(v,c){
                     if (!f && c == 'done') { // end of this stage
-                        write('-done-', 'Send -done-', 'i', 'status_report');
+                        swrite('-done-', 'Send -done-', 'i', 'status_report');
                     } else if (c == _sdcmd) {
                         write(_sdcmd+'='+g1(_sdcmd), 'Send '+_sdcmd+'='+g1(_sdcmd));
                         f = true;
@@ -414,7 +430,7 @@ socket.on('data', function(data) {
 
                 _.each(_data.status, function(a,c){
                     if (!f1 && c == 'done') { // end of this stage
-                        write('-done-', 'Send -done-', 'i', 'ready');
+                        swrite('-done-', 'Send -done-', 'i', 'ready');
 
                         console.log(' ');
                         log('n', 'i', 'All current status have reported to server successfully');
@@ -466,7 +482,7 @@ socket.on('data', function(data) {
     });
 }).on('connect', function() {
     log('n', 'i', 'Socket connected to server successfully!');
-    write('Say hello to server. hihi~!', false);
+    swrite('Say hello to server. hihi~!', false);
     console.log(' ');
 }).on('end', function() {
     log('n', 'i', 'Disconnected from server');

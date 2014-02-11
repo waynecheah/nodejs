@@ -581,6 +581,13 @@ dataHandler = (data) ->
           sockets[i].end()
           i = sockets.length
         i++
+    else if commonFn.isc dt, 'debug' # temporary for debug purposes
+      i = 0
+
+      while i < sockets.length
+        log 'n', 'i', "Socket id: #{sockets[i].id}"
+        log 'n', 'd', sockets[i].data
+        i++
     else if dt.substr 0,7 == '-hello-' # device is checking if server alive and responding
       log 'n', 'i', "#{socket.id} says hello"
       socketResp 'ok'

@@ -47,23 +47,35 @@ exports.gv = (data, start) -> # get value
 exports.encryption = (data, key, iv, format) ->
   cipher = crypto.createCipheriv 'aes-128-cbc', key, iv
   strlen = data.length
+  bytes  = ' > 48 byets'
+  random = false
 
-  random = switch
-    when strlen <= 12 then 15-strlen # use 16 bytes
-    when strlen <= 28 then 31-strlen # use 32 bytes
-    when strlen <= 44 then 47-strlen # use 48 bytes
-    else false
+  switch strlen
+    when strlen <= 12 # use 16 bytes
+      random = 15 - strlen
+      bytes  = '16 bytes'
+    when strlen <= 28
+      random = 31 - strlen # use 32 bytes
+      bytes  = '32 bytes'
+    when strlen <= 44
+      random = 47 - strlen # use 48 bytes
+      bytes  = '48 bytes'
   return false unless random
 
   random = randomString length:random
   data   = random + '|' + data
-  log 's', 'i', 'Encrypt data: '+data
+  log 's', 'i', "Encrypt data (#{bytes}): #{data}"
 
   cipher.setAutoPadding false
-  cipher.update data, 'utf8', format
+  enc = cipher.update data, 'utf8', format
+  log 's', 's', "Encrypted data: #{enc}"
+
+  enc
 #  encryption
 
 exports.decryption = (data, key, iv, format) ->
+  bytes = data.length / 2
+  log 's', 'i', "Decrypt data (#{bytes} bytes): #{data}"
   decipher = crypto.createDecipheriv 'aes-128-cbc', key, iv
 
   decipher.setAutoPadding false
@@ -71,11 +83,11 @@ exports.decryption = (data, key, iv, format) ->
   position = decrData.indexOf '|' # get separator position
 
   if position < 0 # invalid data, there should have a | within decrypted data
-    log 'n', 'e', 'Invalid decrypted data: '+decrData
+    log 's', 'e', "Invalid decrypted data: #{decrData}"
     return false
 
-  log('n', 's', 'Decrypted data: '+decrData);
-  decrData.substr(position+1);
+  log 's', 's', "Decrypted data: #{decrData}"
+  decrData.substr position+1;
 # decryption
 
 exports.datetime = ->
