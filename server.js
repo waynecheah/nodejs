@@ -24,7 +24,7 @@ var sockets     = [];
 var websockets  = [];
 var RN          = '\r\n';
 var _timer      = null;
-var host        = '192.168.1.75';
+var host        = '101.99.83.20';
 
 
 _.each(config, function(v, name){
@@ -938,20 +938,44 @@ _.each(process.argv, function(v, i){
 //
 // Mongoose
 //
-var hosts = 'ns1.node-server.com:27101,' +
-            'ns1.node-server.com:27102,' +
-            'cheah.homeip.net:27201,' +
-            'innerzon.dyndns.ws:27301,' +
-            'cheah.homeip.net:27401,' +
-            'cheah.homeip.net:27501,' +
-            'node.homeip.net:27601';
-//mongoose.connect('mongodb://localhost/mydb');
-mongoose.connect('mongodb://'+hosts+'/mydb?replicaSet=innerzon&w=majority&journal=true', { replset: { rs_name: 'innerzon' } });
+if (config.replication) {
+    var hosts = config.dbHosts.join(',');
+    var opts  = { replset: { rs_name: 'innerzon' } };
+    var onOpen = function(db){
+        log('s', 'i', 'MongoDB is now opened with following info');
+        log('s', 'd', db.hosts);
+        log('s', 'd', db.options);
+    };
+    mongoose.connect('mongodb://'+hosts+'/mydb?replicaSet=innerzon&w=majority&journal=true', opts);
+    setTimeout(function(){
+        log('s', 'i', 'Connecting to MongoDB...');
+    }, 100);
+} else {
+    var onOpen = function(db){
+        log('s', 'i', 'MongoDB is now opened at host: '+db.host+', port: '+db.port);
+        if ('MONGOHQ_URL' in process.env) {
+            log('s', 'i', 'MONGOHQ_URL: '+process.env.MONGOHQ_URL);
+        }
+    };
+    mongoose.connect(config.dbHost);
+}
+
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', function(){
-    log('s', 'i', 'MongoDB connected! host: '+db.host+', port: '+db.port);
+db.on('connected', function(){
+    log('s', 's', 'Connection successfully connects to the MongoDB');
 });
+db.once('open', function(){
+    log('s', 'i', 'Connected to all of this connections models');
+    onOpen(db);
+});
+db.on('disconnected', function(){
+    log('s', 'w', 'MongoDB has disconnected');
+});
+db.on('error', function(){
+    log('s', 'e', 'MongoDB has an error occurred');
+});
+
 var ObjectId = mongoose.Schema.Types.ObjectId;
 var Client = mongoose.model('Client');
 var Device = mongoose.model('Device');
