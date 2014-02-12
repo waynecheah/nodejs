@@ -1,10 +1,118 @@
 
 iz =
+  wsProcess: []
   transition:
     fxOut: 'pt-page-moveToLeft',
     fxIn: 'pt-page-moveFromRight',
     fxRevOut: 'pt-page-moveToRight',
     fxRevIn: 'pt-page-moveFromLeft'
+
+  init: () ->
+    wsProcess  = @wsProcess
+    connection = @connection
+    websocket  = @websocket
+    wsProcess.push 'connecting_websocket'
+
+    socket = io.connect "http://#{document.domain}:8080",
+      'max reconnection attempts': 100
+
+    socket.on 'error', () ->
+      _.pull wsProcess, 'connecting_websocket'
+      connection.isOffline()
+      return
+    socket.on 'connect', () ->
+      _.pull wsProcess, 'connecting_websocket'
+      connection.onlineHandler()
+      return
+    socket.on 'connect_failed', () ->
+      _.pull wsProcess, 'connecting_websocket'
+      connection.isOffline()
+      return
+    socket.on 'disconnect', () ->
+      #notification 'Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000
+      connection.isOffline()
+      return
+    socket.on 'reconnect', () ->
+      _.pull wsProcess, 'connecting_websocket'
+      websocket.loggedSuccess()
+      connection.reconnectHandler()
+      connection.isOffline()
+      return
+    socket.on 'reconnect_failed', () ->
+      _.pull wsProcess, 'connecting_websocket'
+      connection.isOffline()
+      return
+
+    socket.on 'DeviceInformation', () ->
+      return
+    socket.on 'Offline', () ->
+      return
+    socket.on 'DeviceUpdate', () ->
+      return
+    socket.on 'ResponseOnRequest', () ->
+      return
+
+    return
+  # end init
+
+  connection:
+    serverOnline: null
+
+    isOffline: () ->
+      iz.debug 'Check if server offline'
+      serverOnline = @serverOnline = false
+
+      @checkServer()
+      @checkInternet()
+      setTimeout () ->
+        if window.onLine is no
+          iz.debug 'Confirm client is disconnected from internet', 'err'
+          $(window).trigger 'offline' # confirm internet is offline now, trigger offline event
+          $(window).trigger 'internetOff'
+        else if serverOnline is no
+          iz.debug 'Confirm server is offline', 'err'
+          $(windows).trigger 'offline' # confirm server is offline now, trigger offline event
+        return
+      , 3000
+
+      return
+    # END isOffline
+
+    checkServer: () ->
+      return
+    # END checkServer
+
+    checkInternet: () ->
+      return
+    # END checkInternet
+
+    onlineHandler: () ->
+      return
+    # END onlineHandler
+
+    offlineHandler: () ->
+      $('#page-security div.armBtnWrap').hide()
+      $('.troubles').removeClass('').addClass('text-warning').html 'Unavailable'
+      $('.status').removeClass('').addClass('text-warning').html 'Unavailable'
+      $('.connection').removeClass('').addClass('text-danger').html 'Disconnected'
+      return
+    # END offlineHandler
+
+    reconnectHandler: () ->
+      #notification 'Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000
+      $('div.header span.i-server').removeClass('').addClass "#{icoOnline}text-success"
+      return
+    # END reconnectHandler
+  # END connection
+
+  websocket:
+    loggedSuccess: () ->
+      id = if userID then userID else $.cookie 'userID'
+      socket.emit 'user logged',
+        clientId: id
+      return
+    # END loggedSuccess
+  # END websocket
 
   changePage: (from, to, reverse=false, ts=@transition) ->
     fPage = "div.pt-page-#{from}"
@@ -63,7 +171,13 @@ iz =
     null
   # END changeIcon
 
+  debug: (msg, type) ->
+    return
+  # END debug
+
 $ () ->
+  #init()
+
   _.each $('.fixHeader,.header'), (el) ->
     Hammer(el).on 'dragdown', () ->
       if $('div.fixedStatus').hasClass 'hideUp'
