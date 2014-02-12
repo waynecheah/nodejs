@@ -945,8 +945,8 @@ var hosts = 'ns1.node-server.com:27101,' +
             'cheah.homeip.net:27401,' +
             'cheah.homeip.net:27501,' +
             'node.homeip.net:27601';
-mongoose.connect('mongodb://localhost/mydb');
-//mongoose.connect('mongodb://'+hosts+'/mydb?replicaSet=innerzon&w=majority&journal=true', { replset: { rs_name: 'innerzon' } });
+//mongoose.connect('mongodb://localhost/mydb');
+mongoose.connect('mongodb://'+hosts+'/mydb?replicaSet=innerzon&w=majority&journal=true', { replset: { rs_name: 'innerzon' } });
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function(){

@@ -30,7 +30,7 @@ dataRoutes = (socket, data) ->
   else if lgt.indexOf(data.substr 0,3) >= 0 # receive event logs from device
     # EVENT LOG RECEIVED WILL UPDATE SERVER DATABASE
     getEventLogs socket, data
-  else if stt.indexOf(dt.substr 0,2) >= 0 # receive status update from device
+  else if stt.indexOf(data.substr 0,2) >= 0 # receive status update from device
     # SOME STATUS HAS CHANGED ON DEVICE, APP MIGHT NEED TO REFRESH WITH THE UPDATE
     getDeviceUpdate socket, data
   else if commonFn.isc data, 'ok' # device reply 'ok' to confirm it received of previous sent command

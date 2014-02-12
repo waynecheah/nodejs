@@ -8,8 +8,10 @@
         "config",
         "lib/*"
     ],
-    "ext": "ejs handlebars html jade",
+    "ext": "coffee js json",
     "ignore": [
-        ".idea", ".sass-cache", ".tmp", "dist", "aes.js", "app.js", "bower.json", "gapis.js", "app/assets", "public"
+        ".idea", ".sass-cache", ".tmp", "app/assets", "dist", "node_modules/**/node_modules", "public",
+        "aes.js", "app.js", "bower.json", "gapis.js",
+        "*.ejs", "*.handlebars", "*.html", "*.jade"
     ]
 }
