@@ -147,6 +147,12 @@ $dis: gray;
     border-bottom: 1px solid;
     margin: 0 auto $marginBottom;
 }
+@mixin changeBgColor ($classname, $from, $to) {
+    @keyframes #{$classname} {
+        from { background: $from; }
+        to { background: $to; }
+    }
+}
 
 
 div.blur {
@@ -186,6 +192,10 @@ div.tallerMargin {
 }
 
 
+@include changeBgColor(onlineHandler, #ccc, $on);
+@include changeBgColor(offlineHandler, #ccc, $off);
+@include changeBgColor(disabledHandler, #ccc, $dis);
+
 #fixHeader {
     position: absolute;
     top: $summarySttHeight;
@@ -203,12 +213,15 @@ div.tallerMargin {
             height: $summarySttHeight;
         }
         .on {
+            @include animation(onlineHandler, 800ms, null, null, 800ms, 5);
             background-color: $on;
         }
         .off {
+            @include animation(offlineHandler, 800ms, null, null, 800ms, 5);
             background-color: $off;
         }
         .dis {
+            @include animation(disabledHandler, 800ms, null, null, 800ms, 5);
             background-color: $dis;
         }
     }

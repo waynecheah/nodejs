@@ -1,6 +1,8 @@
 
 iz =
+  env: 'dev'
   wsProcess: []
+  socket: null
   transition:
     fxOut: 'pt-page-moveToLeft',
     fxIn: 'pt-page-moveFromRight',
@@ -22,7 +24,7 @@ iz =
       return
     socket.on 'connect', () ->
       _.pull wsProcess, 'connecting_websocket'
-      connection.onlineHandler()
+      connection.serverOnlineHandler()
       return
     socket.on 'connect_failed', () ->
       _.pull wsProcess, 'connecting_websocket'
@@ -58,6 +60,13 @@ iz =
   connection:
     serverOnline: null
 
+    init: () ->
+      img = 'https://developers.google.com/_static/images/silhouette36.png'
+      $('#internetChecker').on('error', @internetOfflineHandler)
+      .on('load', @internetOnlineHandler).attr 'src', img
+      return
+    # END init
+
     isOffline: () ->
       iz.debug 'Check if server offline'
       serverOnline = @serverOnline = false
@@ -86,17 +95,31 @@ iz =
       return
     # END checkInternet
 
-    onlineHandler: () ->
+    internetOnlineHandler: () ->
+      iz.debug 'Client has internet connectivity'
+      window.onLine = true
       return
-    # END onlineHandler
+    # END internetOnlineHandler
 
-    offlineHandler: () ->
-      $('#page-security div.armBtnWrap').hide()
+    internetOfflineHandler: () ->
+      iz.debug 'Client is disconnected from internet', 'err'
+      window.onLine = false
+      return
+    # END internetOfflineHandler
+
+    serverOnlineHandler: () ->
+      $('#status-summary cloud').removeClasss('off dis').addClass 'on'
+      return
+    # END serverOnlineHandler
+
+    serverOfflineHandler: () ->
+      $('#status-summary cloud').removeClasss('on dis').addClass 'off'
+      $('#status-summary app').removeClasss('on off').addClass 'dis'
       $('.troubles').removeClass('').addClass('text-warning').html 'Unavailable'
       $('.status').removeClass('').addClass('text-warning').html 'Unavailable'
       $('.connection').removeClass('').addClass('text-danger').html 'Disconnected'
       return
-    # END offlineHandler
+    # END serverOfflineHandler
 
     reconnectHandler: () ->
       #notification 'Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000
@@ -171,7 +194,31 @@ iz =
     null
   # END changeIcon
 
-  debug: (msg, type) ->
+  gdebug: (name, collapsed=false) ->
+    if @env is 'pro'
+      return
+
+    if not name
+      console.groupEnd()
+    else
+      if collapsed
+        console.groupCollapsed name
+      else
+        console.group name
+
+    return
+  # END gdebug
+
+  debug: (msg, type='log') ->
+    if @env is 'pro'
+      return
+
+    switch type
+      when 'log' then console.log data
+      when 'err' then console.err data
+      when 'warn' then console.warn data
+      when 'table' then console.table data
+
     return
   # END debug
 

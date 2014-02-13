@@ -72,7 +72,9 @@ module.exports = function (grunt) {
             },
             livereload: {
                 options: {
-                    open: true,
+                    open: {
+                        appName: 'Google Chrome Canary'
+                    },
                     base: [
                         '<%= yeoman.app %>',
                         //'<%= yeoman.dist %>'

@@ -73,7 +73,7 @@ var mapping   = {
 var _data  = {
     info: {
         cn: 'apple1',
-        sn: '1234',
+        sn: '94000015A6198E01',
         pn: 'RaspPi',
         vs: '0.2',
         done: null
