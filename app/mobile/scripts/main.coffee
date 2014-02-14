@@ -4,7 +4,7 @@ iz =
   servers:
     devevlopment: ''
     production: []
-  wsProcess: []
+  progressTasks: []
   socket: null
   transition:
     fxOut: 'pt-page-moveToLeft',
@@ -13,52 +13,8 @@ iz =
     fxRevIn: 'pt-page-moveFromLeft'
 
   init: () ->
+    @connection.init()
     @socketio.init()
-
-    wsProcess  = @wsProcess
-    connection = @connection
-    websocket  = @websocket
-    wsProcess.push 'connecting_websocket'
-
-    socket = io.connect "http://#{document.domain}:8080",
-      'max reconnection attempts': 100
-
-    socket.on 'error', () ->
-      _.pull wsProcess, 'connecting_websocket'
-      connection.isOffline()
-      return
-    socket.on 'connect', () ->
-      _.pull wsProcess, 'connecting_websocket'
-      connection.serverOnlineHandler()
-      return
-    socket.on 'connect_failed', () ->
-      _.pull wsProcess, 'connecting_websocket'
-      connection.isOffline()
-      return
-    socket.on 'disconnect', () ->
-      #notification 'Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000
-      connection.isOffline()
-      return
-    socket.on 'reconnect', () ->
-      _.pull wsProcess, 'connecting_websocket'
-      websocket.loggedSuccess()
-      connection.reconnectHandler()
-      connection.isOffline()
-      return
-    socket.on 'reconnect_failed', () ->
-      _.pull wsProcess, 'connecting_websocket'
-      connection.isOffline()
-      return
-
-    socket.on 'DeviceInformation', () ->
-      return
-    socket.on 'Offline', () ->
-      return
-    socket.on 'DeviceUpdate', () ->
-      return
-    socket.on 'ResponseOnRequest', () ->
-      return
-
     return
   # end init
 
@@ -67,7 +23,6 @@ iz =
     serverList: []
     curServerId: 0
     socket: null
-    wsProcess: []
 
     init: () ->
       servers = iz.servers
@@ -88,7 +43,7 @@ iz =
       @socket = io.connect "http://#{serverInUse}",
         'reconnection limit': 60000 # maximum 60 seconds delay of each reconnection
         'max reconnection attempts': reAttempt
-      @connectedHander()
+      @socketHandler()
 
       return
     # END connect
@@ -105,7 +60,8 @@ iz =
       return
     # END changeServer
 
-    connectedHander: () ->
+    socketHandler: () ->
+      websocket    = iz.websocket
       debug        = iz.debug
       socket       = @socket
       changeServer = @changeServer
@@ -142,14 +98,47 @@ iz =
         debug "Reconnecting to server [#{serverInUse}] for #{retryCount} times"
         retryCount++
         return
+
+      websocket.init socket
+
       return
-    # END connectedHander
+    # END socketHandler
   # END socketio
+
+  sockJS: # TODO(plan): add sockJS support as second option to websocket implementation
+    serverList: []
+    curServerId: 0
+    socket: null
+
+    init: () ->
+      return
+    # END init
+
+    connect: () ->
+      return
+    # END connect
+
+    changeServer: () ->
+      return
+    # END changeServer
+
+    socketHandler: () ->
+      websocket = iz.websocket
+      socket    = @socket
+
+      websocket.init socket
+      return
+    # END socketHandler
+  # END sockJS
 
 
   connection:
     serverOnline: null
     checkOnlineImg: 'https://developers.google.com/_static/images/silhouette36.png'
+    onlineImages: [
+      'https://developers.google.com/_static/images/silhouette36.png'
+      'http://innerzon.com/img/innerzon.png'
+    ]
 
     init: () ->
       $('#internetChecker').on('error', @internetOfflineHandler)
@@ -159,19 +148,20 @@ iz =
     # END init
 
     isOffline: () ->
-      iz.debug 'Check if server offline'
+      debug        = iz.debug
       serverOnline = @serverOnline = false
 
-      @checkServer()
+      debug 'Check if server offline'
+
       @checkInternet()
       setTimeout () ->
         if window.onLine is no
-          iz.debug 'Confirm client is disconnected from internet', 'err'
+          debug 'Confirm client is disconnected from internet', 'err'
           $(window).trigger 'offline' # confirm internet is offline now, trigger offline event
           $(window).trigger 'internetOff'
         else if serverOnline is no
-          iz.debug 'Confirm server is offline', 'err'
-          $(windows).trigger 'offline' # confirm server is offline now, trigger offline event
+          debug 'Confirm server is offline', 'err'
+          $(window).trigger 'offline' # confirm server is offline now, trigger offline event
         return
       , 3000
 
@@ -179,21 +169,23 @@ iz =
     # END isOffline
 
     checkServer: (recheck=false) ->
+      debug = iz.debug
+
       if not xmlhttp
-        wsProcess    = iz.wsProcess
-        serverOnline = @serverOnline
+        progressTasks = iz.progressTasks
+        serverOnline  = @serverOnline
 
         xmlhttp = if window.XMLHttpRequest then new XMLHttpRequest() else new ActiveXObject 'Microsoft.XMLHTTP'
         xmlhttp.onreadystatechange = () ->
           if xmlhttp.readyState is 4 && xmlhttp.status is 200
-            iz.debug 'Server is online now'
+            debug 'Server is online now'
             $(window).trigger 'online'
-            _.pull wsProcess, 'checkServerStatus'
+            _.pull progressTasks, 'checkServerStatus'
             serverOnline = true
           return
 
-        return if recheck is no and wsProcess.indexOf 'checkServerStatus' >= 0 # checking server status is in progress
-        wsProcess.push 'checkServerStatus' if wsProcess.indexOf 'checkServerStatus' < 0 # register task name to progress task list
+        return if recheck is no and progressTasks.indexOf 'checkServerStatus' >= 0 # checking server status is in progress
+        progressTasks.push 'checkServerStatus' if progressTasks.indexOf 'checkServerStatus' < 0 # register task name to progress task list
 
         now = (new Date()).getTime()
         xmlhttp.open 'GET', "js/online.status.js?t=#{now}", true
@@ -208,18 +200,19 @@ iz =
     # END checkServer
 
     checkInternet: (recheck=false) ->
-      wsProcess = iz.wsProcess
+      debug         = iz.debug
+      progressTasks = iz.progressTasks
 
-      return if recheck is no and wsProcess.indexOf 'checkInternet' >= 0 # checking internet status is in progress
-      wsProcess.push 'checkInternet' if wsProcess.indexOf 'checkInternet' < 0 # register task name to progress list
+      return if recheck is no and progressTasks.indexOf 'checkInternet' >= 0 # checking internet status is in progress
+      progressTasks.push 'checkInternet' if progressTasks.indexOf 'checkInternet' < 0 # register task name to progress list
 
       if recheck is no # assign event listener when make the first checking
         $('#internetChecker').one 'load', () ->
-          iz.debug 'Client has internet connectivity now'
+          debug 'Client has internet connectivity now'
           $(window).trigger 'online'
           $(window).trigger 'internetOn'
           window.onLine = true
-          _.pull wsProcess, 'checkInternet'
+          _.pull progressTasks, 'checkInternet'
           return
 
       now = (new Date()).getTime()
@@ -269,6 +262,23 @@ iz =
 
 
   websocket:
+    socket: null
+
+    init: (socket) ->
+      @socket = socket
+
+      socket.on 'DeviceInformation', () ->
+        return
+      socket.on 'Offline', () ->
+        return
+      socket.on 'DeviceUpdate', () ->
+        return
+      socket.on 'ResponseOnRequest', () ->
+        return
+
+      return
+    # END init
+
     loggedSuccess: () ->
       id = if userID then userID else $.cookie 'userID'
       socket.emit 'user logged',
