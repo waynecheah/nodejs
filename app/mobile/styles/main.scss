@@ -196,6 +196,9 @@ div.tallerMargin {
 @include changeBgColor(offlineHandler, #ccc, $off);
 @include changeBgColor(disabledHandler, #ccc, $dis);
 
+#internetChecker {
+    position: absolute;
+}
 #fixHeader {
     position: absolute;
     top: $summarySttHeight;
