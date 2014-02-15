@@ -1,8 +1,11 @@
 
-iz =
+window.iz =
   env: 'dev'
   servers:
-    devevlopment: ''
+    development: [
+      'cheah.homeip.net:8080'
+      'innerzon.com:8080'
+    ]
     production: []
   progressTasks: []
   socket: null
@@ -29,15 +32,17 @@ iz =
       env     = iz.env
 
       servers = if env is 'dev' then servers.development else servers.production
-      @serverList = [servers] if _.isString servers
+      @serverList = if _.isString servers then [servers] else servers
 
-      $(window).on 'internetOn', @connect # make socket connection only when internet enabled
+      $(window).on 'internetOn', @connect.bind @ # make socket connection only when internet enabled
       return
     # END init
 
     connect: () ->
+      debug = iz.debug
+
       serverInUse = @serverList[@curServerId]
-      reAttempt   = if @serverList.length is 1 then 1000 else 6 # 6 times retry equal to 10.5 seconds
+      reAttempt   = if @serverList.length is 1 then 1000 else 5 # 5 times retry equal to 10.5 seconds
 
       debug "Socket.io is connecting to server [#{serverInUse}]"
       @socket = io.connect "http://#{serverInUse}",
@@ -49,11 +54,13 @@ iz =
     # END connect
 
     changeServer: () ->
+      debug     = iz.debug
       nextIndex = @curServerId + 1
 
-      return if not $(window).onLine # internet is down, socket is not able to do reconnect
+      return if not window.onLine # internet is down, socket is not able to do reconnect
       return if @serverList.length is 1 # there is no extra server to switch connection
 
+      debug 'Swtich other server and make connection to it'
       @curServerId = if nextIndex > @serverList.length then 0 else nextIndex
       @connect()
 
@@ -68,18 +75,26 @@ iz =
       serverInUse  = @serverList[@curServerId]
       numServers   = @serverList.length
       retryCount   = 1;
-
-      @socket.on 'error', () ->
-        debug 'An error occurs on Socket.io and it cannot be handled by the other event types', 'err'
+      onError      = () ->
+        debug "Error on Socket.io at server [#{serverInUse}] and it can't be handled by the other event types", 'err'
+        @changeServer()
         return
+      onConnFailed = () ->
+        debug "Socket.io fail to make connection to server [#{serverInUse}]", 'warn'
+        @changeServer()
+        return
+      onRecoFailed = () ->
+        debug "Reconnect to server [#{serverInUse}] failed after #{retryCount} times", 'warn'
+        retryCount = 1
+        if numServers is 1 then socket.socket.connect() else changeServer()
+        return
+
+      @socket.on 'error', onError.bind @
       @socket.on 'connect', () ->
         debug "Socket.io has make connection to server [#{serverInUse}] successfully!"
         $(window).trigger 'serverOn', ['connected']
         return
-      @socket.on 'connect_failed', () ->
-        debug "Socket.io fail to make connection to server [#{serverInUse}]", 'warn'
-        changeServer()
-        return
+      @socket.on 'connect_failed', onConnFailed.bind @
       @socket.on 'disconnect', () ->
         debug "Socket.io is disconnected from server [#{serverInUse}]", 'warn'
         retryCount = 1
@@ -89,11 +104,7 @@ iz =
         debug 'Socket.io has reconnected back to server successfully!'
         $(window).trigger 'serverOn', ['reconnected']
         return
-      @socket.on 'reconnect_failed', () ->
-        debug "Reconnect to server [#{serverInUse}] failed after #{retryCount} times", 'warn'
-        retryCount = 1
-        if numServers is 1 then socket.socket.connect() else changeServer()
-        return
+      @socket.on 'reconnect_failed', onRecoFailed.bind @
       @socket.on 'reconnecting', () ->
         debug "Reconnecting to server [#{serverInUse}] for #{retryCount} times"
         retryCount++
@@ -133,126 +144,157 @@ iz =
 
 
   connection:
-    serverOnline: null
+    curImageId: 0
     checkOnlineImg: 'https://developers.google.com/_static/images/silhouette36.png'
     onlineImages: [
       'https://developers.google.com/_static/images/silhouette36.png'
       'http://innerzon.com/img/innerzon.png'
     ]
+    retryCount: 1
+    recheckDelay: 500
 
     init: () ->
-      $('#internetChecker').on('error', @internetOfflineHandler)
-       .on('load', @internetOnlineHandler).attr 'src', @checkOnlineImg
-      $(window).on('serverOn', @serverOnlineHandler).on 'serverOff', @serverOfflineHandler
+      progressTasks          = iz.progressTasks
+      debug                  = iz.debug
+      retryCount             = @retryCount
+      recheckDelay           = @recheckDelay
+      internetOfflineHandler = @internetOfflineHandler
+      internetOnlineHandler  = @internetOnlineHandler
+      checkInternet          = @checkInternet.bind @
+
+      onLoad = () ->
+        retryCount = 1
+
+        if progressTasks.indexOf('firstInternetDetection') >= 0
+          debug 'Client side has internet connected already'
+          $(window).trigger 'internetOn'
+          _.pull progressTasks, 'firstInternetDetection'
+        else
+          if progressTasks.indexOf('checkIsOffline') >= 0
+            debug 'Internet seems alright, probably only the server is not accessible'
+            _.pull progressTasks, 'checkIsOffline'
+          if progressTasks.indexOf('recheckingInternet') >= 0
+            debug 'Client side is now reconnected to internet'
+            $(window).trigger 'internetOn'
+            _.pull progressTasks, 'recheckingInternet'
+
+        return
+      # END loLoad
+
+      onError = () ->
+        delayTime = retryCount * recheckDelay
+        delayTime = if delayTime > 60000 then 60000 else delayTime # limit delay time in 60 seconds
+
+        if progressTasks.indexOf('firstInternetDetection') >= 0
+          debug 'Client side has no internet enabled', 'err'
+          internetOfflineHandler()
+          _.pull progressTasks, 'firstInternetDetection'
+        else
+          if progressTasks.indexOf('checkIsOffline') >= 0 # confirmation check from disconnection
+            debug 'Confirm client side is disconnected from internet', 'err'
+            $(window).trigger 'offline' # confirm internet is offline now, trigger offline event
+            $(window).trigger 'internetOff'
+            _.pull progressTasks, 'checkIsOffline'
+          if progressTasks.indexOf('recheckingInternet') >= 0 # still offline, repeat checking internet later
+            _.pull progressTasks, 'recheckingInternet'
+
+        setTimeout () -> # set delay period before re-attempt checking
+          return if progressTasks.indexOf('checkIsOffline') >= 0 # avoid concurrent crash with rechecking progress
+
+          debug "Retry checking internet for #{retryCount} times"
+          retryCount++
+          progressTasks.push 'recheckingInternet' # register recheking task name to progress list
+          checkInternet()
+          return
+        , delayTime
+
+        return
+      # END onError
+
+      onServerOff = () ->
+        @serverOfflineHandler()
+        @isOffline()
+        return
+      # END onServerOff
+
+      debug 'Run the very first internet checking..'
+      progressTasks.push 'firstInternetDetection'
+
+      $('#internetChecker').on('error', onError).on('load', onLoad)
+       .attr 'src', @onlineImages[0] # first attempt checking if internet accessible
+
+      $(window).on('internetOff', () ->
+        internetOfflineHandler()
+      ).on('internetOn', () ->
+        internetOnlineHandler()
+      ).on('serverOff', onServerOff.bind @).on 'serverOn', @serverOnlineHandler
       return
     # END init
 
-    isOffline: () ->
-      debug        = iz.debug
-      serverOnline = @serverOnline = false
+    isOffline: () -> # do checking if internet is dropped from connection
+      progressTasks = iz.progressTasks
+      debug         = iz.debug
 
-      debug 'Check if server offline'
+      debug 'Check if client side internet is dropped from connection'
+      progressTasks.push 'checkIsOffline'
 
-      @checkInternet()
-      setTimeout () ->
-        if window.onLine is no
-          debug 'Confirm client is disconnected from internet', 'err'
-          $(window).trigger 'offline' # confirm internet is offline now, trigger offline event
-          $(window).trigger 'internetOff'
-        else if serverOnline is no
-          debug 'Confirm server is offline', 'err'
-          $(window).trigger 'offline' # confirm server is offline now, trigger offline event
-        return
-      , 3000
+      if progressTasks.indexOf('recheckingInternet') < 0 # avoid concurrent crash with rechecking progress
+        @checkInternet() # confirmation if internet dropped should run without any delay time
 
       return
     # END isOffline
 
-    checkServer: (recheck=false) ->
-      debug = iz.debug
+    checkInternet: () ->
+      debug  = iz.debug
+      nextId = @curImageId + 1
 
-      if not xmlhttp
-        progressTasks = iz.progressTasks
-        serverOnline  = @serverOnline
+      if @onlineImages.length is 1
+        imgUrl = @onlineImages[0]
+      else
+        nextId      = if @onlineImages.length <= nextId then 0 else nextId
+        imgUrl      = @onlineImages[nextId]
+        @curImageId = nextId
 
-        xmlhttp = if window.XMLHttpRequest then new XMLHttpRequest() else new ActiveXObject 'Microsoft.XMLHTTP'
-        xmlhttp.onreadystatechange = () ->
-          if xmlhttp.readyState is 4 && xmlhttp.status is 200
-            debug 'Server is online now'
-            $(window).trigger 'online'
-            _.pull progressTasks, 'checkServerStatus'
-            serverOnline = true
-          return
-
-        return if recheck is no and progressTasks.indexOf 'checkServerStatus' >= 0 # checking server status is in progress
-        progressTasks.push 'checkServerStatus' if progressTasks.indexOf 'checkServerStatus' < 0 # register task name to progress task list
-
-        now = (new Date()).getTime()
-        xmlhttp.open 'GET', "js/online.status.js?t=#{now}", true
-        xmlhttp.send()
-
-        setTimeout () ->
-          checkServer true if not serverOnline # erver still down
-          return
-        , 3000
-
-      return
-    # END checkServer
-
-    checkInternet: (recheck=false) ->
-      debug         = iz.debug
-      progressTasks = iz.progressTasks
-
-      return if recheck is no and progressTasks.indexOf 'checkInternet' >= 0 # checking internet status is in progress
-      progressTasks.push 'checkInternet' if progressTasks.indexOf 'checkInternet' < 0 # register task name to progress list
-
-      if recheck is no # assign event listener when make the first checking
-        $('#internetChecker').one 'load', () ->
-          debug 'Client has internet connectivity now'
-          $(window).trigger 'online'
-          $(window).trigger 'internetOn'
-          window.onLine = true
-          _.pull progressTasks, 'checkInternet'
-          return
-
+      debug "Check internet status by using online image [#{imgUrl}]"
       now = (new Date()).getTime()
-      $('#internetChecker').attr 'src', "#{@checkOnlineImg}?t=#{now}"
-
-      setTimeout () ->
-        checkInternet true if not window.onLine # internet still down
-        return
-      , 3000
+      $('#internetChecker').attr 'src', "#{imgUrl}?t=#{now}"
 
       return
     # END checkInternet
 
     internetOnlineHandler: () ->
-      iz.debug 'Client has internet connectivity'
+      iz.debug 'Changing internet status to online now'
+      $('#status-summary .line').removeClass('off dis').addClass 'on'
       window.onLine = true
       return
     # END internetOnlineHandler
 
     internetOfflineHandler: () ->
-      iz.debug 'Client is disconnected from internet', 'err'
+      iz.debug 'Changing internet status to offline now', 'warn'
+      $('#status-summary .line').removeClass('on dis').addClass 'off'
+      $('#status-summary .cloud').removeClass('on off').addClass 'dis'
+      $('#status-summary .app').removeClass('on off').addClass 'dis'
       window.onLine = false
       return
     # END internetOfflineHandler
 
     serverOnlineHandler: (e, type) ->
+      websocket = iz.websocket
+
       if type is 'reconnected'
         #notification 'Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000
-        $('div.header span.i-server').removeClass('').addClass "#{icoOnline}text-success"
+        #$(window).trigger 'internetOn' # maybe not because of web services API
         return
 
-      $('#status-summary cloud').removeClasss('off dis').addClass 'on'
+      $('#status-summary .cloud').removeClass('off dis').addClass 'on'
       websocket.loggedSuccess()
       return
     # END serverOnlineHandler
 
     serverOfflineHandler: () ->
       #notification 'Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000
-      $('#status-summary cloud').removeClasss('on dis').addClass 'off'
-      $('#status-summary app').removeClasss('on off').addClass 'dis'
+      $('#status-summary .cloud').removeClass('on dis').addClass 'off'
+      $('#status-summary .app').removeClass('on off').addClass 'dis'
       $('.troubles').removeClass('').addClass('text-warning').html 'Unavailable'
       $('.status').removeClass('').addClass('text-warning').html 'Unavailable'
       $('.connection').removeClass('').addClass('text-danger').html 'Disconnected'
@@ -263,6 +305,7 @@ iz =
 
   websocket:
     socket: null
+    userID: null
 
     init: (socket) ->
       @socket = socket
@@ -280,8 +323,8 @@ iz =
     # END init
 
     loggedSuccess: () ->
-      id = if userID then userID else $.cookie 'userID'
-      socket.emit 'user logged',
+      id = if @userID then @userID else 0 #$.cookie 'userID'
+      @socket.emit 'user logged',
         clientId: id
       return
     # END loggedSuccess
@@ -289,11 +332,12 @@ iz =
 
 
   changePage: (from, to, reverse=false, ts=@transition) ->
+    debug = iz.debug
     fPage = "div.pt-page-#{from}"
     tPage = "div.pt-page-#{to}"
     fxIn  = if reverse then ts.fxRevIn else ts.fxIn
     fxOut = if reverse then ts.fxRevOut else ts.fxOut
-    mrgn  = $("#{tPage} div.header").height()
+    #mrgn  = $("#{tPage} div.header").height()
 
     sHeight = $(window).height()
     $("#{tPage} div.body").css 'min-height', "#{sHeight}px"
@@ -309,8 +353,8 @@ iz =
 
     setTimeout () ->
       $("#{tPage} div.body").css 'min-height', 200
-      #console.log 'callback page '+tPage+' compare sHeight '+sHeight
-      #console.log $("#{tPage}").height()
+      debug "callback page #{tPage} compare sHeight #{sHeight}"
+      debug $("#{tPage}").height()
       $(fPage).removeClass "pt-page-current #{fxOut}"
       $(tPage).removeClass "#{fxIn} pt-page-ontop"
 
@@ -352,29 +396,25 @@ iz =
     if not name
       console.groupEnd()
     else
-      if collapsed
-        console.groupCollapsed name
-      else
-        console.group name
+      if collapsed then console.groupCollapsed name else console.group name
 
     return
   # END gdebug
 
   debug: (msg, type='log') ->
-    if @env is 'pro'
-      return
+    return if @env is 'pro'
 
     switch type
-      when 'log' then console.log data
-      when 'err' then console.err data
-      when 'warn' then console.warn data
-      when 'table' then console.table data
+      when 'log' then console.log msg
+      when 'err' then console.error msg
+      when 'warn' then console.warn msg
+      when 'table' then console.table msg
 
     return
   # END debug
 
 $ () ->
-  #init()
+  iz.init()
 
   _.each $('.fixHeader,.header'), (el) ->
     Hammer(el).on 'dragdown', () ->
