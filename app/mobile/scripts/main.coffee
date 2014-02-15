@@ -30,11 +30,20 @@ window.iz =
     init: () ->
       servers = iz.servers
       env     = iz.env
+      #connect = @connect.bind @
+
+      onInternetOn = () ->
+        if @socket
+          @socket.socket.reconnect()
+        else
+          @connect()
+        return
+      # END onInternetOn
 
       servers = if env is 'dev' then servers.development else servers.production
       @serverList = if _.isString servers then [servers] else servers
 
-      $(window).on 'internetOn', @connect.bind @ # make socket connection only when internet enabled
+      $(window).on 'internetOn', onInternetOn.bind @ # only make socket connection when internet enabled
       return
     # END init
 
@@ -42,7 +51,7 @@ window.iz =
       debug = iz.debug
 
       serverInUse = @serverList[@curServerId]
-      reAttempt   = if @serverList.length is 1 then 1000 else 5 # 5 times retry equal to 10.5 seconds
+      reAttempt   = if @serverList.length is 1 then 1000 else 5 # 5 times retry equal to 7.5 seconds
 
       debug "Socket.io is connecting to server [#{serverInUse}]"
       @socket = io.connect "http://#{serverInUse}",
@@ -91,17 +100,20 @@ window.iz =
 
       @socket.on 'error', onError.bind @
       @socket.on 'connect', () ->
-        debug "Socket.io has make connection to server [#{serverInUse}] successfully!"
+        debug "Socket.io has make connection to server [#{serverInUse}] successfully!", 'info'
         $(window).trigger 'serverOn', ['connected']
         return
       @socket.on 'connect_failed', onConnFailed.bind @
+      @socket.on 'connecting', () ->
+        debug 'Socket.io fires connecting event'
+        return
       @socket.on 'disconnect', () ->
         debug "Socket.io is disconnected from server [#{serverInUse}]", 'warn'
         retryCount = 1
         $(window).trigger 'serverOff'
         return
       @socket.on 'reconnect', () ->
-        debug 'Socket.io has reconnected back to server successfully!'
+        debug 'Socket.io has reconnected back to server successfully!', 'info'
         $(window).trigger 'serverOn', ['reconnected']
         return
       @socket.on 'reconnect_failed', onRecoFailed.bind @
@@ -166,7 +178,7 @@ window.iz =
         retryCount = 1
 
         if progressTasks.indexOf('firstInternetDetection') >= 0
-          debug 'Client side has internet connected already'
+          debug 'Client side has internet connected already', 'info'
           $(window).trigger 'internetOn'
           _.pull progressTasks, 'firstInternetDetection'
         else
@@ -174,7 +186,7 @@ window.iz =
             debug 'Internet seems alright, probably only the server is not accessible'
             _.pull progressTasks, 'checkIsOffline'
           if progressTasks.indexOf('recheckingInternet') >= 0
-            debug 'Client side is now reconnected to internet'
+            debug 'Client side is now reconnected to internet', 'info'
             $(window).trigger 'internetOn'
             _.pull progressTasks, 'recheckingInternet'
 
@@ -279,6 +291,7 @@ window.iz =
     # END internetOfflineHandler
 
     serverOnlineHandler: (e, type) ->
+      iz.debug 'Changing server status is connected now'
       websocket = iz.websocket
 
       if type is 'reconnected'
@@ -292,6 +305,7 @@ window.iz =
     # END serverOnlineHandler
 
     serverOfflineHandler: () ->
+      iz.debug 'Changing server status is disconnected now'
       #notification 'Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000
       $('#status-summary .cloud').removeClass('on dis').addClass 'off'
       $('#status-summary .app').removeClass('on off').addClass 'dis'
@@ -406,6 +420,7 @@ window.iz =
 
     switch type
       when 'log' then console.log msg
+      when 'info' then console.info msg
       when 'err' then console.error msg
       when 'warn' then console.warn msg
       when 'table' then console.table msg
