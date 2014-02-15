@@ -291,14 +291,15 @@ window.iz =
     # END internetOfflineHandler
 
     serverOnlineHandler: (e, type) ->
-      iz.debug 'Changing server status is connected now'
+      debug     = iz.debug
       websocket = iz.websocket
 
       if type is 'reconnected'
         #notification 'Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000
-        #$(window).trigger 'internetOn' # maybe not because of web services API
+        #$(window).trigger 'internetOn' # maybe remove this line, because of web services API
         return
 
+      debug 'Changing server status is connected now'
       $('#status-summary .cloud').removeClass('off dis').addClass 'on'
       websocket.loggedSuccess()
       return
@@ -324,6 +325,15 @@ window.iz =
     init: (socket) ->
       @socket = socket
 
+      onServerOn = () ->
+        return if not @socket or not @userID
+
+        # only when websocket connection to server has established and user has logined
+        @socket.emit 'GET_DEVICE_INFO', userID: @userID, token: '123456'
+
+        return
+      # END onServerOn
+
       socket.on 'DeviceInformation', () ->
         return
       socket.on 'Offline', () ->
@@ -332,6 +342,8 @@ window.iz =
         return
       socket.on 'ResponseOnRequest', () ->
         return
+
+      $(window).on('serverOn', onServerOn.bind @)
 
       return
     # END init

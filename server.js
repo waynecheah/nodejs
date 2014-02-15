@@ -1168,6 +1168,7 @@ io.configure('production', function(){
     io.enable('browser client etag');
     io.enable('browser client gzip');
     io.set('log level', 1); // 0: error, 1: warn, 2: info, 3: debug
+    io.set('heartbeat interval', 5);
 
     io.set('transports', [
         'websocket',
@@ -1178,7 +1179,8 @@ io.configure('production', function(){
     ]);
 });
 io.configure('development', function(){
-    io.set('log level', 2);
+    io.set('log level', 2); // 0: error, 1: warn, 2: info, 3: debug
+    io.set('heartbeat interval', 3);
     io.set('transports', ['websocket']);
 });
 
@@ -1186,20 +1188,25 @@ log('s', 'i', 'Socket.io listening to '+host+':8080');
 io.sockets.on('connection', function(websocket) {
     log('w', 'i', 'web client '+websocket.id+' connected');
     websocket.data = {
-        wsid: websocket.id
+        wsid: websocket.id,
+        logged: false
     };
     websockets.push(websocket); // assign websocket to global variable
 
-
-    websocket.on('user logged', function(data){ // once user has login to system
-        emitDeviceInfo(websocket); // get device information
-    });
     websocket.on('disconnect', function () { // disconnect - io predefined status
         var i = websockets.indexOf(websocket);
         log('w', 'i', 'web client '+websocket.id+' has disconnected');
         websockets.splice(i, 1);
 
         io.sockets.emit('user disconnected');
+    });
+    websocket.on('GET_DEVICE_INFO', function(data){ // once user has login to system
+        var cond = {
+            username: data.userId,
+            'accessToken.code': data.token
+        };
+
+        emitDeviceInfo(websocket); // get device information
     });
     websocket.on('app update', function(type, data){
         appUpdate(type, data, function(err, doc){
@@ -1416,6 +1423,7 @@ io.sockets.on('connection', function(websocket) {
         }
     });
 });
+
 controllers.clients.testing({ test:'input' }, function(obj){
     log('s', 'd', obj);
 });

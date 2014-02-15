@@ -8,6 +8,9 @@ exports.Schema = mongoose.Schema
   name: String
   macAdd: type: String, require: true
   serial: type:String, require: true, index:true
+  owner: String
+  users: type:Array, index:true
+  registerOn: Date
   lastSync: Date
 # END Schema
 

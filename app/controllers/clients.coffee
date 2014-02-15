@@ -4,6 +4,7 @@ moment   = require 'moment'
 commonFn = require '../../lib/common'
 log      = require '../../lib/log'
 Client   = mongoose.model 'Client'
+#Device   = mongoose.model 'Device'
 
 Clients =
   register: (data, callback) ->
@@ -25,6 +26,8 @@ Clients =
       else if res is -1
         status = false
         taken  = true
+      return
+    # END resFn
 
       res =
         status: status
@@ -55,8 +58,19 @@ Clients =
           callback false, msg
         resFn doc
 
-    null
+    return
   # END register
+
+  findDevices: (data, callback) ->
+    resFn = (data) ->
+      callback data
+      return
+    # END resFn
+
+    resFn 'nothing'
+
+    return
+  # END findDevices
 
   appSignin: (data, callback) ->
     form   = data.form
