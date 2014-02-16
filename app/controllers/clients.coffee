@@ -239,10 +239,15 @@ Clients =
     log 's', 'w', 'Showing something really cool'
     log 's', 'd', data
 
-    Client.findOne {}, 'username password fullname', skip: 1, (err, doc) ->
+    fields =
+      _id: false
+      username: 1
+      fullname: 1
+
+    Client.find {}, fields, skip: 0, (err, docs) ->
       throw err if err is true
-      log 's', 'd', doc
-      callback test: 'this is callback'
+      log 's', 'd', docs
+      callback test: 'this is callback after all tasks are done'
 
     test: 'output'
   # END testing

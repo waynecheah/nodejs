@@ -668,7 +668,7 @@ Devices =
 
       return
 
-    return socket
+    socket
   # END main
 
   getSockets: () ->

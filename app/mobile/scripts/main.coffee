@@ -3,10 +3,14 @@ window.iz =
   env: 'dev'
   servers:
     development: [
+      '127.0.0.1:8080'
       'cheah.homeip.net:8080'
       'innerzon.com:8080'
     ]
-    production: []
+    production: [
+      'innerzon.com:8080'
+      'innerzon.com.my:8080'
+    ]
   progressTasks: []
   socket: null
   transition:

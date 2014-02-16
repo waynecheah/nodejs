@@ -15,6 +15,7 @@ var nodemailer   = require('nodemailer');
 var randomString = require('random-string');
 var models       = require('./app/models');
 var controllers  = require('./app/controllers');
+var websockets2  = require('./app/websockets');
 var config       = require('./config/config');
 var commonFn     = require('./lib/common');
 var log          = require('./lib/log');
@@ -1185,10 +1186,14 @@ io.configure('development', function(){
 });
 
 log('s', 'i', 'Socket.io listening to '+host+':8080');
+io.sockets.on('connection', function(websocket){
+    websockets2.main(io, websocket);
+});
 io.sockets.on('connection', function(websocket) {
     log('w', 'i', 'web client '+websocket.id+' connected');
     websocket.data = {
         wsid: websocket.id,
+        userId: null,
         logged: false
     };
     websockets.push(websocket); // assign websocket to global variable
