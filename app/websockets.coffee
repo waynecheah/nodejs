@@ -11,44 +11,84 @@ io          = null
 sockets     = []
 
 getDeviceInfo = (data, callback) ->
-  cond    = users: data.userId
-  fields  =
-    id: false
-    serial: 1
+  errors  = []
+  resData = null
+  total   = 0
+  noDone  = 0
 
   dbCbFn = (err, docs) ->
     if err
       log 'w', 'e', err
       callback
         status: false
-        err: err
+        error: err
       return
 
+    total = docs.length
     curOnlineDevices = controllers.devices.getSockets()
 
     _.each docs, (doc, i) ->
+      resData[i] =
+        serial: doc.serial
+        info: doc
+        online: false
       _.each curOnlineDevices, (device) -> # find if user's device is connected to server
-        return if 'data' of docs[i] is yes
-        docs[i].data = device.data if doc.serial is device.data.info.sn
+        return if 'data' of resData[i] is yes
+
+        if doc.serial is device.data.info.sn
+          resData[i] =
+            serial: doc.serial
+            data: device.data
+            online: true
         return
       return
-    _.each docs, (doc, i) ->
+
+    _.each resData, (doc, i) ->
       return if 'data' of doc is yes
+
       cond    = serial: doc.serial
       fields  = 'deviceId info status modified'
       options = sort: modified: -1
-
       Status.find cond, fields, options, (err, doc) ->
-        return
-      return
+        dbCbFn2 err, doc, i
 
-    callback
-      status: true
-      devices: docs
+      return
 
     return
   # END dbCbFn
 
+  dbCbFn2 = (err, doc, i) ->
+    noDone++
+
+    if err
+      log 'w', 'e', err
+      errors.push err
+
+      if noDone is total
+        callback
+          status: false
+          errors: errors
+
+      return
+    else if doc
+      resData[i].data = doc
+      delete resData[i].info
+
+    if noDone is total # run callback only when all DB process are done
+      callback
+        status: true
+        devices: resData
+
+    return
+  # END dbCbFn2
+
+
+  cond   = users: data.userId
+  fields =
+    id: false
+    name: 1
+    macAdd: 1
+    serial: 1
   Device.find cond, fields, dbCbFn
 
   return

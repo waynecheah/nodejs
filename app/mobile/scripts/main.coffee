@@ -1,5 +1,5 @@
 
-window.iz =
+iz =
   env: 'dev'
   servers:
     development: [
@@ -26,6 +26,7 @@ window.iz =
   # end init
 
 
+  ## dependency modules: null ##
   socketio:
     serverList: []
     curServerId: 0
@@ -62,6 +63,7 @@ window.iz =
         'reconnection limit': 60000 # maximum 60 seconds delay of each reconnection
         'max reconnection attempts': reAttempt
       @socketHandler()
+      $(window).trigger 'initSocketListener', [@socket] # fire and check any other listener wants attact to socket
 
       return
     # END connect
@@ -81,7 +83,6 @@ window.iz =
     # END changeServer
 
     socketHandler: () ->
-      websocket    = iz.websocket
       debug        = iz.debug
       socket       = @socket
       changeServer = @changeServer
@@ -126,12 +127,11 @@ window.iz =
         retryCount++
         return
 
-      websocket.init socket
-
       return
     # END socketHandler
   # END socketio
 
+  ## dependency modules: null ##
   sockJS: # TODO(plan): add sockJS support as second option to websocket implementation
     serverList: []
     curServerId: 0
@@ -142,6 +142,7 @@ window.iz =
     # END init
 
     connect: () ->
+      $(window).trigger 'initSocketListener', [@socket] # fire and check any other listener wants attact to socket
       return
     # END connect
 
@@ -150,15 +151,13 @@ window.iz =
     # END changeServer
 
     socketHandler: () ->
-      websocket = iz.websocket
-      socket    = @socket
-
-      websocket.init socket
+      socket = @socket
       return
     # END socketHandler
   # END sockJS
 
 
+  ## dependency modules: null ##
   connection:
     curImageId: 0
     checkOnlineImg: 'https://developers.google.com/_static/images/silhouette36.png'
@@ -169,16 +168,14 @@ window.iz =
     retryCount: 1
     recheckDelay: 500
 
-    init: () ->
-      progressTasks          = iz.progressTasks
-      debug                  = iz.debug
-      retryCount             = @retryCount
-      recheckDelay           = @recheckDelay
-      internetOfflineHandler = @internetOfflineHandler
-      internetOnlineHandler  = @internetOnlineHandler
-      checkInternet          = @checkInternet.bind @
+    init: ->
+      progressTasks = iz.progressTasks
+      debug         = iz.debug
+      retryCount    = @retryCount
+      recheckDelay  = @recheckDelay
+      checkInternet = @checkInternet.bind @
 
-      onLoad = () ->
+      onLoad = ->
         retryCount = 1
 
         if progressTasks.indexOf('firstInternetDetection') >= 0
@@ -197,19 +194,19 @@ window.iz =
         return
       # END loLoad
 
-      onError = () ->
+      onError = ->
         delayTime = retryCount * recheckDelay
         delayTime = if delayTime > 60000 then 60000 else delayTime # limit delay time in 60 seconds
 
         if progressTasks.indexOf('firstInternetDetection') >= 0
           debug 'Client side has no internet enabled', 'err'
-          internetOfflineHandler()
+          $(window).trigger 'internetOff', ['startup']
           _.pull progressTasks, 'firstInternetDetection'
         else
           if progressTasks.indexOf('checkIsOffline') >= 0 # confirmation check from disconnection
             debug 'Confirm client side is disconnected from internet', 'err'
             $(window).trigger 'offline' # confirm internet is offline now, trigger offline event
-            $(window).trigger 'internetOff'
+            $(window).trigger 'internetOff', ['between']
             _.pull progressTasks, 'checkIsOffline'
           if progressTasks.indexOf('recheckingInternet') >= 0 # still offline, repeat checking internet later
             _.pull progressTasks, 'recheckingInternet'
@@ -227,7 +224,7 @@ window.iz =
         return
       # END onError
 
-      onServerOff = () ->
+      onServerOff = ->
         @serverOfflineHandler()
         @isOffline()
         return
@@ -239,15 +236,13 @@ window.iz =
       $('#internetChecker').on('error', onError).on('load', onLoad)
        .attr 'src', @onlineImages[0] # first attempt checking if internet accessible
 
-      $(window).on('internetOff', () ->
-        internetOfflineHandler()
-      ).on('internetOn', () ->
-        internetOnlineHandler()
-      ).on('serverOff', onServerOff.bind @).on 'serverOn', @serverOnlineHandler
+      $(window).on('internetOff', @internetOfflineHandler).on('internetOn', @internetOnlineHandler)
+      .on('deviceOn', @deviceOnlineHandler).on('deviceOn', @deviceOfflineHandler)
+      .on('serverOff', onServerOff.bind @).on 'serverOn', @serverOnlineHandler
       return
     # END init
 
-    isOffline: () -> # do checking if internet is dropped from connection
+    isOffline: -> # do checking if internet is dropped from connection
       progressTasks = iz.progressTasks
       debug         = iz.debug
 
@@ -260,7 +255,7 @@ window.iz =
       return
     # END isOffline
 
-    checkInternet: () ->
+    checkInternet: ->
       debug  = iz.debug
       nextId = @curImageId + 1
 
@@ -278,14 +273,14 @@ window.iz =
       return
     # END checkInternet
 
-    internetOnlineHandler: () ->
+    internetOnlineHandler: ->
       iz.debug 'Changing internet status to online now'
       $('#status-summary .line').removeClass('off dis').addClass 'on'
       window.onLine = true
       return
     # END internetOnlineHandler
 
-    internetOfflineHandler: () ->
+    internetOfflineHandler: (e, stage) ->
       iz.debug 'Changing internet status to offline now', 'warn'
       $('#status-summary .line').removeClass('on dis').addClass 'off'
       $('#status-summary .cloud').removeClass('on off').addClass 'dis'
@@ -295,8 +290,7 @@ window.iz =
     # END internetOfflineHandler
 
     serverOnlineHandler: (e, type) ->
-      debug     = iz.debug
-      websocket = iz.websocket
+      debug = iz.debug
 
       if type is 'reconnected'
         #notification 'Server Online', 'Server is detected back to online now, this may due to maintenance completed.', 10000
@@ -305,11 +299,10 @@ window.iz =
 
       debug 'Changing server status is connected now'
       $('#status-summary .cloud').removeClass('off dis').addClass 'on'
-      websocket.loggedSuccess()
       return
     # END serverOnlineHandler
 
-    serverOfflineHandler: () ->
+    serverOfflineHandler: ->
       iz.debug 'Changing server status is disconnected now'
       #notification 'Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000
       $('#status-summary .cloud').removeClass('on dis').addClass 'off'
@@ -319,46 +312,20 @@ window.iz =
       $('.connection').removeClass('').addClass('text-danger').html 'Disconnected'
       return
     # END serverOfflineHandler
+
+    deviceOnlineHandler: ->
+      iz.debug 'Changing device status to online now'
+      $('#status-summary .app').removeClass('off dis').addClass 'on'
+      return
+    # END deviceOnlineHandler
+
+    deviceOfflineHandler: ->
+      iz.debug 'Changing device status to offline now', 'warn'
+      $('#status-summary .app').removeClass('on dis').addClass 'off'
+      return
+    # END deviceOfflineHandler
   # END connection
 
-
-  websocket:
-    socket: null
-    userID: null
-
-    init: (socket) ->
-      @socket = socket
-
-      onServerOn = () ->
-        return if not @socket or not @userID
-
-        # only when websocket connection to server has established and user has logined
-        @socket.emit 'GET_DEVICE_INFO', userID: @userID, token: '123456'
-
-        return
-      # END onServerOn
-
-      socket.on 'DeviceInformation', () ->
-        return
-      socket.on 'Offline', () ->
-        return
-      socket.on 'DeviceUpdate', () ->
-        return
-      socket.on 'ResponseOnRequest', () ->
-        return
-
-      $(window).on('serverOn', onServerOn.bind @)
-
-      return
-    # END init
-
-    loggedSuccess: () ->
-      id = if @userID then @userID else 0 #$.cookie 'userID'
-      @socket.emit 'user logged',
-        clientId: id
-      return
-    # END loggedSuccess
-  # END websocket
 
 
   changePage: (from, to, reverse=false, ts=@transition) ->
@@ -475,3 +442,90 @@ $ () ->
     null
 
   null
+
+
+## START module websocket
+## dependency modules: null ##
+do (app = iz) ->
+  init = (e, socket) ->
+    app.websocket.init socket
+    return
+  # END init
+
+  updateDeviceStatus = (data) ->
+    eName = if data.online then 'deviceOn' else 'deviceOff'
+    $(window).trigger eName
+
+    # call some functions to update all statuses
+    # func 1
+    # func 2
+
+    return
+  # END updateDeviceStatus
+
+
+  app.websocket =
+    socket: null
+    userId: 'kennymetta@gmail.com'
+    devices: null
+    serverOnListened: false
+
+    init: (socket) ->
+      that    = @
+      @socket = socket
+
+      socket.on 'DeviceInformation', (data) ->
+        that.devices = data
+        updateDeviceStatus data
+        return
+      socket.on 'Offline', () ->
+        return
+      socket.on 'DeviceUpdate', () ->
+        return
+      socket.on 'ResponseOnRequest', () ->
+        return
+
+
+      return if @serverOnListened
+      @serverOnListened = true
+
+      onServerOn = (e, type) ->
+        return if not @socket or not @userId
+
+        # only when websocket connection to server has established and user has logined
+        @socket.emit 'GET_DEVICE_INFO', userID: @userId, token: '123456'
+
+        # TODO(remove): to be replaced by line above
+        id = if @userID then @userID else 0 #$.cookie 'userID'
+        @socket.emit 'user logged', clientId: id
+
+        return
+      # END onServerOn
+
+      $(window).on('serverOn', onServerOn.bind @)
+
+      return
+    # END init
+  # END websocket
+
+  $(window).on 'initSocketListener', init
+
+  app
+# END module websocket
+
+
+do (app = iz) ->
+  private_property = null
+  private_method = ->
+  private_method = ->
+    protected_method = () ->
+    return
+
+  app.module =
+    property: null
+    method: ->
+
+  app
+
+
+#window.iz = iz
