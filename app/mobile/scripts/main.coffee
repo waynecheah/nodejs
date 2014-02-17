@@ -447,6 +447,8 @@ $ () ->
 ## START module websocket
 ## dependency modules: null ##
 do (app = iz) ->
+  respondCallback = {}
+
   init = (e, socket) ->
     app.websocket.init socket
     return
@@ -462,6 +464,12 @@ do (app = iz) ->
 
     return
   # END updateDeviceStatus
+
+  registerRespond = (req, callback) ->
+    return if req of respondCallback is true
+    respondCallback[req] = callback
+    return
+  # END registerRespond
 
 
   app.websocket =
@@ -482,7 +490,8 @@ do (app = iz) ->
         return
       socket.on 'DeviceUpdate', () ->
         return
-      socket.on 'ResponseOnRequest', () ->
+      socket.on 'ResponseOnRequest', (req, data) ->
+        respondCallback[req] data if req of respondCallback is true
         return
 
 
@@ -506,6 +515,12 @@ do (app = iz) ->
 
       return
     # END init
+
+    emitReq: (req, data, resCallback=null) ->
+      registerRespond req, resCallback if resCallback
+      @socket.emit 'APP_REQUEST', req, data
+      return
+    # END emitReq
   # END websocket
 
   $(window).on 'initSocketListener', init
@@ -514,6 +529,58 @@ do (app = iz) ->
 # END module websocket
 
 
+## START module appInteraction
+## dependency modules: websocket ##
+do (app = iz) ->
+  websocket = app.websocket
+
+  emitReq = (req, data) ->
+    websocket.emitReq req, data
+    return
+  # END emitReq
+
+
+  app.appInteraction =
+    armDisarmed: ->
+      cur  = websocket.devices[0].data.status.pt[0]
+      info = cur.split ','
+      stt  = if info[1] then 0 else 1
+
+      callback = (data) ->
+        return if data.status is false
+        websocket.devices[0].data.status.pt[0] = "1,#{stt},103"
+        return
+      # END callback
+
+      emitReq '/events/armDisarmed', no: 1, cmd: stt, password: 1234, callback
+
+      return
+    # END armDisarmed
+
+    updateLights: ->
+      return
+    # END updateLights
+
+
+    userLogin: ->
+      return
+    # END userLogin
+
+    userLogout: ->
+      return
+    # END userLogout
+
+    userRegister: ->
+      return
+    # END userRegister
+  # END appInteraction
+
+  app
+# END module appInteraction
+
+
+## START module websocket
+## dependency modules: null ##
 do (app = iz) ->
   private_property = null
   private_method = ->
@@ -524,8 +591,10 @@ do (app = iz) ->
   app.module =
     property: null
     method: ->
+  # END module
 
   app
+# END module name
 
 
 #window.iz = iz
