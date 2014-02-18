@@ -123,7 +123,7 @@ Websockets =
 
       delete websocket.data
 
-      i = sockets.indexOf socket
+      i = sockets.indexOf websocket
       websocket.splice i, 1 if i >= 0
       io.sockets.emit 'UserDisconnected'
 
@@ -149,11 +149,11 @@ Websockets =
         if contrl of controllers is yes and method of controllers[contrl] is yes # controller and method are found
           obj =
             form: data
-            ws: socket.data
+            ws: websocket.data
 
           controllers[contrl][method] obj, (res, sessions) -> # call execution
             log 's', 'i', "Processed controller [#{contr}] and method [#{method}] has completed"
-            socket.emit 'ResponseOnRequest', req, res
+            websocket.emit 'ResponseOnRequest', req, res
             _.assign socket.data, sessions if sessions? and _.isObject sessions
             return
 
