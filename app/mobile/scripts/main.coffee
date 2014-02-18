@@ -4,8 +4,8 @@ iz =
   servers:
     development: [
       '127.0.0.1:8080'
+      'innerzon.com:8081'
       'cheah.homeip.net:8080'
-      'innerzon.com:8080'
     ]
     production: [
       'innerzon.com:8080'
@@ -505,8 +505,8 @@ do (app = iz) ->
         @socket.emit 'GET_DEVICE_INFO', userID: @userId, token: '123456'
 
         # TODO(remove): to be replaced by line above
-        id = if @userID then @userID else 0 #$.cookie 'userID'
-        @socket.emit 'user logged', clientId: id
+        #id = if @userID then @userID else 0 #$.cookie 'userID'
+        #@socket.emit 'user logged', clientId: id
 
         return
       # END onServerOn

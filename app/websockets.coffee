@@ -83,7 +83,7 @@ getDeviceInfo = (data, callback) ->
   # END dbCbFn2
 
 
-  cond   = users: data.userId
+  cond   = users: data.userID
   fields =
     id: false
     name: 1
