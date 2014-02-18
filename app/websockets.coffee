@@ -24,7 +24,8 @@ getDeviceInfo = (data, callback) ->
         error: err
       return
 
-    total = docs.length
+    total   = docs.length
+    resData = []
     curOnlineDevices = controllers.devices.getSockets()
 
     _.each docs, (doc, i) ->
@@ -49,7 +50,7 @@ getDeviceInfo = (data, callback) ->
       cond    = serial: doc.serial
       fields  = 'deviceId info status modified'
       options = sort: modified: -1
-      Status.find cond, fields, options, (err, doc) ->
+      Status.findOne cond, fields, options, (err, doc) ->
         dbCbFn2 err, doc, i
 
       return
@@ -85,10 +86,11 @@ getDeviceInfo = (data, callback) ->
 
   cond   = users: data.userID
   fields =
-    id: false
+    _id: false
     name: 1
     macAdd: 1
     serial: 1
+
   Device.find cond, fields, dbCbFn
 
   return
