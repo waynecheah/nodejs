@@ -1,6 +1,7 @@
 {
     "verbose": true,
     "watch": [
+        "app",
         "app/controllers",
         "app/models",
         "app/models/plugins",

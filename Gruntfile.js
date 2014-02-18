@@ -103,6 +103,7 @@ module.exports = function (grunt) {
                     ],
                     watchedExtensions: ['ejs','handlebars','html','jade'],
                     watchedFolders: [
+                        'app',
                         'app/controllers',
                         'app/models',
                         'app/models/plugins',
