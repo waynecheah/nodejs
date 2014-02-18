@@ -124,7 +124,7 @@ Websockets =
       delete websocket.data
 
       i = sockets.indexOf websocket
-      websocket.splice i, 1 if i >= 0
+      sockets.splice i, 1 if i >= 0
       io.sockets.emit 'UserDisconnected'
 
       return
