@@ -307,9 +307,9 @@ iz =
       #notification 'Server Offline', 'Server is currently detected offline, this may due to scheduled maintenance.', 10000
       $('#status-summary .cloud').removeClass('on dis').addClass 'off'
       $('#status-summary .app').removeClass('on off').addClass 'dis'
-      $('.troubles').removeClass('').addClass('text-warning').html 'Unavailable'
-      $('.status').removeClass('').addClass('text-warning').html 'Unavailable'
-      $('.connection').removeClass('').addClass('text-danger').html 'Disconnected'
+      #$('.troubles').removeClass('').addClass('text-warning').html 'Unavailable'
+      #$('.status').removeClass('').addClass('text-warning').html 'Unavailable'
+      #$('.connection').removeClass('').addClass('text-danger').html 'Disconnected'
       return
     # END serverOfflineHandler
 
@@ -339,11 +339,17 @@ iz =
     sHeight = $(window).height()
     $("#{tPage} div.body").css 'min-height', "#{sHeight}px"
 
+    if $("#{tPage} .tabsBody").length > 0 and $("#{tPage} .arrow").attr('pos') isnt 'Y'
+      width = $(window).width()
+      tabs  = $("#{tPage} .tabsBody .tab").length
+      each  = width / tabs
+      first = (each - 10) / 2
+      $("#{tPage} .arrow").css 'left', "#{first}px"
+
     fixedHeader = $('#fixHeader div.header')
     if fixedHeader.length > 0
       hdPage = fixedHeader.attr 'data-page'
       $("div.pt-page-#{hdPage}").prepend fixedHeader
-
 
     $(fPage).addClass "pt-page-current #{fxOut}"
     $(tPage).addClass "pt-page-current #{fxIn} pt-page-ontop"
@@ -418,17 +424,15 @@ $ () ->
     Hammer(el).on 'dragdown', () ->
       if $('div.fixedStatus').hasClass 'hideUp'
         $('div.fixedStatus').removeClass('hideUp').addClass 'showDown'
-
-      null
-    null
+      return
+    return
 
   _.each $('.pt-page'), (el) ->
     Hammer(el).on 'tap', () ->
       if $('div.fixedStatus').hasClass 'showDown'
         $('div.fixedStatus').removeClass('showDown').addClass 'hideUp'
-
-      null
-    null
+      return
+    return
 
   _.each $('.pt-page .ln'), (el) ->
     Hammer(el).on 'tap', () ->
@@ -437,11 +441,34 @@ $ () ->
       if pages[0] and pages[1]
         reverse = true if pages[2] is 'r'
         iz.changePage pages[0], pages[1], reverse
+      return
+    return
 
-      null
-    null
+  $('.tab').click ->
+    return if $(@).hasClass 'selected'
+    $(@).parent('.tabs').find('.selected').removeClass 'selected'
+    $(@).addClass 'selected'
 
-  null
+    width = $(window).width()
+    tabs  = $('#fixHeader .tabsBody .tab').length
+    each  = width / tabs
+    first = (each - 10) / 2
+    i     = 0
+    pos   = null
+
+    while tabs > i
+      pos = i if $("#fixHeader .tabsBody .tab:nth(#{i})").hasClass 'selected'
+      i++
+
+    if pos is 0
+      left = first
+    else
+      left = (pos * each) + first
+    $('#fixHeader .arrow').css 'left', "#{left}px"
+
+    return
+
+  return
 
 
 ## START module websocket

@@ -87,8 +87,10 @@ $pageFxFillMode: both;
 $minHeight: 320px;
 $headerHeight: 60px;
 $tallerHeaderHeight: 100px;
+$tallestHeaderHeight: 191px;
 $statusHeight: 100px;
 $summarySttHeight: 3px;
+$bgColor01: #EE5567;
 $on: #3DB094;
 $off: #d74352;
 $dis: gray;
@@ -179,6 +181,37 @@ div.header {
             }
             div.line {
                 @include line;
+            }
+        }
+    }
+    .tabsHead {
+        margin: 10px 2px 7px;
+    }
+    .tabsBody {
+        position: relative;
+        background-color: $bgColor01;
+        margin: 0;
+
+        .arrow {
+            @include dimenPos(10px, 10px);
+            @include position(-5px, -10px);
+            transform: rotate(45deg);
+            background-color: rgba(48, 48, 48, .99);
+        }
+        .tabs {
+            display: table;
+            width: 100%;
+            padding: 12px 0;
+            background-color: rgba(50, 50, 50, $opacity);
+
+            .tab {
+                opacity: $opacity;
+            }
+            .selected {
+                opacity: 1;
+            }
+            span {
+                font-size: 0.6em;
             }
         }
     }
@@ -313,10 +346,14 @@ div.body {
 div.body2 {
     @extend div.body;
     padding-top: $headerHeight;
-    background-color: #EE5567;
+    background-color: $bgColor01;
+}
+div.body2a {
+    @extend div.body2;
+    padding-top: $tallestHeaderHeight;
 }
 div.body4 {
-    @extend div.body;
+    @extend div.body2;
     background-color: #6D97AE;
 }
 div.body5 {
