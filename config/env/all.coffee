@@ -9,7 +9,7 @@ module.exports =
 
   db: process.env.MONGOHQ_URL
 
-  dbHost: 'mongodb://localhost/mydb'
+  dbHost: 'mongodb://cheah.homeip.net/mydb'
 
   dbHosts: [
     'ns1.node-server.com:27101'
@@ -21,7 +21,7 @@ module.exports =
     #'node.homeip.net:27605'
   ]
 
-  replication: true
+  replication: false
 
   aesKey: 'MtKKLowsPeak4095'
 

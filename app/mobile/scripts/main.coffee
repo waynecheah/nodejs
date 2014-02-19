@@ -237,7 +237,7 @@ iz =
        .attr 'src', @onlineImages[0] # first attempt checking if internet accessible
 
       $(window).on('internetOff', @internetOfflineHandler).on('internetOn', @internetOnlineHandler)
-      .on('deviceOn', @deviceOnlineHandler).on('deviceOn', @deviceOfflineHandler)
+      .on('deviceOn', @deviceOnlineHandler).on('deviceOff', @deviceOfflineHandler)
       .on('serverOff', onServerOff.bind @).on 'serverOn', @serverOnlineHandler
       return
     # END init
@@ -320,7 +320,7 @@ iz =
     # END deviceOnlineHandler
 
     deviceOfflineHandler: ->
-      iz.debug 'Changing device status to offline now', 'warn'
+      iz.debug 'Changing device status to offline now'
       $('#status-summary .app').removeClass('on dis').addClass 'off'
       return
     # END deviceOfflineHandler
@@ -454,8 +454,8 @@ do (app = iz) ->
     return
   # END init
 
-  updateDeviceStatus = (data) ->
-    eName = if data.online then 'deviceOn' else 'deviceOff'
+  updateAllDeviceStatus = (devices) ->
+    eName = if devices[0].online then 'deviceOn' else 'deviceOff' # TODO(devices): when users can have more devices installed
     $(window).trigger eName
 
     # call some functions to update all statuses
@@ -463,7 +463,25 @@ do (app = iz) ->
     # func 2
 
     return
+  # END updateAllDeviceStatus
+
+  updateDeviceStatus = (data, devices) ->
+    _.each devices, (device, i) ->
+      devices[i] = data if device.data.info.sn is data.serial
+      return
+
+    return
   # END updateDeviceStatus
+
+  updateDeviceOffline = (serial, devices) ->
+    _.each devices, (device, i) ->
+      if device.data.info.sn is serial
+        device.online = no
+        devices[i]    = device
+      return
+
+    return
+  # END updateDeviceOffline
 
   registerRespond = (req, callback) ->
     return if req of respondCallback is true
@@ -482,13 +500,24 @@ do (app = iz) ->
       that    = @
       @socket = socket
 
+      socket.on 'Online', (data) ->
+        app.debug "Device serial [#{data.serial}] is report connected to server", 'info'
+        $(window).trigger 'deviceOn'
+        return
+      socket.on 'Offline', (data) ->
+        app.debug "Device serial [#{data.serial}] is reported offline from server", 'warn'
+        updateDeviceOffline data.serial, that.devices
+        $(window).trigger 'deviceOff'
+        return
+      socket.on 'DeviceUpdate', (data) ->
+        updateDeviceStatus data, that.devices
+        return
+
       socket.on 'DeviceInformation', (data) ->
-        that.devices = data
-        updateDeviceStatus data
-        return
-      socket.on 'Offline', () ->
-        return
-      socket.on 'DeviceUpdate', () ->
+        return if 'status' of data is no or typeof data.status isnt 'boolean'
+        if data.status
+          that.devices = data.devices
+          updateAllDeviceStatus data.devices
         return
       socket.on 'ResponseOnRequest', (req, data) ->
         respondCallback[req] data if req of respondCallback is true

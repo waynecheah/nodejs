@@ -1189,7 +1189,7 @@ log('s', 'i', 'Socket.io listening to '+host+':8080');
 io.sockets.on('connection', function(websocket){
     websockets2.main(io, websocket);
 });
-io.sockets.on('connection', function(websocket) {
+/*io.sockets.on('connection', function(websocket) {
     log('w', 'i', 'web client '+websocket.id+' connected');
     websocket.data = {
         wsid: websocket.id,
@@ -1427,7 +1427,7 @@ io.sockets.on('connection', function(websocket) {
             });
         }
     });
-});
+});*/
 
 controllers.clients.testing({ test:'input' }, function(obj){
     log('s', 'd', obj);

@@ -45,7 +45,7 @@ getDeviceInfo = (data, callback) ->
       return
 
     _.each resData, (doc, i) ->
-      return if 'data' of doc is yes
+      dbCbFn2 null, null, i if 'data' of doc is yes
 
       cond    = serial: doc.serial
       fields  = 'deviceId info status modified'
@@ -134,6 +134,7 @@ Websockets =
       log 'w', 'i', "Proceed event GET_DEVICE_INFO sent from websocket"
 
       getDeviceInfo req, (res) ->
+        websocket.data.devices = res.devices if res.status and 'devices' of res is yes
         emit websocket, 'DeviceInformation', res
 
       return
@@ -163,6 +164,50 @@ Websockets =
 
     return
   # END main
+
+  socketOnConnected: (deviceId, info) ->
+    log 'w', 's', "Device ID #{deviceId} with serial no #{info.sn} has connected to server"
+
+    _.each sockets, (websocket) ->
+      _.each websocket.data.devices, (device) ->
+        if info.sn is device.serial
+          emit websocket, 'Online', serial: info.sn
+        return
+      return
+
+    return
+  # END socketOnconnected
+
+  socketOnClose: (deviceId, info) ->
+    log 'w', 'e', "Device ID #{deviceId} with serial no #{info.sn} has disconnected from server"
+
+    _.each sockets, (websocket) ->
+      _.each websocket.data.devices, (device) ->
+        if info.sn is device.serial
+          emit websocket, 'Offline', serial: info.sn
+        return
+      return
+
+    return
+  # END socketOnClose
+
+  socketOnData: (data) ->
+    sn  = data.info.sn
+    msg = "Device serial no [#{sn}] just connected to server has latest info and status need update to Apps user"
+    log 'w', 's', msg
+
+    _.each sockets, (websocket) ->
+      _.each websocket.data.devices, (device) ->
+        if sn is device.serial
+          emit websocket, 'DeviceUpdate',
+            serial: sn
+            data: data
+            online: true
+        return
+      return
+
+    return
+  # END socketOnData
 
   getSockets: () ->
     sockets

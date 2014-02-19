@@ -1,15 +1,16 @@
 
-_        = require 'lodash'
-mongoose = require 'mongoose'
-moment   = require 'moment'
-config   = require '../../config/config'
-commonFn = require '../../lib/common'
-log      = require '../../lib/log'
-Device   = mongoose.model 'Device'
-Event    = mongoose.model 'Event'
-Status   = mongoose.model 'Status'
-sockets  = []
-RN       = '\r\n';
+_          = require 'lodash'
+mongoose   = require 'mongoose'
+moment     = require 'moment'
+config     = require '../../config/config'
+commonFn   = require '../../lib/common'
+log        = require '../../lib/log'
+websockets = require '../websockets'
+Device     = mongoose.model 'Device'
+Event      = mongoose.model 'Event'
+Status     = mongoose.model 'Status'
+sockets    = []
+RN         = '\r\n';
 
 encryption = (socket, data) ->
   str = commonFn.decryption data, config.aesKey, config.aesIv, 'hex'
@@ -69,7 +70,9 @@ getDeviceInfo = (socket, data) ->
       socketWrite socket, 'e3'
       return
 
-    dbFindDevice socket, t
+    dbFindDevice socket, t, (id) ->
+      websockets.socketOnConnected id, t
+      return
   else if data
     log 'n', 'e', "Invalid input #{data}"
     socketWrite socket, 'e0'
@@ -192,8 +195,8 @@ getCurrentStatus = (socket, data) ->
       socket.tmp         = {}
 
       dbUpdateLastSync socket, socket.data.info.sn
-      dbStatusUpdate socket, () ->
-        # TODO(system): emit device info to clients who connect to it
+      dbStatusUpdate socket, ->
+        websockets.socketOnData socket.data
         return
   else if data
     log 'n', 'e', "Invalid input #{data}"
@@ -430,7 +433,7 @@ reportedOkay = (socket) ->
   return
 # END reportedOkay
 
-dbFindDevice = (socket, data) ->
+dbFindDevice = (socket, data, callback) ->
   Device.findOne serial: data.sn, 'id macAdd lastSync', (err, doc) ->
     if err
       log 'n', 'e', err
@@ -461,6 +464,7 @@ dbFindDevice = (socket, data) ->
         sensors: []
         labels: []
 
+      callback doc.id
       socketWrite socket, 'sr?' # ask device's status report
     return
   return
@@ -660,6 +664,7 @@ Devices =
       msg = if hasErr then 'Error occur before connection closed' else 'No error was found'
       log 'n', 'i', "client #{socket.id} has disconnected. #{msg}"
 
+      websockets.socketOnClose socket.data.deviceId, socket.data.info
       delete socket.data
 
       i = sockets.indexOf socket
@@ -671,7 +676,7 @@ Devices =
     socket
   # END main
 
-  getSockets: () ->
+  getSockets: ->
     sockets
   # END getSocket
 # END Devices

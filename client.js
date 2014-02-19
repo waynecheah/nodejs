@@ -9,7 +9,7 @@ var sockets   = [];
 var RN        = '\r\n';
 var _timer    = 0;
 var host      = 'innerzon.com';
-var port      = 1471;
+var port      = 1470;
 var clientErr = {
     e0: 'Invalid input',
     e1: 'Invalid partition status update, improper format sent',
