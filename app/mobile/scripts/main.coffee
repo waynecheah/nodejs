@@ -340,11 +340,13 @@ iz =
     $("#{tPage} div.body").css 'min-height', "#{sHeight}px"
 
     if $("#{tPage} .tabsBody").length > 0 and $("#{tPage} .arrow").attr('pos') isnt 'Y'
-      width = $(window).width()
-      tabs  = $("#{tPage} .tabsBody .tab").length
-      each  = width / tabs
-      first = (each - 10) / 2
+      width  = $(window).width() # screen weight
+      height = $(window).height() # screen height
+      tabs   = $("#{tPage} .tabsBody .tab").length
+      each   = width / tabs
+      first  = (each - 10) / 2
       $("#{tPage} .arrow").css 'left', "#{first}px"
+      $("#{tPage} div.body .pt-page").css 'height', height
 
     fixedHeader = $('#fixHeader div.header')
     if fixedHeader.length > 0
@@ -369,11 +371,33 @@ iz =
       if sHeight > $("#{tPage}").height()
         $("#{tPage} div.body").css 'height', "#{sHeight}px"
 
-      null
+      return
     , 400
 
-    null
+    return
   # END changePage
+
+  changeTab: (bodyName, fTab, tTab, ts=@transition) ->
+    debug   = iz.debug
+    reverse = if fTab > tTab then yes else no
+    fxIn    = if reverse then ts.fxRevIn else ts.fxIn
+    fxOut   = if reverse then ts.fxRevOut else ts.fxOut
+    fTab    = ".body#{bodyName} .pt-tab-#{fTab}"
+    tTab    = ".body#{bodyName} .pt-tab-#{tTab}"
+    sHeight = $(window).height() # screen height
+
+    $(".body#{bodyName} .pt-page").css 'height', sHeight
+
+    debug "from #{fTab} to #{tTab}"
+    $(fTab).addClass "pt-page-current #{fxOut}"
+    $(tTab).addClass "pt-page-current #{fxIn} pt-page-ontop"
+
+    setTimeout () ->
+      $(fTab).removeClass "pt-page-current #{fxOut}"
+      $(tTab).removeClass "#{fxIn} pt-page-ontop"
+      return
+    , 400
+  # END changeTab
 
   changeIcon: (selector, from, to) ->
     $(selector).addClass('pt-icon-moveInBack').css 'margin-top', '100px'
@@ -393,21 +417,41 @@ iz =
   # END changeIcon
 
   onTabClick: ->
+    debug = iz.debug
     return if $(@).hasClass 'selected'
-    $(@).parent('.tabs').find('.selected').removeClass 'selected'
-    $(@).addClass 'selected'
 
+    page = $(@).parents('.header').attr 'data-page'
     tabs = $('#fixHeader .tabsBody .tab').length # total of tabs in the row
     i    = 0
-    nth  = null
+    j    = 0
+    from = null
+    to   = null
+
+    return if typeof page is 'undefined'
 
     while tabs > i
-      nth = i if $("#fixHeader .tabsBody .tab:nth(#{i})").hasClass 'selected'
+      from = i if $("#fixHeader .tabsBody .tab:nth(#{i})").hasClass 'selected'
       i++
 
-    if nth isnt null
-      left = iz.tabArrowPostion nth
-      $('#fixHeader .arrow').attr('pos', 'Y').css 'left', "#{left}px"
+    return if from is null
+
+    $("#fixHeader .tabsBody .tab:nth(#{from})").removeClass 'selected'
+    #$(@).parent('.tabs').find('.selected').removeClass 'selected'
+    $(@).addClass 'selected'
+
+    while tabs > j
+      to = j if $("#fixHeader .tabsBody .tab:nth(#{j})").hasClass 'selected'
+      j++
+
+    return if to is null
+
+    left = iz.tabArrowPostion to # find the left absolute position in pixel
+    $('#fixHeader .arrow').attr('pos', 'Y').css 'left', "#{left}px"
+
+    from++
+    to++
+    debug "body#{page} from tab#{from} to tab#{to}"
+    iz.changeTab page, from, to
 
     return
   # END onTabClick
@@ -474,6 +518,8 @@ $ () ->
     return
 
   $('.tab').click iz.onTabClick
+  #$(window).resize ->
+  # TODO(resize): resize height for DOM '.body .pt-page'
 
   return
 

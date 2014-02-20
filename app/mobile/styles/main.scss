@@ -344,6 +344,21 @@ div.body {
         line-height: 60px;
         background-color: rgba(50, 50, 50, $opacity);
     }
+    div.pt-page { /* this also means it's tab DIV */
+        overflow-y: auto;
+        overflow-x: hidden;
+
+        div.tabContent {
+            padding-top: $tallestHeaderHeight;
+
+            li div {
+                line-height: 20px;
+            }
+            li span {
+                font-size: 0.6em;
+            }
+        }
+    }
 }
 div.body2 {
     @extend div.body;
@@ -352,7 +367,7 @@ div.body2 {
 }
 div.body2a {
     @extend div.body2;
-    padding-top: $tallestHeaderHeight;
+    padding-top: 0; /* has longest header with tabs */
 }
 div.body4 {
     @extend div.body2;
@@ -365,6 +380,11 @@ div.body5 {
 div.fixPad {
     padding-left: 4px;
     padding-right: 4px;
+}
+div.rightCol {
+    padding-left: 0;
+    padding-right: 5px;
+    text-align: right;
 }
 
 
