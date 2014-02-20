@@ -392,6 +392,35 @@ iz =
     null
   # END changeIcon
 
+  onTabClick: ->
+    return if $(@).hasClass 'selected'
+    $(@).parent('.tabs').find('.selected').removeClass 'selected'
+    $(@).addClass 'selected'
+
+    tabs = $('#fixHeader .tabsBody .tab').length # total of tabs in the row
+    i    = 0
+    nth  = null
+
+    while tabs > i
+      nth = i if $("#fixHeader .tabsBody .tab:nth(#{i})").hasClass 'selected'
+      i++
+
+    if nth isnt null
+      left = iz.tabArrowPostion nth
+      $('#fixHeader .arrow').attr('pos', 'Y').css 'left', "#{left}px"
+
+    return
+  # END onTabClick
+
+  tabArrowPostion: (nth) ->
+    width = $(window).width()
+    tabs  = $('#fixHeader .tabsBody .tab').length # total of tabs in the row
+    each  = width / tabs # each tab's width in pixel
+    first = (each - 10) / 2 # first tab's arrow left position in pixel
+
+    if nth is 0 then first else first + (nth * each)
+  # END tabArrowPostion
+
   gdebug: (name, collapsed=false) ->
     if @env is 'pro'
       return
@@ -444,29 +473,7 @@ $ () ->
       return
     return
 
-  $('.tab').click ->
-    return if $(@).hasClass 'selected'
-    $(@).parent('.tabs').find('.selected').removeClass 'selected'
-    $(@).addClass 'selected'
-
-    width = $(window).width()
-    tabs  = $('#fixHeader .tabsBody .tab').length
-    each  = width / tabs
-    first = (each - 10) / 2
-    i     = 0
-    pos   = null
-
-    while tabs > i
-      pos = i if $("#fixHeader .tabsBody .tab:nth(#{i})").hasClass 'selected'
-      i++
-
-    if pos is 0
-      left = first
-    else
-      left = (pos * each) + first
-    $('#fixHeader .arrow').css 'left', "#{left}px"
-
-    return
+  $('.tab').click iz.onTabClick
 
   return
 

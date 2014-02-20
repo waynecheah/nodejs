@@ -191,12 +191,14 @@ div.header {
         position: relative;
         background-color: $bgColor01;
         margin: 0;
+        padding-bottom: 1px;
 
         .arrow {
             @include dimenPos(10px, 10px);
             @include position(-5px, -10px);
             transform: rotate(45deg);
             background-color: rgba(48, 48, 48, .99);
+            transition: left 300ms;
         }
         .tabs {
             display: table;
