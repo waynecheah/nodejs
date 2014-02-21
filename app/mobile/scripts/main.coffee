@@ -11,7 +11,105 @@ iz =
       'innerzon.com:8080'
       'innerzon.com.my:8080'
     ]
+  config:
+    mapping:
+      system:
+        type:
+          0: 'N/A'
+          1: 'AC'
+          2: 'Battery'
+          3: 'PSTN'
+          4: 'Bell'
+          5: 'Peripheral'
+          6: 'GSM'
+          7: 'Comm Fail'
+        status:
+          0: 'Ok'
+          1: 'Alarm'
+          2: 'Fault'
+
+      partition:
+        status:
+          0: 'Disarmed'
+          1: 'Away'
+          2: 'Home'
+          3: 'Night'
+        user:
+          100: 'User1'
+          101: 'Keyfob'
+          102: 'Auto'
+          103: 'Remote'
+
+      zone:
+        condition:
+          0: 'Disable'
+          1: 'Open'
+          2: 'Close'
+        status:
+          0: 'Ready'
+          1: 'Alarm'
+          2: 'Bypass'
+          3: 'Trouble'
+          4: 'Tamper'
+        type:
+          0: 'N/A'
+          1: 'Delay'
+          2: 'Instant'
+          3: 'Follower'
+          4: '24hr'
+          5: 'Delay2'
+          6: 'Keyswitch'
+
+      emergency:
+        type:
+          0: 'N/A'
+          1: 'Panic'
+          2: 'Medical'
+          3: 'Fire'
+          4: 'Duress'
+        status:
+          0: 'Ok',
+          1: 'Alarm'
+
+      light:
+        type:
+          0: 'Disable'
+          1: 'Normal'
+          2: 'Dim'
+          3: 'Toggle'
+          4: 'Pulse'
+          5: 'Blink'
+          6: 'Delay'
+        status:
+          0: 'Off'
+          1: 'On'
+          2: 'Dim'
+        user:
+          101: 'Keyfob'
+          102: 'Auto'
+          103: 'Remote'
+
+      sensor:
+        type:
+          0: 'Disable'
+          1: 'Normal Open'
+          2: 'Normal Close'
+          3: 'Potential'
+        status:
+          0: 'N/A'
+          1: 'Open'
+          2: 'Close'
+
+      label:
+        item:
+          zn: 'Zone'
+          dv: 'Device'
+          li: 'Light'
+          ss: 'Sensor'
+          us: 'User'
+
   progressTasks: []
+  templates: {}
   socket: null
   transition:
     fxOut: 'pt-page-moveToLeft',
@@ -499,21 +597,21 @@ iz =
 $ () ->
   iz.init()
 
-  _.each $('.fixHeader,.header'), (el) ->
+  _.each $('.fixHeader,.header'), (el) -> # Slide up to hide connectivity status bar
     Hammer(el).on 'dragdown', () ->
       if $('div.fixedStatus').hasClass 'hideUp'
         $('div.fixedStatus').removeClass('hideUp').addClass 'showDown'
       return
     return
 
-  _.each $('.pt-page'), (el) ->
+  _.each $('.pt-page'), (el) -> # Slide down to show connectivity status bar
     Hammer(el).on 'tap', () ->
       if $('div.fixedStatus').hasClass 'showDown'
         $('div.fixedStatus').removeClass('showDown').addClass 'hideUp'
       return
     return
 
-  _.each $('.pt-page .ln'), (el) ->
+  _.each $('.pt-page .ln'), (el) -> # Animate each page change
     Hammer(el).on 'tap', () ->
       pages = $(@).attr('data-page').split '-'
       tabNo = $(@).attr('data-tab')
@@ -525,6 +623,12 @@ $ () ->
       return
     return
 
+  _.each $('template'), (tpl) -> # load all templates
+    id = $(tpl).attr 'id'
+    iz.templates[id] = $($(tpl).html())
+    tpl.remove()
+    return
+
   $('.tab').click iz.onTabClick
   #$(window).resize ->
   # TODO(resize): resize height for DOM '.body .pt-page'
@@ -532,31 +636,123 @@ $ () ->
   return
 
 
-## START module websocket
+## START module [ websocket ]
 ## dependency modules: null ##
 do (app = iz) ->
   respondCallback = {}
 
   init = (e, socket) ->
+    console.warn 'socket conencted'
     app.websocket.init socket
     return
   # END init
 
-  updateAllDeviceStatus = (devices) ->
-    eName = if devices[0].online then 'deviceOn' else 'deviceOff' # TODO(devices): when users can have more devices installed
-    $(window).trigger eName
+  updateAllDeviceStatus = (devices, trigger=false) ->
+    if trigger is yes
+      eName = if devices[0].online then 'deviceOn' else 'deviceOff' # TODO(devices): when users can have more devices installed
+      $(window).trigger eName
 
     # call some functions to update all statuses
-    # func 1
-    # func 2
+    device = devices[0]
+    armStt = device.data.status.partition[0] # arm status
+    k      = armStt.split ','
+
+    n  = k[0] # partition number
+    st = parseInt k[1] # status
+    us = parseInt k[2] # user
+
+    stTxt = if st is 0 then 'Disarmed' else 'Armed'
+    $('div.body2 li:first-child div:last-child').html stTxt
+
+    updateAllZones device
+    updateSystemInfo device
 
     return
   # END updateAllDeviceStatus
+
+  updateAllZones = (device) ->
+    map  = iz.config.mapping
+    html = ''
+
+    _.each device.data.status.zones, (zone) ->
+      tpl = app.templates.zoneList
+
+      k  = zone.split ','
+      n  = k[0] # zone number
+      cd = parseInt k[1] # condition
+      st = parseInt k[2] # status
+      pt = k[3] # partition
+      ty = parseInt k[4] # type
+      id = "zn#{n}"
+
+      cdCls = switch cd
+        when 0 then 'disabled'
+        when 1 then 'open'
+        when 2 then 'closed'
+      stCls = switch st
+        when 1 then 'danger'
+        when 2 then 'bypass'
+        when 3 then 'trouble'
+        when 4 then 'tamper'
+
+      cdTxt = map.zone.status[cd]
+      tyTxt = if ty > 0 then map.zone.type[ty] else ''
+      tyTxt = "<br /><span>#{tyTxt}</span>" if tyTxt
+
+      tpl.find('li').attr 'id', "id-#{id}"
+      tpl.find('li div:nth(1)').html "Zone #{n}#{tyTxt}"
+      tpl.find('li div:nth(2)').html cdTxt
+      html += $(tpl).html()
+      return
+
+    $('div.body2a .pt-tab-1 .tabContent ul').html html
+    return
+  # END updateAllZones
+
+  updateSystemInfo = (device) ->
+    map  = iz.config.mapping
+    html = ''
+    ok   = 0 # Ready/Restore
+    ntok = 0 # Fault
+    alrm = 0 # Alarm
+
+    _.each device.data.status.system, (si, i) ->
+      return if i is 0
+
+      tpl = app.templates.systemInfo
+
+      k  = si.split ','
+      ty = parseInt k[0] # type
+      st = parseInt k[1] # status
+
+      if st is 1
+        stCls = 'alarm'
+        alrm++
+      else if st is 2
+        stCls = 'fault'
+        ntok++
+      else
+        stCls = 'ready'
+        ok++
+
+      tyTxt = map.system.type[ty]
+      stTxt = map.system.status[st]
+
+      tpl.find('li div:nth(1)').html tyTxt
+      tpl.find('li div:nth(2)').html stTxt
+      html += $(tpl).html()
+      return
+
+    $('div.body2 li:nth(1) div:last-child').html "#{ok} OK<br />#{ntok} Fail"
+    $('div.body2a .pt-tab-2 .tabContent ul').html html
+    return
+  # END updateSystemInfo
 
   updateDeviceStatus = (data, devices) ->
     _.each devices, (device, i) ->
       devices[i] = data if device.data.info.sn is data.serial
       return
+    updateAllDeviceStatus devices, false # TODO(justify): if it's alright to update everything & render whole page
 
     return
   # END updateDeviceStatus
@@ -605,7 +801,7 @@ do (app = iz) ->
         return if 'status' of data is no or typeof data.status isnt 'boolean'
         if data.status
           that.devices = data.devices
-          updateAllDeviceStatus data.devices
+          updateAllDeviceStatus data.devices, true
         return
       socket.on 'ResponseOnRequest', (req, data) ->
         respondCallback[req] data if req of respondCallback is true
@@ -646,7 +842,7 @@ do (app = iz) ->
 # END module websocket
 
 
-## START module appInteraction
+## START module [ appInteraction ]
 ## dependency modules: websocket ##
 do (app = iz) ->
   websocket = app.websocket
@@ -683,7 +879,7 @@ do (app = iz) ->
 # END module appInteraction
 
 
-## START module client
+## START module [ client ]
 ## dependency modules: Backbone ##
 do (app = iz) ->
   debug = app.debug
