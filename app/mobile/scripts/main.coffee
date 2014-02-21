@@ -328,7 +328,7 @@ iz =
 
 
 
-  changePage: (from, to, reverse=false, ts=@transition) ->
+  changePage: (from, to, reverse, tabNo, ts=@transition) ->
     debug = iz.debug
     fPage = "div.pt-page-#{from}"
     tPage = "div.pt-page-#{to}"
@@ -336,39 +336,45 @@ iz =
     fxOut = if reverse then ts.fxRevOut else ts.fxOut
     #mrgn  = $("#{tPage} div.header").height()
 
-    sHeight = $(window).height()
-    $("#{tPage} div.body").css 'min-height', "#{sHeight}px"
+    sHeight = $(window).height() # get screen height
+    $("#{tPage} div.body").css 'min-height', "#{sHeight}px" # make page body to have same height as the screen
 
-    if $("#{tPage} .tabsBody").length > 0 and $("#{tPage} .arrow").attr('pos') isnt 'Y'
-      width  = $(window).width() # screen weight
-      height = $(window).height() # screen height
-      tabs   = $("#{tPage} .tabsBody .tab").length
-      each   = width / tabs
-      first  = (each - 10) / 2
-      $("#{tPage} .arrow").css 'left', "#{first}px"
-      $("#{tPage} div.body .pt-page").css 'height', height
+    if tabNo # it has tabs in this page
+      num  = parseInt tabNo - 1
+      left = iz.tabArrowPostion num, tPage # find the absolute left position in pixel
+      #$("#{tPage} .tabsBody .arrow").css 'left', "#{left}px" # position the arrow to first tab
+      $(".body#{to} .pt-page").removeClass('pt-page-current').css 'height', sHeight # make all tabs to have same height as the screen
+      $(".body#{to} .pt-tab-#{tabNo}").addClass 'pt-page-current' # set the right tab to display on screen
 
     fixedHeader = $('#fixHeader div.header')
-    if fixedHeader.length > 0
-      hdPage = fixedHeader.attr 'data-page'
-      $("div.pt-page-#{hdPage}").prepend fixedHeader
+    if fixedHeader.length > 0 # if there is any content in current fixed header
+      hdPage = fixedHeader.attr 'data-page' # first to find where is it original page came from
+      $("div.pt-page-#{hdPage}").prepend fixedHeader # then put the header back tp the page
 
     $(fPage).addClass "pt-page-current #{fxOut}"
     $(tPage).addClass "pt-page-current #{fxIn} pt-page-ontop"
 
-    setTimeout () ->
+    setTimeout () -> # when transition is done
+      pHeight = $("#{tPage}").height()
       $("#{tPage} div.body").css 'min-height', 200
-      debug "callback page #{tPage} compare sHeight #{sHeight}"
-      debug $("#{tPage}").height()
+      debug "callback on destination page #{tPage} compare screen height #{sHeight} with page height #{pHeight}"
+
       $(fPage).removeClass "pt-page-current #{fxOut}"
       $(tPage).removeClass "#{fxIn} pt-page-ontop"
 
       header = $("#{tPage} div.header")
-      if header.length > 0
-        $('#fixHeader').html(header).show()
-        $('#fixHeader div.header').attr 'data-page', to
+      if header.length > 0 # if there is any content in destination header
+        $('#fixHeader').html(header).show() # first to migrate the header content from original page to fixed header
+        $('#fixHeader div.header').attr 'data-page', to # and don't forget to tell where this header original came from
+        setTimeout ->
+          $('#fixHeader .arrow').css 'left', "#{left}px" # position the arrow to destination tab
+        , 50
+        $('#fixHeader .tabs .tab').delay(250).removeClass 'selected'
+        setTimeout ->
+          $("#fixHeader .tabs .tab:nth(#{num})").addClass 'selected'
+        , 400
 
-      if sHeight > $("#{tPage}").height()
+      if sHeight > $("#{tPage}").height() # make the content fit to screen if it's height shorter then screen height
         $("#{tPage} div.body").css 'height', "#{sHeight}px"
 
       return
@@ -456,9 +462,9 @@ iz =
     return
   # END onTabClick
 
-  tabArrowPostion: (nth) ->
+  tabArrowPostion: (nth, selector='#fixHeader') ->
     width = $(window).width()
-    tabs  = $('#fixHeader .tabsBody .tab').length # total of tabs in the row
+    tabs  = $("#{selector} .tabsBody .tab").length # total of tabs in the row
     each  = width / tabs # each tab's width in pixel
     first = (each - 10) / 2 # first tab's arrow left position in pixel
 
@@ -510,10 +516,12 @@ $ () ->
   _.each $('.pt-page .ln'), (el) ->
     Hammer(el).on 'tap', () ->
       pages = $(@).attr('data-page').split '-'
+      tabNo = $(@).attr('data-tab')
 
       if pages[0] and pages[1]
-        reverse = true if pages[2] is 'r'
-        iz.changePage pages[0], pages[1], reverse
+        reverse = if pages[2] is 'r' then yes else no
+        tabNo   = if pages[3] then pages[3] else null
+        iz.changePage pages[0], pages[1], reverse, tabNo
       return
     return
 
