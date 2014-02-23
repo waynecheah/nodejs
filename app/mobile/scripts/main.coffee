@@ -511,13 +511,13 @@ iz =
 
       setTimeout () ->
         $(selector).removeClass 'pt-icon-moveOutBack'
-        null
+        return
       , 400
 
-      null
+      return
     , 400
 
-    null
+    return
   # END changeIcon
 
   onTabClick: ->
@@ -596,6 +596,7 @@ iz =
 
 $ () ->
   iz.init()
+  ui = iz.interface
 
   _.each $('.fixHeader,.header'), (el) -> # Slide up to hide connectivity status bar
     Hammer(el).on 'dragdown', () ->
@@ -619,7 +620,7 @@ $ () ->
       if pages[0] and pages[1]
         reverse = if pages[2] is 'r' then yes else no
         tabNo   = if pages[3] then pages[3] else null
-        iz.changePage pages[0], pages[1], reverse, tabNo
+        ui.changePage pages[0], pages[1], reverse, tabNo
       return
     return
 
@@ -629,11 +630,217 @@ $ () ->
     tpl.remove()
     return
 
-  $('.tab').click iz.onTabClick
+  $('.tab').click ui.onTabClick
   #$(window).resize ->
   # TODO(resize): resize height for DOM '.body .pt-page'
 
   return
+
+
+## START module interface
+## dependency modules: null ##
+do (app = iz) ->
+  tabArrowPostion = (nth, selector='#fixHeader') ->
+    width = $(window).width()
+    tabs  = $("#{selector} .tabsBody .tab").length # total of tabs in the row
+    each  = width / tabs # each tab's width in pixel
+    first = (each - 10) / 2 # first tab's arrow left position in pixel
+
+    if nth is 0 then first else first + (nth * each)
+  # END tabArrowPostion
+
+  app.interface =
+    init: ->
+      that = @
+
+      _.each $('.fixHeader,.header'), (el) ->
+        Hammer(el).on 'dragdown', () -> # Slide down to show connectivity status bar
+          if $('div.fixedStatus').hasClass 'hideUp'
+            $('div.fixedStatus').removeClass('hideUp').addClass 'showDown'
+          return
+        return
+
+      _.each $('.pt-page'), (el) ->
+        Hammer(el).on 'tap', () -> # Slide up to hide connectivity status bar
+          if $('div.fixedStatus').hasClass 'showDown'
+            $('div.fixedStatus').removeClass('showDown').addClass 'hideUp'
+          return
+        return
+
+      _.each $('.pt-page .ln'), (el) ->
+        Hammer(el).on 'tap', () -> # Animate each page change
+          pages = $(@).attr('data-page').split '-'
+          tabNo = $(@).attr('data-tab')
+
+          if pages[0] and pages[1]
+            reverse = if pages[2] is 'r' then yes else no
+            tabNo   = if pages[3] then pages[3] else null
+            that.changePage pages[0], pages[1], reverse, tabNo
+          return
+        return
+
+      _.each $('template'), (tpl) -> # load all templates
+        id = $(tpl).attr 'id'
+        iz.templates[id] = $($(tpl).html())
+        tpl.remove()
+        return
+
+      $('.tab').click @onTabClick
+      #$(window).resize ->
+      # TODO(resize): resize height for DOM '.body .pt-page'
+      return
+    # END init
+
+    changePage: (from, to, reverse, tabNo, ts=@transition) ->
+      debug = iz.debug
+      fPage = "div.pt-page-#{from}"
+      tPage = "div.pt-page-#{to}"
+      fxIn  = if reverse then ts.fxRevIn else ts.fxIn
+      fxOut = if reverse then ts.fxRevOut else ts.fxOut
+
+      sHeight = $(window).height() # get screen height
+      $ "#{tPage} div.body"
+       .css 'min-height', "#{sHeight}px" # make page body to have same height as the screen
+
+      if tabNo # it has tabs in this page
+        num  = parseInt tabNo - 1
+        left = tabArrowPostion num, tPage # find the absolute left position in pixel
+        #$("#{tPage} .tabsBody .arrow").css 'left', "#{left}px" # position the arrow to first tab
+        $ ".body#{to} .pt-page"
+         .removeClass 'pt-page-current'
+         .css 'height', sHeight # make all tabs to have same height as the screen
+        $ ".body#{to} .pt-tab-#{tabNo}"
+         .addClass 'pt-page-current' # set the right tab to display on screen
+
+      fixedHeader = $('#fixHeader div.header')
+      if fixedHeader.length > 0 # if there is any content in current fixed header
+        hdPage = fixedHeader.attr 'data-page' # first to find where is it original page came from
+        $ "div.pt-page-#{hdPage}"
+         .prepend fixedHeader # then put the header back tp the page
+
+      $(fPage).addClass "pt-page-current #{fxOut}"
+      $(tPage).addClass "pt-page-current #{fxIn} pt-page-ontop"
+
+      setTimeout () -> # when transition is done
+        pHeight = $("#{tPage}").height()
+        $("#{tPage} div.body").css 'min-height', 200
+        debug "callback on destination page #{tPage} compare
+         screen height #{sHeight} with page height #{pHeight}"
+
+        $(fPage).removeClass "pt-page-current #{fxOut}"
+        $(tPage).removeClass "#{fxIn} pt-page-ontop"
+
+        header = $("#{tPage} div.header")
+        if header.length > 0 # if there is any content in destination header
+          $('#fixHeader').html(header).show() # first to migrate the header content from original page to fixed header
+          $('#fixHeader div.header').attr 'data-page', to # and don't forget to tell where this header original came from
+          setTimeout ->
+            $ '#fixHeader .arrow'
+             .css 'left', "#{left}px" # position the arrow to destination tab
+          , 50
+          $('#fixHeader .tabs .tab').delay(250).removeClass 'selected'
+          setTimeout ->
+            $ "#fixHeader .tabs .tab:nth(#{num})"
+             .addClass 'selected'
+          , 400
+
+        if sHeight > $("#{tPage}").height() # make the content fit to screen if it's height shorter then screen height
+          $("#{tPage} div.body").css 'height', "#{sHeight}px"
+
+        return
+      , 400
+
+      return
+    # END changePage
+
+    changeTab: (bodyName, fTab, tTab, ts=@transition) ->
+      debug   = iz.debug
+      reverse = if fTab > tTab then yes else no
+      fxIn    = if reverse then ts.fxRevIn else ts.fxIn
+      fxOut   = if reverse then ts.fxRevOut else ts.fxOut
+      fTab    = ".body#{bodyName} .pt-tab-#{fTab}"
+      tTab    = ".body#{bodyName} .pt-tab-#{tTab}"
+      sHeight = $(window).height() # screen height
+
+      $(".body#{bodyName} .pt-page").css 'height', sHeight
+
+      debug "from #{fTab} to #{tTab}"
+      $(fTab).addClass "pt-page-current #{fxOut}"
+      $(tTab).addClass "pt-page-current #{fxIn} pt-page-ontop"
+
+      setTimeout () ->
+        $(fTab).removeClass "pt-page-current #{fxOut}"
+        $(tTab).removeClass "#{fxIn} pt-page-ontop"
+        return
+      , 400
+    # END changeTab
+
+    changeIcon: (selector, from, to) ->
+      $ selector
+      .addClass 'pt-icon-moveInBack'
+      .css 'margin-top', '100px'
+
+      setTimeout () ->
+        $ selector
+        .removeClass "pt-icon-moveInBack #{from}"
+        .addClass "pt-icon-moveOutBack #{to}"
+        .css 'margin-top', '2px'
+
+        setTimeout () ->
+          $ selector
+          .removeClass 'pt-icon-moveOutBack'
+          return
+        , 400
+
+        return
+      , 400
+
+      return
+    # END changeIcon
+
+    onTabClick: ->
+      debug = iz.debug
+      return if $(@).hasClass 'selected'
+
+      page = $(@).parents('.header').attr 'data-page'
+      tabs = $('#fixHeader .tabsBody .tab').length # total of tabs in the row
+      i    = 0
+      j    = 0
+      from = null
+      to   = null
+
+      return if typeof page is 'undefined'
+
+      while tabs > i
+        from = i if $("#fixHeader .tabsBody .tab:nth(#{i})").hasClass 'selected'
+        i++
+
+      return if from is null
+
+      $("#fixHeader .tabsBody .tab:nth(#{from})").removeClass 'selected'
+      #$(@).parent('.tabs').find('.selected').removeClass 'selected'
+      $(@).addClass 'selected'
+
+      while tabs > j
+        to = j if $("#fixHeader .tabsBody .tab:nth(#{j})").hasClass 'selected'
+        j++
+
+      return if to is null
+
+      left = tabArrowPostion to # find the left absolute position in pixel
+      $('#fixHeader .arrow').attr('pos', 'Y').css 'left', "#{left}px"
+
+      from++
+      to++
+      debug "body#{page} from tab#{from} to tab#{to}"
+      app.interface.changeTab page, from, to
+
+      return
+    # END onTabClick
+  # END interface
+
+  app
+# END module interface
 
 
 ## START module [ websocket ]
