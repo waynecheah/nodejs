@@ -58,7 +58,9 @@
     "load-grunt-tasks": "~0.2.1",
     "grunt-open": "~0.2.2",
     "grunt-nodemon": "~0.1.2",
-    "grunt-contrib-coffee": "~0.8.2"
+    "grunt-contrib-coffee": "~0.8.2",
+    "grunt-jsbeautifier": "^0.2.6",
+    "grunt-sass": "^0.10.0"
   },
   "dependencies": {
     "mongoose": ">= 2.6.5",

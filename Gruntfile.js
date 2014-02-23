@@ -4,7 +4,7 @@ var SERVER_PORT     = 9000;
 
 module.exports = function (grunt) {
     // Load grunt tasks automatically
-    require('load-grunt-tasks')(grunt);
+    require('load-grunt-tasks')(grunt, { pattern: ['grunt-*', '!grunt-contrib-sass'] });
 
     // Time how long tasks take. Can help when optimizing build times
     require('time-grunt')(grunt);
@@ -24,7 +24,7 @@ module.exports = function (grunt) {
         watch: {
             coffee: {
                 files: ['<%= yeoman.app %>/scripts/{,*/}*.coffee'],
-                tasks: ['coffee:server', 'jshint']
+                tasks: ['coffee:server', 'jsbeautifier', 'jshint']
             },
             js: {
                 files: ['<%= yeoman.app %>/scripts/vendor/{,*/}*.js'],
@@ -42,11 +42,11 @@ module.exports = function (grunt) {
             //},
             sass: {
                 files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
-                tasks: ['sass:server', 'autoprefixer']
+                tasks: ['sass:server']
             },
             styles: {
                 files: ['<%= yeoman.app %>/styles/{,*/}*.css'],
-                tasks: ['newer:copy:styles', 'autoprefixer']
+                tasks: ['newer:copy:styles']
             },
             livereload: {
                 options: {
@@ -185,6 +185,18 @@ module.exports = function (grunt) {
             }
         },
 
+        jsbeautifier: {
+            files: [
+                '<%= yeoman.tmp %>/js/{,*/}*.js',
+                '!<%= yeoman.tmp %>/js/vendor/*'
+            ],
+            options: {
+                js: {
+                    wrapLineLength: 0
+                }
+            }
+        },
+
         // Compiles Sass to CSS and generates necessary files if requested
         compass: {
             options: {
@@ -234,9 +246,12 @@ module.exports = function (grunt) {
                     ext: '.css'
                 }],
                 options: {
-                    sourcemap: false
+                    //sourcemap: false,
+                    //lineNumbers: true // grunt-contrib-sass options
+                    //sourceMap: '<%= yeoman.app %>/styles/',
+                    sourceComments: 'normal' // grunt-sass options
                 }
-            }
+           }
         },
 
         // Add vendor prefixed styles
