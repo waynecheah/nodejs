@@ -32,17 +32,17 @@ $opacity: 0.2;
         padding: $padding;
     }
 }
-@mixin position ($top:none, $left:none, $bottom:none, $right:none) {
-    @if $top != 'none' {
+@mixin position ($top:null, $left:null, $bottom:null, $right:null) {
+    @if $top != null {
         top: $top;
     }
-    @if $left != 'none' {
+    @if $left != null {
         left: $left;
     }
-    @if $bottom != 'none' {
+    @if $bottom != null {
         bottom: $bottom;
     }
-    @if $right != 'none' {
+    @if $right != null {
         right: $right;
     }
 }

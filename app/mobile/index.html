@@ -62,7 +62,7 @@
             <div class="col-xs-4 text-center line on">
               <div class="text">LINE</div>
               <div class="status">
-                <div class="ico"><span class="icon-world"></span></div>
+                <div class="ico"><span class="icon-World"></span></div>
               </div>
             </div>
             <div class="col-xs-4 text-center cloud off">
@@ -82,11 +82,14 @@
         <div id="fixHeader">
           <div class="blur"></div>
         </div>
+        <div id="fullpage">
+
+        </div>
 
         <div id="pt-main" class="pt-perspective">
           <div class="pt-page pt-page-1 pt-page-current">
             <div style="text-align:center; margin:50px 0 20px;">
-              <span class="icon-IZlogo3" style="font-size:2.8em;"></span>
+              <span class="icon-IZCircle" style="font-size:2.8em;"></span>
             </div>
             <ul class="mainmenu">
               <li id="test" data-page="1-2" class="ln">Waves</li>
@@ -100,24 +103,24 @@
           <div class="pt-page pt-page-2">
             <div class="header">
               <div class="row">
-                <div class="col-xs-2 col-md-1">
-                  <span data-page="2-1-r" class="ln icon-lines"></span>
+                <div data-page="2-1-r" class="ln col-xs-2 col-md-1">
+                  <span class="icon-MainMenu"></span>
                 </div>
                 <div class="pageTitle col-xs-8 col-md-10 text-center">Alarm Dashboard</div>
-                <div class="col-xs-2 col-md-1" style="padding-left:10px;">
-                  <span data-page="2-3" class="ln icon-location"></span>
+                <div data-page="2-3" class="ln col-xs-2 col-md-1" style="padding-left:10px;">
+                  <span class="icon-Location"></span>
                 </div>
               </div>
             </div>
             <div class="body body2">
               <ul>
                 <li data-page="2-2a-f-1" class="ln row">
-                  <div class="col-xs-3 col-md-2"><span class="icon-lock"></span></div>
+                  <div class="col-xs-3 col-md-2"><span class="icon-Locked"></span></div>
                   <div class="col-xs-5 col-md-8">Security</div>
                   <div class="col-xs-4 col-md-2">N/A</div>
                 </li>
                 <li data-page="2-2a-f-2" class="ln row">
-                  <div class="col-xs-3 col-md-2"><span class="icon-heart"></span></div>
+                  <div class="col-xs-3 col-md-2"><span class="icon-Heart"></span></div>
                   <div class="col-xs-5 col-md-8">System Health</div>
                   <div class="col-xs-4 col-md-2">N/A</div>
                 </li>
@@ -137,8 +140,8 @@
           <div class="pt-page pt-page-2a">
             <div data-page="2a" class="header tallerHead">
               <div class="row tabsHead">
-                <div class="col-xs-2 col-md-1">
-                  <span data-page="2a-2-r" class="ln icon-back"></span>
+                <div data-page="2a-2-r" class="ln col-xs-2 col-md-1" style="height:72px;">
+                  <span class="icon-Back"></span>
                 </div>
                 <div class="pageTitle col-xs-8 col-md-10 text-center">
                   <div class="iconWrapper">
@@ -153,11 +156,11 @@
                 <div class="arrow"></div>
                 <div class="tabs">
                   <div class="col-xs-3 text-center tab selected">
-                    <div class="icon icon-lock"></div>
+                    <div class="icon icon-Locked"></div>
                     <span>Security</span>
                   </div>
                   <div class="col-xs-3 text-center tab">
-                    <div class="icon icon-heart"></div>
+                    <div class="icon icon-Heart"></div>
                     <span>Health</span>
                   </div>
                   <div class="col-xs-3 text-center tab">
@@ -171,6 +174,22 @@
                 </div>
               </div>
             </div>
+
+            <div class="armAction">
+              <div class="status armed">
+                <div class="col-xs-2">
+                  <div class="icon icon-Locked"></div>
+                </div>
+                <div class="col-xs-7">
+                  <div class="curArmStatus">Armed Away.</div>
+                  <div class="armDescription">Press to Disarm</div>
+                </div>
+                <div class="col-xs-3 text-right">
+                  <div class="armButton">Disarm</div>
+                </div>
+              </div>
+            </div>
+
             <div class="body body2a">
               <div class="pt-page pt-tab-1">
                 <div class="tabContent">
@@ -249,8 +268,8 @@
           <div class="pt-page pt-page-3">
             <div class="header">
               <div class="row">
-                <div class="col-xs-2 col-md-1">
-                  <span data-page="3-2-r" class="ln icon-back"></span>
+                <div data-page="3-2-r" class="ln col-xs-2 col-md-1">
+                  <span class="icon-Back"></span>
                 </div>
                 <div class="pageTitle col-xs-8 col-md-10 text-center">Location List</div>
                 <div class="col-xs-2 col-md-1" style="padding-left:10px;">
@@ -323,8 +342,8 @@
           <div class="pt-page pt-page-4">
             <div class="header tallerHead">
               <div class="row">
-                <div class="col-xs-2 col-md-1">
-                  <span data-page="4-1-r" class="ln icon-lines"></span>
+                <div data-page="4-1-r" class="ln col-xs-2 col-md-1">
+                  <span class="icon-MainMenu"></span>
                 </div>
                 <div class="pageTitle col-xs-8 col-md-10 text-center">
                   <div class="iconWrapper">
@@ -333,8 +352,8 @@
                   <div class="line"></div>
                   Office
                 </div>
-                <div class="col-xs-2 col-md-1" style="padding-left:10px;">
-                  <span data-page="4-3" class="ln icon-location"></span>
+                <div data-page="4-3" class="ln col-xs-2 col-md-1" style="padding-left:10px;">
+                  <span class="icon-Location"></span>
                 </div>
               </div>
             </div>
@@ -360,16 +379,16 @@
           <div class="pt-page pt-page-5">
             <div class="header tallerHead">
               <div class="row">
-                <div class="col-xs-2 col-md-1">
-                  <span data-page="5-1-r" class="ln icon-lines"></span>
+                <div data-page="5-1-r" class="ln col-xs-2 col-md-1">
+                  <span class="icon-MainMenu"></span>
                 </div>
                 <div class="pageTitle col-xs-8 col-md-10 text-center">
                   <div class="icon-Timer"></div>
                   <div class="line"></div>
                   Home
                 </div>
-                <div class="col-xs-2 col-md-1" style="padding-left:10px;">
-                  <span data-page="5-3" class="ln icon-location"></span>
+                <div data-page="5-3" class="ln col-xs-2 col-md-1" style="padding-left:10px;">
+                  <span class="icon-Location"></span>
                 </div>
               </div>
             </div>
@@ -395,4 +414,37 @@
         <script>
         </script>
     </body>
+
+  <template id="systemInfo">
+    <ul>
+      <li class="row">
+        <div class="col-xs-3 col-md-2"><span class="ico icon-info"></span></div>
+        <div class="col-xs-6 col-md-8">Name</div>
+        <div class="col-xs-3 col-md-2">Status</div>
+      </li>
+    </ul>
+  </template>
+  <template id="zoneList">
+    <ul>
+      <li class="ln row">
+        <div class="col-xs-3 col-md-2"><span class="ico icon-info"></span></div>
+        <div class="col-xs-6 col-md-8">Zone Name</div>
+        <div class="col-xs-3 col-md-2">Status</div>
+      </li>
+    </ul>
+  </template>
+  <template id="eventList">
+    <ul>
+      <li class="ln row">
+        <div class="col-xs-3 col-md-2"><span class="icon-info"></span></div>
+        <div class="col-xs-6 col-md-8">
+          <div>
+            Name<br />
+            <span>Description</span>
+          </div>
+        </div>
+        <div class="col-xs-3 col-md-2 rightCol">Time</div>
+      </li>
+    </ul>
+  </template>
 </html>
