@@ -593,10 +593,6 @@ iz =
 
 $ () ->
   iz.init()
-
-  #$(window).resize ->
-  # TODO(resize): resize height for DOM '.body .pt-page'
-
   return
 
 
@@ -622,6 +618,12 @@ do (app = iz) ->
     $('.armAction').css 'top', "#{height}px"
     return
   # END hideArmDisarmActionBar
+
+  screenResize = ->
+    height = $(window).height()
+    $('.screenHeight').css 'height', "#{height}px"
+    return
+  # END screenResize
 
   app.interface =
     transition:
@@ -675,8 +677,7 @@ do (app = iz) ->
       ).on 'onOtherTab', hideArmDisarmActionBar
 
       hideArmDisarmActionBar()
-      #$(window).resize ->
-      # TODO(resize): resize height for DOM '.body .pt-page'
+      $(window).resize(screenResize).trigger 'resize'
       return
     # END init
 

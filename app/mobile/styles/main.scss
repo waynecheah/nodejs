@@ -346,30 +346,34 @@ div.armAction {
     z-index: 5;
     -webkit-transition: top 300ms;
 
-    .status {
-        min-height: 640px;
+    .screenHeight {
+        min-height: 320px;
         background-color: rgba(50, 50, 50, .5);
     }
-    .armButton {
-        @include dimen($dimen, $dimen);
-        margin: 5px 0;
-        font-size: 0.8em;
-        font-weight: bold;
-        text-align: center;
-        line-height: $dimen - 2;
-        border: 1px solid #fff;
-        border-radius: $dimen / 2;
-    }
-    .icon {
-        margin-top: 17px;
-    }
-    .curArmStatus {
-        margin-top: 11px;
-    }
-    .armDescription {
-        font-size: 0.65em;
-    }
 
+    .status {
+        min-height: 66px;
+
+        .armButton {
+            @include dimen($dimen, $dimen);
+            margin: 5px 0;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-align: center;
+            line-height: $dimen - 2;
+            border: 1px solid #fff;
+            border-radius: $dimen / 2;
+        }
+        .icon {
+            margin-top: 17px;
+        }
+        .curArmStatus {
+            margin-top: 11px;
+        }
+        .armDescription {
+            font-size: 0.65em;
+        }
+    }
     div.armed {
         border-bottom: 2px solid #2B7B67;
 
@@ -384,6 +388,39 @@ div.armAction {
         .armButton {
             background-color: transparent;
             color: #fff;
+        }
+    }
+
+    .passcode {
+        $dimen: 60px;
+        $border: 2px;
+
+        .digits {
+            div {
+                @include dimen(10px, 10px);
+                border-radius: 5px;
+                margin: 5px;
+                background-color: rgba(255, 152, 152, 0.66);
+                float: left;
+            }
+        }
+
+        .row {
+            width: 200px;
+            margin: 20px auto;
+            .col {
+                padding: 0;
+            }
+            .passcodeButton {
+                @include dimen($dimen, $dimen);
+                text-align: center;
+                border: $border solid rgba(255, 152, 152, 0.66);
+                color: rgba(255, 255, 255, 0.8);
+                margin: 15px;
+                font-size: 1.5em;
+                line-height: $dimen - $border;
+                border-radius: $dimen / 2;
+            }
         }
     }
 }
