@@ -459,7 +459,6 @@ do (app = iz) ->
   respondCallback = {}
 
   init = (e, socket) ->
-    console.warn 'socket conencted'
     app.websocket.init socket
     return
   # END init
@@ -702,19 +701,20 @@ do (app = iz) ->
     # END curArmStatus
 
     armDisarmed: (passcode, callbackUI) ->
-      stt = curArmStatus()
-      stt = if stt then 0 else 1
-
       callback = (data) ->
         if data.status is false
           callbackUI data
           return
 
+        stt = curArmStatus()
+        stt = if stt then 0 else 1
         setArmStatus stt, 103
         callbackUI data
         return
       # END callback
 
+      stt = curArmStatus()
+      stt = if stt then 0 else 1
       emitReq '/events/armDisarmed', no: 1, cmd: stt, password: passcode, callback
 
       return

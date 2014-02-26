@@ -574,13 +574,11 @@ dbUpdateAppEvent = (eid) ->
     return
 
   cond =
-    id: eid
+    _id: eid
   update =
-    '$set':
-      success: true
+    $set:
+      succeed: true
 
-  log 'w', 'w', cond
-  log 'w', 'w', update
   Event.findOneAndUpdate cond, update, (err, doc) ->
     if err
       log 's', 'e', err
