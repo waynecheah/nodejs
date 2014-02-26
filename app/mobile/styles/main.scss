@@ -124,6 +124,12 @@ $blur: blur(3px);
     transform: translate3d(0, 0, 0);
     transform-style: preserve-3d;
 
+    .armedBgColor {
+        background-color: rgba(74, 217, 182, 0.85);
+    }
+    .disarmBgColor {
+        background-color: rgba(221, 68, 84, 0.85);
+    }
 }
 .pt-page-current, .no-js .pt-page {
     visibility: visible;
@@ -354,6 +360,15 @@ div.armAction {
     .status {
         min-height: 66px;
 
+        .icon {
+            margin-top: 17px;
+        }
+        .curArmStatus {
+            margin-top: 11px;
+        }
+        .armDescription {
+            font-size: 0.65em;
+        }
         .armButton {
             @include dimen($dimen, $dimen);
             margin: 5px 0;
@@ -364,14 +379,9 @@ div.armAction {
             border: 1px solid #fff;
             border-radius: $dimen / 2;
         }
-        .icon {
-            margin-top: 17px;
-        }
-        .curArmStatus {
-            margin-top: 11px;
-        }
-        .armDescription {
-            font-size: 0.65em;
+        .closeArmAction {
+            font-size: 28px;
+            margin-top: 10px;
         }
     }
     div.armed {
@@ -392,22 +402,44 @@ div.armAction {
     }
 
     .passcode {
-        $dimen: 60px;
+        $dimen: 70px;
         $border: 2px;
 
         .digits {
-            div {
-                @include dimen(10px, 10px);
-                border-radius: 5px;
-                margin: 5px;
-                background-color: rgba(255, 152, 152, 0.66);
-                float: left;
+            .txt {
+                margin: 3px 0;
+                font-weight: bold;
+                font-size: .9em;
+                text-align: center;
+            }
+            table {
+                margin: auto;
+                height: 22px;
+
+                div {
+                    @include dimen(10px, 10px);
+                    border-radius: 5px;
+                    margin: 5px;
+                    background-color: rgba(255, 152, 152, 0.66);
+                    float: left;
+                }
+            }
+        }
+
+        .keypad {
+            width: 270px;
+            padding-right: 7px;
+
+            .ok, .cancel {
+                text-align: center;
+                font-size: .8em;
+                font-weight: bold;
+                line-height: $dimen;
             }
         }
 
         .row {
-            width: 200px;
-            margin: 20px auto;
+            margin: 15px auto;
             .col {
                 padding: 0;
             }
@@ -418,8 +450,12 @@ div.armAction {
                 color: rgba(255, 255, 255, 0.8);
                 margin: 15px;
                 font-size: 1.5em;
+                font-weight: bold;
                 line-height: $dimen - $border;
                 border-radius: $dimen / 2;
+            }
+            .onTap {
+                background-color: rgba(255, 152, 152, 0.66);
             }
         }
     }

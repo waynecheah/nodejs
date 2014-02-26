@@ -146,8 +146,8 @@ Websockets =
     websocket.on 'APP_REQUEST', (req, data) ->
       if req.indexOf('/') >= 0
         routes = req.split '/'
-        contrl = routes[0]
-        method = if routes.length > 1 then routes[1] else 'index'
+        contrl = routes[1]
+        method = if routes.length > 2 then routes[2] else 'index'
 
         if contrl of controllers is yes and method of controllers[contrl] is yes # controller and method are found
           obj =
@@ -155,8 +155,9 @@ Websockets =
             ws: websocket.data
 
           controllers[contrl][method] obj, (res, sessions) -> # call execution
-            log 's', 'i', "Processed controller [#{contr}] and method [#{method}] has completed"
+            log 's', 'i', "Processed controller [#{contrl}] and method [#{method}] has completed"
             websocket.emit 'ResponseOnRequest', req, res
+
             _.assign socket.data, sessions if sessions? and _.isObject sessions
             return
 

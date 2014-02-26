@@ -422,150 +422,6 @@ iz =
   # END connection
 
 
-
-  changePage: (from, to, reverse, tabNo, ts=@transition) ->
-    debug = iz.debug
-    fPage = "div.pt-page-#{from}"
-    tPage = "div.pt-page-#{to}"
-    fxIn  = if reverse then ts.fxRevIn else ts.fxIn
-    fxOut = if reverse then ts.fxRevOut else ts.fxOut
-    #mrgn  = $("#{tPage} div.header").height()
-
-    sHeight = $(window).height() # get screen height
-    $("#{tPage} div.body").css 'min-height', "#{sHeight}px" # make page body to have same height as the screen
-
-    if tabNo # it has tabs in this page
-      num  = parseInt tabNo - 1
-      left = iz.tabArrowPostion num, tPage # find the absolute left position in pixel
-      #$("#{tPage} .tabsBody .arrow").css 'left', "#{left}px" # position the arrow to first tab
-      $(".body#{to} .pt-page").removeClass('pt-page-current').css 'height', sHeight # make all tabs to have same height as the screen
-      $(".body#{to} .pt-tab-#{tabNo}").addClass 'pt-page-current' # set the right tab to display on screen
-
-    fixedHeader = $('#fixHeader div.header')
-    if fixedHeader.length > 0 # if there is any content in current fixed header
-      hdPage = fixedHeader.attr 'data-page' # first to find where is it original page came from
-      $("div.pt-page-#{hdPage}").prepend fixedHeader # then put the header back tp the page
-
-    $(fPage).addClass "pt-page-current #{fxOut}"
-    $(tPage).addClass "pt-page-current #{fxIn} pt-page-ontop"
-
-    setTimeout () -> # when transition is done
-      pHeight = $("#{tPage}").height()
-      $("#{tPage} div.body").css 'min-height', 200
-      debug "callback on destination page #{tPage} compare screen height #{sHeight} with page height #{pHeight}"
-
-      $(fPage).removeClass "pt-page-current #{fxOut}"
-      $(tPage).removeClass "#{fxIn} pt-page-ontop"
-
-      header = $("#{tPage} div.header")
-      if header.length > 0 # if there is any content in destination header
-        $('#fixHeader').html(header).show() # first to migrate the header content from original page to fixed header
-        $('#fixHeader div.header').attr 'data-page', to # and don't forget to tell where this header original came from
-        setTimeout ->
-          $('#fixHeader .arrow').css 'left', "#{left}px" # position the arrow to destination tab
-        , 50
-        $('#fixHeader .tabs .tab').delay(250).removeClass 'selected'
-        setTimeout ->
-          $("#fixHeader .tabs .tab:nth(#{num})").addClass 'selected'
-        , 400
-
-      if sHeight > $("#{tPage}").height() # make the content fit to screen if it's height shorter then screen height
-        $("#{tPage} div.body").css 'height', "#{sHeight}px"
-
-      return
-    , 400
-
-    return
-  # END changePage
-
-  changeTab: (bodyName, fTab, tTab, ts=@transition) ->
-    debug   = iz.debug
-    reverse = if fTab > tTab then yes else no
-    fxIn    = if reverse then ts.fxRevIn else ts.fxIn
-    fxOut   = if reverse then ts.fxRevOut else ts.fxOut
-    fTab    = ".body#{bodyName} .pt-tab-#{fTab}"
-    tTab    = ".body#{bodyName} .pt-tab-#{tTab}"
-    sHeight = $(window).height() # screen height
-
-    $(".body#{bodyName} .pt-page").css 'height', sHeight
-
-    debug "from #{fTab} to #{tTab}"
-    $(fTab).addClass "pt-page-current #{fxOut}"
-    $(tTab).addClass "pt-page-current #{fxIn} pt-page-ontop"
-
-    setTimeout () ->
-      $(fTab).removeClass "pt-page-current #{fxOut}"
-      $(tTab).removeClass "#{fxIn} pt-page-ontop"
-      return
-    , 400
-  # END changeTab
-
-  changeIcon: (selector, from, to) ->
-    $(selector).addClass('pt-icon-moveInBack').css 'margin-top', '100px'
-    setTimeout () ->
-      $(selector).removeClass("pt-icon-moveInBack #{from}")
-        .addClass("pt-icon-moveOutBack #{to}").css 'margin-top', '2px'
-
-      setTimeout () ->
-        $(selector).removeClass 'pt-icon-moveOutBack'
-        return
-      , 400
-
-      return
-    , 400
-
-    return
-  # END changeIcon
-
-  onTabClick: ->
-    debug = iz.debug
-    return if $(@).hasClass 'selected'
-
-    page = $(@).parents('.header').attr 'data-page'
-    tabs = $('#fixHeader .tabsBody .tab').length # total of tabs in the row
-    i    = 0
-    j    = 0
-    from = null
-    to   = null
-
-    return if typeof page is 'undefined'
-
-    while tabs > i
-      from = i if $("#fixHeader .tabsBody .tab:nth(#{i})").hasClass 'selected'
-      i++
-
-    return if from is null
-
-    $("#fixHeader .tabsBody .tab:nth(#{from})").removeClass 'selected'
-    #$(@).parent('.tabs').find('.selected').removeClass 'selected'
-    $(@).addClass 'selected'
-
-    while tabs > j
-      to = j if $("#fixHeader .tabsBody .tab:nth(#{j})").hasClass 'selected'
-      j++
-
-    return if to is null
-
-    left = iz.tabArrowPostion to # find the left absolute position in pixel
-    $('#fixHeader .arrow').attr('pos', 'Y').css 'left', "#{left}px"
-
-    from++
-    to++
-    debug "body#{page} from tab#{from} to tab#{to}"
-    iz.changeTab page, from, to
-
-    return
-  # END onTabClick
-
-  tabArrowPostion: (nth, selector='#fixHeader') ->
-    width = $(window).width()
-    tabs  = $("#{selector} .tabsBody .tab").length # total of tabs in the row
-    each  = width / tabs # each tab's width in pixel
-    first = (each - 10) / 2 # first tab's arrow left position in pixel
-
-    if nth is 0 then first else first + (nth * each)
-  # END tabArrowPostion
-
   gdebug: (name, collapsed=false) ->
     if @env is 'pro'
       return
@@ -594,242 +450,7 @@ iz =
 $ () ->
   iz.init()
   return
-
-
-## START module interface
-## dependency modules: null ##
-do (app = iz) ->
-  tabArrowPostion = (nth, selector='#fixHeader') ->
-    width = $(window).width()
-    tabs  = $("#{selector} .tabsBody .tab").length # total of tabs in the row
-    each  = width / tabs # each tab's width in pixel
-    first = (each - 10) / 2 # first tab's arrow left position in pixel
-
-    if nth is 0
-      $(window).trigger 'onSecurityTab'
-    else
-      $(window).trigger 'onOtherTab'
-
-    if nth is 0 then first else first + (nth * each)
-  # END tabArrowPostion
-
-  hideArmDisarmActionBar = ->
-    height = $(window).height()
-    $('.armAction').css 'top', "#{height}px"
-    return
-  # END hideArmDisarmActionBar
-
-  screenResize = ->
-    height = $(window).height()
-    $('.screenHeight').css 'height', "#{height}px"
-    return
-  # END screenResize
-
-  app.interface =
-    transition:
-      fxOut: 'pt-page-moveToLeft'
-      fxIn: 'pt-page-moveFromRight'
-      fxRevOut: 'pt-page-moveToRight'
-      fxRevIn: 'pt-page-moveFromLeft'
-
-    init: ->
-      that = @
-
-      _.each $('.fixHeader,.header'), (el) ->
-        Hammer(el).on 'dragdown', () -> # Slide down to show connectivity status bar
-          if $('div.fixedStatus').hasClass 'hideUp'
-            $('div.fixedStatus').removeClass('hideUp').addClass 'showDown'
-          return
-        return
-
-      _.each $('.pt-page'), (el) ->
-        Hammer(el).on 'tap', () -> # Slide up to hide connectivity status bar
-          if $('div.fixedStatus').hasClass 'showDown'
-            $('div.fixedStatus').removeClass('showDown').addClass 'hideUp'
-          return
-        return
-
-      _.each $('.pt-page .ln'), (el) ->
-        Hammer(el).on 'tap', () -> # Animate each page change
-          pages = $(@).attr('data-page').split '-'
-          tabNo = $(@).attr('data-tab')
-
-          if pages[0] and pages[1]
-            reverse = if pages[2] is 'r' then yes else no
-            tabNo   = if pages[3] then pages[3] else null
-            that.changePage pages[0], pages[1], reverse, tabNo
-          return
-        return
-
-      _.each $('template'), (tpl) -> # load all templates
-        id = $(tpl).attr 'id'
-        app.templates[id] = $($(tpl).html())
-        tpl.remove()
-        return
-
-      $('.tab').click @onTabClick
-      $(window).on('onSecurityTab', ->
-        height = $(window).height() - $('.armButton').outerHeight true
-        height = height - 2
-        setTimeout ->
-          $('.armAction').css 'top', "#{height}px"
-        , 400
-      ).on 'onOtherTab', hideArmDisarmActionBar
-
-      hideArmDisarmActionBar()
-      $(window).resize(screenResize).trigger 'resize'
-      return
-    # END init
-
-    changePage: (from, to, reverse, tabNo, ts=@transition) ->
-      debug = iz.debug
-      fPage = "div.pt-page-#{from}"
-      tPage = "div.pt-page-#{to}"
-      fxIn  = if reverse then ts.fxRevIn else ts.fxIn
-      fxOut = if reverse then ts.fxRevOut else ts.fxOut
-
-      sHeight = $(window).height() # get screen height
-      $("#{tPage} div.body")
-       .css 'min-height', "#{sHeight}px" # make page body to have same height as the screen
-
-      if tabNo # it has tabs in this page
-        num  = parseInt tabNo - 1
-        left = tabArrowPostion num, tPage # find the absolute left position in pixel
-        #$("#{tPage} .tabsBody .arrow").css 'left', "#{left}px" # position the arrow to first tab
-        $(".body#{to} .pt-page").removeClass('pt-page-current')
-         .css 'height', sHeight # make all tabs to have same height as the screen
-        $(".body#{to} .pt-tab-#{tabNo}")
-         .addClass 'pt-page-current' # set the right tab to display on screen
-
-      fixedHeader = $('#fixHeader div.header')
-      if fixedHeader.length > 0 # if there is any content in current fixed header
-        hdPage = fixedHeader.attr 'data-page' # first to find where is it original page came from
-        $("div.pt-page-#{hdPage}")
-         .prepend fixedHeader # then put the header back tp the page
-
-      $(fPage).addClass "pt-page-current #{fxOut}"
-      $(tPage).addClass "pt-page-current #{fxIn} pt-page-ontop"
-
-      setTimeout () -> # when transition is done
-        pHeight = $("#{tPage}").height()
-        $("#{tPage} div.body").css 'min-height', 200
-        debug "callback on destination page #{tPage} compare
-         screen height #{sHeight} with page height #{pHeight}"
-
-        $(fPage).removeClass "pt-page-current #{fxOut}"
-        $(tPage).removeClass "#{fxIn} pt-page-ontop"
-
-        header = $("#{tPage} div.header")
-        if header.length > 0 # if there is any content in destination header
-          $('#fixHeader').html(header).show() # first to migrate the header content from original page to fixed header
-          $('#fixHeader div.header').attr 'data-page', to # and don't forget to tell where this header original came from
-          setTimeout ->
-            $('#fixHeader .arrow')
-             .css 'left', "#{left}px" # position the arrow to destination tab
-          , 50
-          $('#fixHeader .tabs .tab').delay(250).removeClass 'selected'
-          setTimeout ->
-            $("#fixHeader .tabs .tab:nth(#{num})")
-             .addClass 'selected'
-          , 400
-
-        if sHeight > $("#{tPage}").height() # make the content fit to screen if it's height shorter then screen height
-          $("#{tPage} div.body").css 'height', "#{sHeight}px"
-
-        return
-      , 400
-
-      return
-    # END changePage
-
-    changeTab: (bodyName, fTab, tTab, ts=@transition) ->
-      debug   = iz.debug
-      reverse = if fTab > tTab then yes else no
-      fxIn    = if reverse then ts.fxRevIn else ts.fxIn
-      fxOut   = if reverse then ts.fxRevOut else ts.fxOut
-      fTab    = ".body#{bodyName} .pt-tab-#{fTab}"
-      tTab    = ".body#{bodyName} .pt-tab-#{tTab}"
-      sHeight = $(window).height() # screen height
-
-      $(".body#{bodyName} .pt-page").css 'height', sHeight
-
-      debug "from #{fTab} to #{tTab}"
-      $(fTab).addClass "pt-page-current #{fxOut}"
-      $(tTab).addClass "pt-page-current #{fxIn} pt-page-ontop"
-
-      setTimeout () ->
-        $(fTab).removeClass "pt-page-current #{fxOut}"
-        $(tTab).removeClass "#{fxIn} pt-page-ontop"
-        return
-      , 400
-    # END changeTab
-
-    changeIcon: (selector, from, to) ->
-      $(selector)
-       .addClass 'pt-icon-moveInBack'
-       .css 'margin-top', '100px'
-
-      setTimeout () ->
-        $(selector)
-         .removeClass "pt-icon-moveInBack #{from}"
-         .addClass "pt-icon-moveOutBack #{to}"
-         .css 'margin-top', '2px'
-
-        setTimeout () ->
-          $(selector)
-           .removeClass 'pt-icon-moveOutBack'
-          return
-        , 400
-
-        return
-      , 400
-
-      return
-    # END changeIcon
-
-    onTabClick: ->
-      debug = iz.debug
-      return if $(@).hasClass 'selected'
-
-      page = $(@).parents('.header').attr 'data-page'
-      tabs = $('#fixHeader .tabsBody .tab').length # total of tabs in the row
-      i    = 0
-      j    = 0
-      from = null
-      to   = null
-
-      return if typeof page is 'undefined'
-
-      while tabs > i
-        from = i if $("#fixHeader .tabsBody .tab:nth(#{i})").hasClass 'selected'
-        i++
-
-      return if from is null
-
-      $("#fixHeader .tabsBody .tab:nth(#{from})").removeClass 'selected'
-      #$(@).parent('.tabs').find('.selected').removeClass 'selected'
-      $(@).addClass 'selected'
-
-      while tabs > j
-        to = j if $("#fixHeader .tabsBody .tab:nth(#{j})").hasClass 'selected'
-        j++
-
-      return if to is null
-
-      left = tabArrowPostion to # find the left absolute position in pixel
-      $('#fixHeader .arrow').attr('pos', 'Y').css 'left', "#{left}px"
-
-      from++
-      to++
-      debug "body#{page} from tab#{from} to tab#{to}"
-      app.interface.changeTab page, from, to
-
-      return
-    # END onTabClick
-  # END interface
-
-  app
-# END module interface
+# END document ready
 
 
 ## START module [ websocket ]
@@ -991,6 +612,7 @@ do (app = iz) ->
         return
       socket.on 'DeviceUpdate', (data) ->
         updateDeviceStatus data, that.devices
+        $(window).trigger 'deviceDataUpdated'
         return
 
       socket.on 'DeviceInformation', (data) ->
@@ -998,6 +620,7 @@ do (app = iz) ->
         if data.status
           that.devices = data.devices
           updateAllDeviceStatus data.devices, true
+          $(window).trigger 'deviceDataUpdated'
         return
       socket.on 'ResponseOnRequest', (req, data) ->
         respondCallback[req] data if req of respondCallback is true
@@ -1030,6 +653,10 @@ do (app = iz) ->
       @socket.emit 'APP_REQUEST', req, data
       return
     # END emitReq
+
+    resCbList: ->
+      respondCallback
+    # END resCbList
   # END websocket
 
   $(window).on 'initSocketListener', init
@@ -1043,85 +670,52 @@ do (app = iz) ->
 do (app = iz) ->
   websocket = app.websocket
 
-  emitReq = (req, data) ->
-    websocket.emitReq req, data
+  emitReq = (req, data, callback) ->
+    websocket.emitReq req, data, callback
     return
   # END emitReq
 
   curArmStatus = ->
-    cur  = websocket.devices[0].data.status.pt[0]
+    cur  = websocket.devices[0].data.status.partition[0]
     info = cur.split ','
-    if info[1] then 0 else 1
+    if info[1] is '0' then 0 else 1
   # END curArmStatus
 
-  armDisarmBarPosition = ->
-    height = $(window).height() - $('.armButton').outerHeight true
-    height - 2
-  # END armDisarmBarPosition
-
-  armDisarmed = (status) ->
-    callback = (data) ->
-      return if data.status is false
-      websocket.devices[0].data.status.pt[0] = "1,#{stt},103"
-      return
-    # END callback
-
-    s = $ '.armAction .status'
-
-    if status
-      s.removeClass('disarm').addClass 'armed'
-      s.find('.curArmStatus').html 'Armed Away.'
-      s.find('.armDescription').html 'Press to Disarm'
-      s.find('.armButton').html 'Disarm'
-      $('.armAction').css 'top', armDisarmBarPosition
-      $('#fixHeader .header, .body2a .pt-tab-1').removeClass 'blur'
-      setTimeout ->
-        fullpageAction = $ '#fullpage .armAction'
-        $("div.pt-page-2a").prepend fullpageAction
-        return
-      , 400
-    else
-      s.removeClass('armed').addClass 'disarm'
-      s.find('.curArmStatus').html 'Disarmed.'
-      s.find('.armDescription').html 'Press to Arm'
-      s.find('.armButton').html 'Arm'
-      actionBar = $ '.pt-page-2a .armAction'
-      $('#fullpage').html actionBar
-      setTimeout ->
-        $('.armAction').css 'top', 0
-        return
-      , 50
-      setTimeout ->
-        $('#fixHeader .header, .body2a .pt-tab-1').addClass 'blur'
-        return
-      , 310
-
-    #emitReq '/events/armDisarmed', no: 1, cmd: stt, password: 1234, callback
-
+  setArmStatus = (stt, user) ->
+    websocket.devices[0].data.status.partition[0] = "1,#{stt},#{user}";
     return
-  # armDisarmed
+  # END setArmStatus
+
 
   app.appInteraction =
     init: ->
-      $('.armButton').click ->
-        s = $ '.armAction .armed, .armAction .disarm'
-        if s.hasClass 'armed' then armDisarmed 0 else armDisarmed 1
+      $(window).on('arm', ->
         return
+      ).on('disarm', ->
+        return
+      )
       return
     # END init
 
-    armDisarmed: ->
-      cur  = websocket.devices[0].data.status.pt[0]
-      info = cur.split ','
-      stt  = if info[1] then 0 else 1
+    curArmStatus: ->
+      curArmStatus()
+    # END curArmStatus
+
+    armDisarmed: (passcode, callbackUI) ->
+      stt = curArmStatus()
+      stt = if stt then 0 else 1
 
       callback = (data) ->
-        return if data.status is false
-        websocket.devices[0].data.status.pt[0] = "1,#{stt},103"
+        if data.status is false
+          callbackUI data
+          return
+
+        setArmStatus stt, 103
+        callbackUI data
         return
       # END callback
 
-      emitReq '/events/armDisarmed', no: 1, cmd: stt, password: 1234, callback
+      emitReq '/events/armDisarmed', no: 1, cmd: stt, password: passcode, callback
 
       return
     # END armDisarmed
@@ -1133,6 +727,401 @@ do (app = iz) ->
 
   app
 # END module appInteraction
+
+
+## START module interface
+## dependency modules: appInteraction ##
+do (app = iz) ->
+  appInteraction = app.appInteraction
+  onArmStatusBar = no
+  onPasscode     = no
+  passcode       = []
+
+  changeArmStatus = (force=no) ->
+    return unless onArmStatusBar or force
+
+    status = appInteraction.curArmStatus()
+    s      = $ '.armAction .status'
+
+    if status
+      desc = if onPasscode then 'Enter Passcode to Disarm' else 'Press to Disarm'
+      $('.armAction').removeClass('disarmBgColor').addClass 'armedBgColor'
+      s.removeClass('disarm').addClass 'armed'
+      s.find('.icon').removeClass('icon-UnLock').addClass 'icon-Locked'
+      s.find('.curArmStatus').html 'Armed Away.'
+      s.find('.armDescription').html desc
+      s.find('.armButton').html 'Disarm'
+    else
+      desc = if onPasscode then 'Enter Passcode to Arm' else 'Press to Arm'
+      $('.armAction').removeClass('armedBgColor').addClass 'disarmBgColor'
+      s.removeClass('armed').addClass 'disarm'
+      s.find('.icon').removeClass('icon-Locked').addClass 'icon-UnLock'
+      s.find('.curArmStatus').html 'Disarmed.'
+      s.find('.armDescription').html desc
+      s.find('.armButton').html 'Arm'
+  # END changeArmStatus
+
+  tabArrowPostion = (nth, selector='#fixHeader') ->
+    width = $(window).width()
+    tabs  = $("#{selector} .tabsBody .tab").length # total of tabs in the row
+    each  = width / tabs # each tab's width in pixel
+    first = (each - 10) / 2 # first tab's arrow left position in pixel
+
+    if nth is 0
+      $(window).trigger 'onSecurityTab'
+    else
+      $(window).trigger 'onOtherTab'
+
+    if nth is 0 then first else first + (nth * each)
+  # END tabArrowPostion
+
+  hideArmDisarmActionBar = ->
+    height = $(window).height()
+    $('.armAction').css 'top', "#{height}px"
+    onArmStatusBar = no
+    return
+  # END hideArmDisarmActionBar
+
+  showArmDisarmActionBar = ->
+    # TODO(UI): should not show this bar when device is offline
+    height = armDisarmBarPosition()
+
+    changeArmStatus true
+    setTimeout ->
+      $('.armAction').css 'top', "#{height}px"
+      onArmStatusBar = yes
+    , 400
+    return
+  # END showArmDisarmActionBar
+
+  armDisarmBarPosition = ->
+    height = $(window).height() - $('.armButton').outerHeight true
+    height - 2
+  # END armDisarmBarPosition
+
+  togglePasscode = (turnOff=false) ->
+    return if turnOff and not onPasscode # no need to turn off since passcode is not showing on screen
+
+    status = appInteraction.curArmStatus()
+    if status
+      desc1 = 'Press to Disarm'
+      desc2 = 'Enter Passcode to Disarm'
+    else
+      desc1 = 'Press to Arm'
+      desc2 = 'Enter Passcode to Arm'
+
+    if onPasscode # showing passcode screen, toggle to close it
+      onPasscode = no
+      $('.armAction').css 'top', armDisarmBarPosition
+      $('.armAction .status .armDescription').html desc1
+      $('.armAction .status .armButton').show()
+      $('.armAction .status .closeArmAction').hide()
+      $('#fixHeader .header, .body2a .pt-tab-1').removeClass 'blur'
+      passcode = []
+
+      setTimeout ->
+        fullpageAction = $ '#fullpage .armAction'
+        $("div.pt-page-2a").prepend fullpageAction
+
+        $('.armAction .passcode .digits table tr td div').remove()
+        $('.armAction .passcode .keypad .ok').hide()
+        $('.armAction .passcode .keypad .cancel').html 'Cancel'
+        return
+      , 400
+    else # Passcode is hidden at bottom, toggle to show it
+      onPasscode = yes
+      actionBar  = $ '.pt-page-2a .armAction'
+      $('#fullpage').html actionBar
+
+      setTimeout ->
+        $('.armAction').css 'top', 0
+        $('.armAction .status .armDescription').html desc2
+        $('.armAction .status .armButton').hide()
+        $('.armAction .status .closeArmAction').show()
+        return
+      , 50
+      setTimeout ->
+        $('#fixHeader .header, .body2a .pt-tab-1').addClass 'blur'
+        return
+      , 310
+
+    return
+  # END togglePasscode
+
+  enterPasscode = ->
+    length = $('.armAction .passcode .digits table tr td div').length
+    $('.armAction .passcode .digits table tr td').append '<div></div>'
+    $('.armAction .passcode .keypad .ok').show() if length > 2
+    $('.armAction .passcode .keypad .cancel').html 'Delete'
+    return
+  # END enterPasscode
+
+  armDisarmUpdateCallback = (data) ->
+    if data.status
+      console.log data
+    else
+      console.warn data
+
+    togglePasscode()
+    changeArmStatus()
+    return
+  # END armDisarmUpdateCallback
+
+  screenResize = ->
+    height = $(window).height()
+    $('.screenHeight').css 'height', "#{height}px"
+    return
+  # END screenResize
+
+  onTap = (selector, evt, callback) ->
+    _.each $(selector), (el) ->
+      Hammer(el).on evt, callback
+      return
+    return
+  # END onTap
+
+
+  app.interface =
+    transition:
+      fxOut: 'pt-page-moveToLeft'
+      fxIn: 'pt-page-moveFromRight'
+      fxRevOut: 'pt-page-moveToRight'
+      fxRevIn: 'pt-page-moveFromLeft'
+
+    init: ->
+      that = @
+
+      _.each $('.fixHeader,.header'), (el) ->
+        Hammer(el).on 'dragdown', () -> # Slide down to show connectivity status bar
+          if $('div.fixedStatus').hasClass 'hideUp'
+            $('div.fixedStatus').removeClass('hideUp').addClass 'showDown'
+          return
+        return
+
+      _.each $('.pt-page'), (el) ->
+        Hammer(el).on 'tap', -> # Slide up to hide connectivity status bar
+          if $('div.fixedStatus').hasClass 'showDown'
+            $('div.fixedStatus').removeClass('showDown').addClass 'hideUp'
+          return
+        return
+
+      _.each $('.pt-page .ln'), (el) ->
+        Hammer(el).on 'tap', -> # Animate each page change
+          pages = $(@).attr('data-page').split '-'
+          tabNo = $(@).attr('data-tab')
+
+          if pages[0] and pages[1]
+            reverse = if pages[2] is 'r' then yes else no
+            tabNo   = if pages[3] then pages[3] else null
+            that.changePage pages[0], pages[1], reverse, tabNo
+          return
+        return
+
+      _.each $('template'), (tpl) -> # load all templates
+        id = $(tpl).attr 'id'
+        app.templates[id] = $($(tpl).html())
+        tpl.remove()
+        return
+
+      onTap '.tab', 'tap', @onTabClick
+      onTap '.armAction .armButton, .armAction .closeArmAction', 'tap', ->
+        togglePasscode()
+        return
+      onTap '.armAction .keypad .ok', 'tap', ->
+        appInteraction.armDisarmed passcode.join(''), armDisarmUpdateCallback
+        return
+      onTap '.armAction .cancel', 'tap', ->
+        length = $('.armAction .passcode .digits table tr td div').length
+        if length > 0
+          $('.armAction .passcode .digits table tr td div:last-child').remove()
+          passcode.pop()
+
+          if length is 1
+            $('.armAction .passcode .keypad .cancel').html 'Cancel'
+          else if length < 5
+            $('.armAction .passcode .keypad .ok').hide()
+        else
+          togglePasscode true
+        return
+      onTap '.armAction .passcodeButton', 'touch', -> # very fast capture when screen get touched, add onTap class
+        $(@).addClass 'onTap'
+        passcode.push $(@).attr 'data-no'
+        enterPasscode()
+        return
+      onTap '.armAction .passcodeButton', 'tap', -> # if finger is not on hold, onTop class will be removed
+        setTimeout ->
+          $('.armAction .passcodeButton').removeClass 'onTap'
+          return
+        , 200
+        return
+      onTap '.armAction .passcodeButton', 'hold', -> # when finger on hold, keep the onTap class there
+        $(@).addClass 'onTap'
+        passcode.push $(@).attr 'data-no'
+        return
+      onTap '.armAction .passcodeButton', 'release', -> # when finger release, class onTap should have removed
+        setTimeout ->
+          $('.armAction .passcodeButton').removeClass 'onTap'
+          return
+        , 200
+        return
+
+      $(window).on('deviceDataUpdated', changeArmStatus)
+       .on('onSecurityTab', showArmDisarmActionBar)
+       .on('onOtherTab', hideArmDisarmActionBar).trigger 'onOtherTab'
+
+      $(window).resize(screenResize).trigger 'resize'
+      return
+    # END init
+
+    changePage: (from, to, reverse, tabNo, ts=@transition) ->
+      debug = iz.debug
+      fPage = "div.pt-page-#{from}"
+      tPage = "div.pt-page-#{to}"
+      fxIn  = if reverse then ts.fxRevIn else ts.fxIn
+      fxOut = if reverse then ts.fxRevOut else ts.fxOut
+
+      sHeight = $(window).height() # get screen height
+      $("#{tPage} div.body")
+      .css 'min-height', "#{sHeight}px" # make page body to have same height as the screen
+
+      if tabNo # it has tabs in this page
+        num  = parseInt tabNo - 1
+        left = tabArrowPostion num, tPage # find the absolute left position in pixel
+        #$("#{tPage} .tabsBody .arrow").css 'left', "#{left}px" # position the arrow to first tab
+        $(".body#{to} .pt-page").removeClass('pt-page-current')
+        .css 'height', sHeight # make all tabs to have same height as the screen
+        $(".body#{to} .pt-tab-#{tabNo}")
+        .addClass 'pt-page-current' # set the right tab to display on screen
+
+      fixedHeader = $('#fixHeader div.header')
+      if fixedHeader.length > 0 # if there is any content in current fixed header
+        hdPage = fixedHeader.attr 'data-page' # first to find where is it original page came from
+        $("div.pt-page-#{hdPage}")
+        .prepend fixedHeader # then put the header back tp the page
+
+      $(fPage).addClass "pt-page-current #{fxOut}"
+      $(tPage).addClass "pt-page-current #{fxIn} pt-page-ontop"
+
+      setTimeout () -> # when transition is done
+        pHeight = $("#{tPage}").height()
+        $("#{tPage} div.body").css 'min-height', 200
+        debug "callback on destination page #{tPage} compare
+                 screen height #{sHeight} with page height #{pHeight}"
+
+        $(fPage).removeClass "pt-page-current #{fxOut}"
+        $(tPage).removeClass "#{fxIn} pt-page-ontop"
+
+        header = $("#{tPage} div.header")
+        if header.length > 0 # if there is any content in destination header
+          $('#fixHeader').html(header).show() # first to migrate the header content from original page to fixed header
+          $('#fixHeader div.header').attr 'data-page', to # and don't forget to tell where this header original came from
+          setTimeout ->
+            $('#fixHeader .arrow')
+            .css 'left', "#{left}px" # position the arrow to destination tab
+          , 50
+          $('#fixHeader .tabs .tab').delay(250).removeClass 'selected'
+          setTimeout ->
+            $("#fixHeader .tabs .tab:nth(#{num})")
+            .addClass 'selected'
+          , 400
+
+        if sHeight > $("#{tPage}").height() # make the content fit to screen if it's height shorter then screen height
+          $("#{tPage} div.body").css 'height', "#{sHeight}px"
+
+        return
+      , 400
+
+      return
+    # END changePage
+
+    changeTab: (bodyName, fTab, tTab, ts=@transition) ->
+      debug   = iz.debug
+      reverse = if fTab > tTab then yes else no
+      fxIn    = if reverse then ts.fxRevIn else ts.fxIn
+      fxOut   = if reverse then ts.fxRevOut else ts.fxOut
+      fTab    = ".body#{bodyName} .pt-tab-#{fTab}"
+      tTab    = ".body#{bodyName} .pt-tab-#{tTab}"
+      sHeight = $(window).height() # screen height
+
+      $(".body#{bodyName} .pt-page").css 'height', sHeight
+
+      debug "from #{fTab} to #{tTab}"
+      $(fTab).addClass "pt-page-current #{fxOut}"
+      $(tTab).addClass "pt-page-current #{fxIn} pt-page-ontop"
+
+      setTimeout () ->
+        $(fTab).removeClass "pt-page-current #{fxOut}"
+        $(tTab).removeClass "#{fxIn} pt-page-ontop"
+        return
+      , 400
+    # END changeTab
+
+    changeIcon: (selector, from, to) ->
+      $(selector)
+      .addClass 'pt-icon-moveInBack'
+        .css 'margin-top', '100px'
+
+      setTimeout () ->
+        $(selector)
+        .removeClass "pt-icon-moveInBack #{from}"
+          .addClass "pt-icon-moveOutBack #{to}"
+            .css 'margin-top', '2px'
+
+        setTimeout () ->
+          $(selector)
+          .removeClass 'pt-icon-moveOutBack'
+          return
+        , 400
+
+        return
+      , 400
+
+      return
+    # END changeIcon
+
+    onTabClick: ->
+      debug = iz.debug
+      return if $(@).hasClass 'selected'
+
+      page = $(@).parents('.header').attr 'data-page'
+      tabs = $('#fixHeader .tabsBody .tab').length # total of tabs in the row
+      i    = 0
+      j    = 0
+      from = null
+      to   = null
+
+      return if typeof page is 'undefined'
+
+      while tabs > i
+        from = i if $("#fixHeader .tabsBody .tab:nth(#{i})").hasClass 'selected'
+        i++
+
+      return if from is null
+
+      $("#fixHeader .tabsBody .tab:nth(#{from})").removeClass 'selected'
+      #$(@).parent('.tabs').find('.selected').removeClass 'selected'
+      $(@).addClass 'selected'
+
+      while tabs > j
+        to = j if $("#fixHeader .tabsBody .tab:nth(#{j})").hasClass 'selected'
+        j++
+
+      return if to is null
+
+      left = tabArrowPostion to # find the left absolute position in pixel
+      $('#fixHeader .arrow').attr('pos', 'Y').css 'left', "#{left}px"
+
+      from++
+      to++
+      debug "body#{page} from tab#{from} to tab#{to}"
+      app.interface.changeTab page, from, to
+
+      return
+    # END onTabClick
+  # END interface
+
+  app
+# END module interface
 
 
 ## START module [ client ]
@@ -1195,6 +1184,7 @@ do (app = iz) ->
   private_method = ->
     protected_method = () ->
     return
+
 
   app.module =
     property: null

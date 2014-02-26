@@ -547,16 +547,40 @@ dbEventUpdate = (socket, cond, event, type, callback) ->
   return
 # END dbEventUpdate
 
+
+
+dbAddAppEvent = (data, callback) ->
+  if not data
+    return callback(null, false) if _.isFunction callback
+
+  Event.create data, (err, doc) ->
+    if err
+      log 's', 'e', 'App event has logged failure'
+      log 's', 'd', err
+    else
+      log 's', 's', 'App event has logged successfully'
+      log 's', 'd', doc
+
+    callback(err, doc) if _.isFunction callback
+
+    return
+  # END Event.create
+
+  return
+# END dbAddAppEvent
+
 dbUpdateAppEvent = (eid) ->
   if not eid?
     return
 
   cond =
-    _id: eid
+    id: eid
   update =
-    $set:
+    '$set':
       success: true
 
+  log 'w', 'w', cond
+  log 'w', 'w', update
   Event.findOneAndUpdate cond, update, (err, doc) ->
     if err
       log 's', 'e', err
@@ -679,6 +703,50 @@ Devices =
   getSockets: ->
     sockets
   # END getSocket
+
+  write: (serial, data, encrption, callback) ->
+    total = sockets.length
+    time  = (new Date).getTime()
+    sent  = no
+    i     = 0
+
+    data.datetime = time
+
+    if encrption
+      msg = commonFn.encryption data.log, config.aesKey, config.aesIv, 'hex'
+      msg = "en=#{msg}"
+    else
+      msg = data.log
+
+    while i < total
+      socket = sockets[i]
+      sn     = socket.data.info.sn
+
+      if serial is sn
+        log 'w', 'i', "App make update to device serial [#{sn}] with command [#{msg}]"
+        socketWrite socket, msg
+
+        data.device = socket.data.deviceId
+        dbAddAppEvent data, (err, doc) ->
+          return if err
+
+          socket.app.lastCommand    = data.category
+          socket.app[data.category] =
+            status: 'server sent'
+            eid: doc._id
+            time: time
+
+          return
+        # END dbAddAppEvent
+
+        sent = yes
+        callback true
+      i++
+
+    callback(false) if not sent
+
+    return
+  # END write
 # END Devices
 
 module.exports = Devices
