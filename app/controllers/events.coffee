@@ -28,7 +28,7 @@ Events =
       user: 103,
       succeed: false
 
-    devices.write serial, obj, no, (status) ->
+    devices.write serial, obj, yes, (status) ->
       callback
         status: status
         data: data.form

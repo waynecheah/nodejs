@@ -470,9 +470,34 @@ div.body {
     li {
         margin-bottom: 2px;
         padding: 20px;
-        line-height: 60px;
         background-color: rgba(50, 50, 50, $opacity);
+
+        div {
+            line-height: 35px;
+
+            .ico {
+                font-size: .8em !important;
+            }
+        }
     }
+    li.disabled {
+        background-color: rgba(150, 150, 150, 0.5);
+
+        .icon {
+            font-size: 1.2em !important;
+        }
+    }
+
+    ul.lgRow {
+        li {
+            padding: 35px 20px;
+
+            .description {
+                font-size: .65em;
+            }
+        }
+    }
+
     div.pt-page { /* this also means it's tab DIV */
         overflow-y: auto;
         overflow-x: hidden;
@@ -484,7 +509,7 @@ div.body {
                 line-height: 20px;
             }
             li span {
-                font-size: 0.6em;
+                font-size: .6em;
             }
         }
     }

@@ -113,25 +113,28 @@
               </div>
             </div>
             <div class="body body2">
-              <ul>
+              <ul class="lgRow">
                 <li data-page="2-2a-f-1" class="ln row">
-                  <div class="col-xs-3 col-md-2"><span class="icon-Locked"></span></div>
-                  <div class="col-xs-5 col-md-8">Security</div>
-                  <div class="col-xs-4 col-md-2">N/A</div>
+                  <div class="col-xs-2 col-md-2"><div class="icon-Locked"></div></div>
+                  <div class="col-xs-6 col-md-8">
+                    Security
+                    <div class="description totalZones"></div>
+                  </div>
+                  <div class="col-xs-4 col-md-2 armStatus">N/A</div>
                 </li>
                 <li data-page="2-2a-f-2" class="ln row">
-                  <div class="col-xs-3 col-md-2"><span class="icon-Heart"></span></div>
-                  <div class="col-xs-5 col-md-8">System Health</div>
+                  <div class="col-xs-2 col-md-2"><span class="icon-Heart"></span></div>
+                  <div class="col-xs-6 col-md-8">System Health</div>
                   <div class="col-xs-4 col-md-2">N/A</div>
                 </li>
                 <li data-page="2-2a-f-3" class="ln row">
-                  <div class="col-xs-3 col-md-2"><span class="icon-AlarmClock"></span></div>
-                  <div class="col-xs-5 col-md-8">Alarm</div>
+                  <div class="col-xs-2 col-md-2"><span class="icon-AlarmClock"></span></div>
+                  <div class="col-xs-6 col-md-8">Alarm</div>
                   <div class="col-xs-4 col-md-2">OK</div>
                 </li>
                 <li data-page="2-2a-f-4" class="ln row">
-                  <div class="col-xs-3 col-md-2"><span class="icon-Clock"></span></div>
-                  <div class="col-xs-5 col-md-8">Event Logs</div>
+                  <div class="col-xs-2 col-md-2"><span class="icon-Clock"></span></div>
+                  <div class="col-xs-6 col-md-8">Event Logs</div>
                   <div class="col-xs-4 col-md-2">9 new</div>
                 </li>
               </ul>
@@ -231,25 +234,45 @@
             <div class="body body2a">
               <div class="pt-page pt-tab-1">
                 <div class="tabContent">
-                  <ul></ul>
+                  <ul>
+                    <li class="disabled row">
+                      <div class="col-xs-2">
+                        <span class="icon icon-False"></span>
+                      </div>
+                      <div class="col-xs-10">
+                        <div>Info Unavailable</div>
+                        <span>Have not connected to panel</span>
+                      </div>
+                    </li>
+                  </ul>
                 </div>
               </div>
               <div class="pt-page pt-tab-2">
                 <div class="tabContent">
-                  <ul></ul>
+                  <ul>
+                    <li class="disabled row">
+                      <div class="col-xs-2">
+                        <span class="icon icon-False"></span>
+                      </div>
+                      <div class="col-xs-10">
+                        <div>Info Unavailable</div>
+                        <span>Have not connected to panel</span>
+                      </div>
+                    </li>
+                  </ul>
                 </div>
               </div>
               <div class="pt-page pt-tab-3">
                 <div class="tabContent">
-                  <div style="padding:10px 20px;">Alarm</div>
+                  <div style="padding:10px 20px;">Alarm work in progress..</div>
                 </div>
               </div>
               <div class="pt-page pt-tab-4">
                 <div class="tabContent">
                   <ul>
                     <li class="ln row">
-                      <div class="col-xs-3 col-md-2"><span class="icon-info"></span></div>
-                      <div class="col-xs-6 col-md-8">
+                      <div class="col-xs-2 col-md-2"><span class="ico icon-Refresh"></span></div>
+                      <div class="col-xs-7 col-md-8">
                         <div>
                           Event<br />
                           <span>Camera 1 (1 image)</span>
@@ -258,8 +281,8 @@
                       <div class="col-xs-3 col-md-2 rightCol">6:06AM</div>
                     </li>
                     <li class="row">
-                      <div class="col-xs-3 col-md-2"><span class="icon-info"></span></div>
-                      <div class="col-xs-6 col-md-8">
+                      <div class="col-xs-2 col-md-2"><span class="ico icon-Mail"></span></div>
+                      <div class="col-xs-7 col-md-8">
                         <div>
                           Kitchen Door<br />
                           <span>communication error</span>
@@ -268,8 +291,8 @@
                       <div class="col-xs-3 col-md-2 rightCol">7:38AM</div>
                     </li>
                     <li class="row">
-                      <div class="col-xs-3 col-md-2"><span class="icon-info"></span></div>
-                      <div class="col-xs-6 col-md-8">
+                      <div class="col-xs-2 col-md-2"><span class="ico icon-Trash"></span></div>
+                      <div class="col-xs-7 col-md-8">
                         <div>
                           Kitchen Door<br />
                           <span>communication restored</span>
@@ -278,8 +301,8 @@
                       <div class="col-xs-3 col-md-2 rightCol">7:43:AM</div>
                     </li>
                     <li class="row">
-                      <div class="col-xs-3 col-md-2"><span class="icon-info"></span></div>
-                      <div class="col-xs-6 col-md-8">
+                      <div class="col-xs-2 col-md-2"><span class="ico icon-Forward"></span></div>
+                      <div class="col-xs-7 col-md-8">
                         <div>
                           Zone Door<br />
                           <span>detect opened</span>
@@ -288,14 +311,34 @@
                       <div class="col-xs-3 col-md-2 rightCol">10:22AM</div>
                     </li>
                     <li class="row">
-                      <div class="col-xs-3 col-md-2"><span class="icon-info"></span></div>
-                      <div class="col-xs-6 col-md-8">
+                      <div class="col-xs-2 col-md-2"><span class="ico icon-Zone20"></span></div>
+                      <div class="col-xs-7 col-md-8">
                         <div>
-                          Room Window<br />
+                          Room Window 1<br />
                           <span>detect opened</span>
                         </div>
                       </div>
                       <div class="col-xs-3 col-md-2 rightCol">10:23AM</div>
+                    </li>
+                    <li class="row">
+                      <div class="col-xs-2 col-md-2"><span class="ico icon-Share"></span></div>
+                      <div class="col-xs-7 col-md-8">
+                        <div>
+                          Room Window 2<br />
+                          <span>detect opened</span>
+                        </div>
+                      </div>
+                      <div class="col-xs-3 col-md-2 rightCol">10:33AM</div>
+                    </li>
+                    <li class="row">
+                      <div class="col-xs-2 col-md-2"><span class="ico icon-Star"></span></div>
+                      <div class="col-xs-7 col-md-8">
+                        <div>
+                          Zone Door<br />
+                          <span>detect opened</span>
+                        </div>
+                      </div>
+                      <div class="col-xs-3 col-md-2 rightCol">10:48AM</div>
                     </li>
                   </ul>
                 </div>
@@ -319,14 +362,14 @@
               <div style="padding:4px;">
                 <div class="col-xs-6 fixPad">
                   <div data-page="3-5-r" class="ln location">
-                    <div class="ico icon-Timer"></div>
+                    <div class="ico icon-House"></div>
                     <div class="line"></div>
                     Home
                   </div>
                 </div>
                 <div class="col-xs-6 fixPad">
                   <div data-page="3-4-r" class="ln location">
-                    <div class="ico icon-ServerSync"></div>
+                    <div class="ico icon-Bulb"></div>
                     <div class="line"></div>
                     Office
                   </div>
@@ -340,21 +383,21 @@
                 </div>
                 <div class="col-xs-6 fixPad">
                   <div class="location">
-                    <div class="ico icon-user"></div>
+                    <div class="ico icon-iMac"></div>
                     <div class="line"></div>
                     Factory
                   </div>
                 </div>
                 <div class="col-xs-6 fixPad">
                   <div class="location">
-                    <div class="ico icon-True"></div>
+                    <div class="ico icon-Sms"></div>
                     <div class="line"></div>
                     Villa
                   </div>
                 </div>
                 <div class="col-xs-6 fixPad">
                   <div class="location">
-                    <div class="ico icon-False"></div>
+                    <div class="ico icon-Email"></div>
                     <div class="line"></div>
                     Condo
                   </div>
@@ -385,7 +428,7 @@
                 </div>
                 <div class="pageTitle col-xs-8 col-md-10 text-center">
                   <div class="iconWrapper">
-                    <div class="icon icon-ServerSync"></div>
+                    <div class="icon icon-Bulb"></div>
                   </div>
                   <div class="line"></div>
                   Office
@@ -421,7 +464,7 @@
                   <span class="icon-MainMenu"></span>
                 </div>
                 <div class="pageTitle col-xs-8 col-md-10 text-center">
-                  <div class="icon-Timer"></div>
+                  <div class="icon-House"></div>
                   <div class="line"></div>
                   Home
                 </div>
@@ -453,20 +496,20 @@
         </script>
     </body>
 
-  <template id="systemInfo">
+  <template id="zoneList">
     <ul>
-      <li class="row">
-        <div class="col-xs-3 col-md-2"><span class="ico icon-info"></span></div>
-        <div class="col-xs-6 col-md-8">Name</div>
+      <li class="ln row">
+        <div class="col-xs-2 col-md-2"><span class="ico icon-Zone8"></span></div>
+        <div class="col-xs-7 col-md-8">Zone Name</div>
         <div class="col-xs-3 col-md-2">Status</div>
       </li>
     </ul>
   </template>
-  <template id="zoneList">
+  <template id="systemInfo">
     <ul>
-      <li class="ln row">
-        <div class="col-xs-3 col-md-2"><span class="ico icon-info"></span></div>
-        <div class="col-xs-6 col-md-8">Zone Name</div>
+      <li class="row">
+        <div class="col-xs-2 col-md-2"><span class="ico icon-Message"></span></div>
+        <div class="col-xs-7 col-md-8">Name</div>
         <div class="col-xs-3 col-md-2">Status</div>
       </li>
     </ul>
@@ -474,8 +517,8 @@
   <template id="eventList">
     <ul>
       <li class="ln row">
-        <div class="col-xs-3 col-md-2"><span class="icon-info"></span></div>
-        <div class="col-xs-6 col-md-8">
+        <div class="col-xs-2 col-md-2"><span class="icon-info"></span></div>
+        <div class="col-xs-7 col-md-8">
           <div>
             Name<br />
             <span>Description</span>

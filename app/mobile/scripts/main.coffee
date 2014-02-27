@@ -478,7 +478,9 @@ do (app = iz) ->
     us = parseInt k[2] # user
 
     stTxt = if st is 0 then 'Disarmed' else 'Armed'
-    $('div.body2 li:first-child div:last-child').html stTxt
+    ttlZn = device.data.status.zones.length
+    $('div.body2 li:first-child .totalZones').html "#{ttlZn} zones detected"
+    $('div.body2 li:first-child div.armStatus').html stTxt
 
     updateAllZones device
     updateSystemInfo device
@@ -675,6 +677,8 @@ do (app = iz) ->
   # END emitReq
 
   curArmStatus = ->
+    return if not websocket.devices
+
     cur  = websocket.devices[0].data.status.partition[0]
     info = cur.split ','
     if info[1] is '0' then 0 else 1
@@ -735,6 +739,7 @@ do (app = iz) ->
   appInteraction = app.appInteraction
   onArmStatusBar = no
   onPasscode     = no
+  deviceOnline   = no
   passcode       = []
 
   changeArmStatus = (force=no) ->
@@ -783,7 +788,8 @@ do (app = iz) ->
   # END hideArmDisarmActionBar
 
   showArmDisarmActionBar = ->
-    # TODO(UI): should not show this bar when device is offline
+    return unless deviceOnline
+
     height = armDisarmBarPosition()
 
     changeArmStatus true
@@ -965,7 +971,14 @@ do (app = iz) ->
         , 200
         return
 
-      $(window).on('deviceDataUpdated', changeArmStatus)
+      $(window).on('deviceOn', ->
+        deviceOnline = yes
+        return
+      ).on('deviceOff', ->
+        deviceOnline = no
+        hideArmDisarmActionBar()
+        return
+      ).on('deviceDataUpdated', changeArmStatus)
        .on('onSecurityTab', showArmDisarmActionBar)
        .on('onOtherTab', hideArmDisarmActionBar).trigger 'onOtherTab'
 
