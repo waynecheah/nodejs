@@ -3,8 +3,8 @@ iz =
   env: 'dev'
   servers:
     development: [
+      'innerzon.com:8080'
       '127.0.0.1:8080'
-      'innerzon.com:8081'
       'cheah.homeip.net:8080'
     ]
     production: [

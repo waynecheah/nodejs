@@ -992,8 +992,8 @@ var lgr = (environment == 'development') ? 'dev' : function(tokens, req, res){ /
 var app = connect()
     .use(connect.favicon())
     .use(connect.logger(lgr))
-    .use(connect.static('public'))
-    //.use(connect.directory('public'))
+    .use(connect.static('dist'))
+    //.use(connect.directory('public')) better not to list
     .use(connect.cookieParser())
     .use(connect.session({ secret: 'session secret at here' }))
     .use(connect.query())
@@ -1003,7 +1003,7 @@ var app = connect()
             console.log(req.query.code);
         }
 
-        fs.readFile(__dirname + '/public/index.htm', function(err, data){
+        fs.readFile(__dirname + '/dist/index.html', function(err, data){
             if (err) {
                 res.writeHead(500, { 'Content-Type':'text/plain' });
                 return res.end('Error');
