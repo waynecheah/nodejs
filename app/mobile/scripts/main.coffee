@@ -1142,37 +1142,13 @@ do (app = iz) ->
 do (app = iz) ->
   debug = app.debug
 
-  Client = Backbone.Model.extend
-    defaults:
-      username: ''
-      password: ''
-      fullname: ''
-      accessToken: ''
-      services: ''
-
-    validate: (attrs) ->
-      return 'Please fill up your username' if not attrs.username
-      return 'Please fill up your password' if not attrs.password
-      'Please fill up your fullname' if not attrs.fullname
-    # END validate
-
-    initialize: ->
-      debug 'Client model has been initialized.'
-      @.on 'invalid', (model, error) ->
-        debug error, 'err'
-        return
-      return
-    # END initialize
-  # END Client
+  privacy_method = ->
+    return
+  # END privacy_method
 
 
   app.client =
     register: ->
-      client = new Client
-        username: 'cheahkokweng@gmail.com'
-        password: 'abc123'
-        fullname: 'Wayne Cheah'
-      client.save()
       return
     # END register
 

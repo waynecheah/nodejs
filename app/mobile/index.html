@@ -40,13 +40,21 @@
         <script>(function(a,b,c){if(c in b&&b[c]){var d,e=a.location,f=/^(a|html)$/i;a.addEventListener("click",function(a){d=a.target;while(!f.test(d.nodeName))d=d.parentNode;"href"in d&&(d.href.indexOf("http")||~d.href.indexOf(e.host))&&(a.preventDefault(),e.href=d.href)},!1)}})(document,window.navigator,"standalone")</script>
         -->
 
-        <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/bootstrap.css">
-        <link rel="stylesheet" href="css/icomoon.css">
-        <link rel="stylesheet" href="css/icomoon-ie7.css">
-        <link rel="stylesheet" href="css/animations.css">
+        <!-- build:css css/vendor.css -->
+          <!-- bower:css -->
+          <link rel="stylesheet" href="bower_components/sass-bootstrap/dist/css/bootstrap.css" />
+          <!-- endbower -->
+        <link rel="stylesheet" href="styles/icomoon.css">
+        <link rel="stylesheet" href="styles/icomoon-ie7.css">
+        <link rel="stylesheet" href="styles/animations.css">
+        <!-- endbuild -->
+
+        <!-- auto generated not work for css files below, use concat:customBuild at Gruntfile.js -->
+        <!-- build:css css/main.css -->
         <link rel="stylesheet" href="css/main.css">
-        <script src="js/vendor/modernizr-2.7.1.min.js"></script>
+        <!-- endbuild -->
+
+        <script src="bower_components/modernizr/modernizr.js"></script>
     </head>
     <body>
 
@@ -82,9 +90,7 @@
         <div id="fixHeader">
           <div class="blur"></div>
         </div>
-        <div id="fullpage">
-
-        </div>
+        <div id="fullpage"></div>
 
         <div id="pt-main" class="pt-perspective">
           <div class="pt-page pt-page-1 pt-page-current">
@@ -483,13 +489,23 @@
           <p>Your browser does not support CSS animations.</p>
         </div>
 
-        <script src="js/vendor/jquery-2.0.3.js"></script>
-        <script src="js/vendor/lodash.js"></script>
-        <script src="js/vendor/backbone.js"></script>
-        <script src="js/vendor/hammer.js"></script>
-        <script src="js/vendor/socket.io.js"></script>
-        <script src="js/helper.js"></script>
+
+        <!-- build:js js/vendor.js -->
+          <!-- bower:js -->
+          <script src="bower_components/jquery/jquery.js"></script>
+          <script src="bower_components/lodash/dist/lodash.compat.js"></script>
+          <script src="bower_components/hammerjs/hammer.js"></script>
+          <script src="bower_components/sass-bootstrap/dist/js/bootstrap.js"></script>
+          <script src="bower_components/socket.io-client/dist/socket.io.js"></script>
+          <!-- endbower -->
+        <script src="scripts/helper.js"></script>
+        <!-- endbuild -->
+
+        <!-- auto generated not work for js files below, use concat:customBuild at Gruntfile.js -->
+        <!-- build:js js/main.js -->
         <script src="js/main.js"></script>
+        <script src="js/plugins.js"></script>
+        <!-- endbuild -->
 
         <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
         <script>

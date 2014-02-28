@@ -4,14 +4,10 @@
   "dependencies": {
     "modernizr": "~2.6.2",
     "jquery": "~1.10.2",
-    "jquery-mobile-bower": "~1.4.0",
-    "jQuery.mmenu": "~4.1.7",
-    "jquery.cookie": "~1.4.0",
-    "sass-bootstrap": "~3.0.0",
-    "hammerjs": "~1.0.6",
     "lodash": "~2.4.1",
-    "holderjs": "~2.3.0",
-    "socket.io": "~0.9.15"
+    "hammerjs": "~1.0.6",
+    "sass-bootstrap": "~3.0.0",
+    "socket.io-client": "~0.9.16"
   },
   "devDependencies": {}
 }

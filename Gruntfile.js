@@ -42,11 +42,11 @@ module.exports = function (grunt) {
             //},
             sass: {
                 files: ['<%= yeoman.app %>/styles/{,*/}*.{scss,sass}'],
-                tasks: ['sass:server']
+                tasks: ['sass:server'] // for own working file, the code should already prefix to work with test browser
             },
             styles: {
                 files: ['<%= yeoman.app %>/styles/{,*/}*.css'],
-                tasks: ['newer:copy:styles']
+                tasks: ['newer:copy:styles', 'autoprefixer:server']
             },
             livereload: {
                 options: {
@@ -77,7 +77,6 @@ module.exports = function (grunt) {
                     },
                     base: [
                         '<%= yeoman.app %>',
-                        //'<%= yeoman.dist %>'
                         '<%= yeoman.tmp %>'
                     ]
                 }
@@ -233,7 +232,7 @@ module.exports = function (grunt) {
                     expand: true,
                     cwd: '<%= yeoman.app %>/styles',
                     src: ['*.scss'],
-                    dest: '<%= yeoman.dist %>/css',
+                    dest: '<%= yeoman.tmp %>/css',
                     ext: '.css'
                 }]
             },
@@ -260,12 +259,20 @@ module.exports = function (grunt) {
                 browsers: ['last 1 version', 'android >= 4', 'bb >= 10'],
                 diff: false
             },
-            dist: {
+            server: {
                 files: [{
                     expand: true,
                     cwd: '<%= yeoman.tmp %>/css/',
                     src: '{,*/}*.css',
                     dest: '<%= yeoman.tmp %>/css/'
+                }]
+            },
+            dist: {
+                files: [{
+                    expand: true,
+                    cwd: '<%= yeoman.tmp %>/concat/css/',
+                    src: '{,*/}*.css',
+                    dest: '<%= yeoman.tmp %>/concat/css/'
                 }]
             }
         },
@@ -369,13 +376,13 @@ module.exports = function (grunt) {
         // to use the Usemin blocks.
         // cssmin: {
         //     dist: {
-        //         files: {
-        //             '<%= yeoman.dist %>/css/main.css': [
-        //                 '<%= yeoman.tmp %>/css/{,*/}*.css',
-        //                 '<%= yeoman.app %>/styles/{,*/}*.css'
-        //             ]
-        //         }
-        //     }
+        //         files: [{
+        //             expand: true,
+        //             cwd: '<%= yeoman.tmp %>/css/concat',
+        //             src: '{,*/}*.css',
+        //             dest: '<%= yeoman.dist %>/css'
+        //         }]
+        //    }
         // },
         // uglify: {
         //     dist: {
@@ -389,6 +396,20 @@ module.exports = function (grunt) {
         // concat: {
         //     dist: {}
         // },
+
+        concat: {
+            customBuild: {
+                files: {
+                    '<%= yeoman.tmp %>/concat/css/main.css': [
+                        '<%= yeoman.tmp %>/css/main.css'
+                    ],
+                    '<%= yeoman.tmp %>/concat/js/main.js': [
+                        '<%= yeoman.tmp %>/js/main.js',
+                        '<%= yeoman.tmp %>/js/plugins.js'
+                    ]
+                }
+            }
+        },
 
         // Copies remaining files to places other tasks can use
         copy: {
@@ -407,6 +428,8 @@ module.exports = function (grunt) {
                         'images/{,*/}*.webp',
                         'styles/fonts/{,*/}*.{eot,svg,ttf,woff}'
                     ]
+                }, {
+                    '<%= yeoman.tmp %>/js/plugins.js': '<%= yeoman.app %>/scripts/plugins.js'
                 }]
             },
             server: {
@@ -418,9 +441,6 @@ module.exports = function (grunt) {
                     src: [
                         'fonts/{,*/}*.{eot,svg,ttf,woff}'
                     ]
-                }, {
-                    src: '<%= yeoman.app %>/scripts/helper.js',
-                    dest: '<%= yeoman.tmp %>/js/helper.js'
                 }]
             },
             styles: {
@@ -434,15 +454,17 @@ module.exports = function (grunt) {
                     'fonts/{,*/}*.{eot,svg,ttf,woff}'
                 ]
             },
-            scripts: {
-                expand: true,
-                dot: true,
-                cwd: '<%= yeoman.app %>/scripts',
-                dest: '<%= yeoman.tmp %>/js/',
-                src: [
-                    'scripts/helper.js',
-                    'vendor/{,*/}*.js'
-                ]
+            scripts: { // when watch JS files is changing, do this..
+                files: [{
+                    expand: true,
+                    dot: true,
+                    cwd: '<%= yeoman.app %>/scripts',
+                    dest: '<%= yeoman.tmp %>/js/',
+                    src: [
+                        '{,*/}*.js',
+                        'vendor/{,*/}*.js'
+                    ]
+                }]
             }
         },
 
@@ -474,10 +496,9 @@ module.exports = function (grunt) {
             ],
             background: ['watch','nodemon:server'],
             dist: [
+                'coffee:dist',
                 //'compass:dist',
                 'sass:dist',
-                'copy:scripts',
-                'copy:styles',
                 'imagemin:dist',
                 'svgmin'
             ]
@@ -493,7 +514,7 @@ module.exports = function (grunt) {
         grunt.task.run([
             'clean:server',
             'concurrent:server',
-            'autoprefixer',
+            'autoprefixer:server',
             'bower-install',
             'connect:livereload',
             'watch'
@@ -504,11 +525,12 @@ module.exports = function (grunt) {
         'clean:dist',
         'useminPrepare',
         'concurrent:dist',
-        'autoprefixer',
         'concat',
+        'concat:customBuild',
+        'autoprefixer:dist',
         'cssmin',
         'uglify',
-        'copy:dist',
+        'copy:dist', // copy over the rest of other files that not required any process to dist folder
         'modernizr',
         'rev',
         'usemin',
