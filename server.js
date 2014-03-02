@@ -5,14 +5,12 @@ var http         = require('http');
 var net          = require('net');
 var connect      = require('connect');
 var io           = require('socket.io');
-var cons         = require('consolidate');
 var fs           = require('fs');
 var crypto       = require('crypto');
 var colors       = require('colors');
 var _            = require('lodash');
 var moment       = require('moment');
 var nodemailer   = require('nodemailer');
-var randomString = require('random-string');
 var models       = require('./app/models');
 var controllers  = require('./app/controllers');
 var websockets2  = require('./app/websockets');
@@ -989,12 +987,14 @@ var Event  = mongoose.model('Event');
 // Connect middleware
 //
 var lgr = (environment == 'development') ? 'dev' : function(tokens, req, res){ /* write to logfile */ };
+var oneMonth = 2592000000;
 var app = connect()
+    .use(connect.compress())
     .use(connect.favicon())
     .use(connect.logger(lgr))
-    .use(connect.static('dist'))
-    //.use(connect.directory('public')) better not to list
-    .use(connect.cookieParser())
+    .use(connect.static('dist', { maxAge: oneMonth }))
+    //.use(connect.directory('public')) better not to list content
+    //.use(connect.cookieParser()) better use local storage instead of cookie
     .use(connect.session({ secret: 'session secret at here' }))
     .use(connect.query())
     .use(function(req, res){
