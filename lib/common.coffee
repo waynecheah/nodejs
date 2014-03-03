@@ -47,20 +47,27 @@ exports.gv = (data, start) -> # get value
 exports.encryption = (data, key, iv, format) ->
   cipher = crypto.createCipheriv 'aes-128-cbc', key, iv
   strlen = data.length
-  bytes  = ' > 48 byets'
   random = false
+  i      = 1
 
-  switch strlen
-    when strlen <= 12 # use 16 bytes
-      random = 15 - strlen
-      bytes  = '16 bytes'
-    when strlen <= 28
-      random = 31 - strlen # use 32 bytes
-      bytes  = '32 bytes'
-    when strlen <= 44
-      random = 47 - strlen # use 48 bytes
-      bytes  = '48 bytes'
-  return false unless random
+  while random is false
+    if i > 16 # make maximum limit of 256 string long
+      log 'w', 'w', 'Can not encrypt data more than 256 characters long'
+      log 'w', 'd', data
+      random = -1
+      return
+
+    bytes  = 16 * i
+    minlen = bytes - 4
+
+    if strlen <= minlen
+      random = (bytes - 1) - strlen
+      bytes  = "#{bytes} bytes"
+    else
+      i++
+  # END while loop
+
+  return false if not random or random < 0
 
   random = randomString length:random
   data   = random + '|' + data

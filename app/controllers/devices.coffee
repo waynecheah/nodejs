@@ -712,6 +712,7 @@ Devices =
 
     if encrption
       msg = commonFn.encryption data.log, config.aesKey, config.aesIv, 'hex'
+      return if not msg
       msg = "en=#{msg}"
     else
       msg = data.log

@@ -740,6 +740,7 @@ do (app = iz) ->
   onArmStatusBar = no
   onPasscode     = no
   deviceOnline   = no
+  currentTabNo   = alarm: null
   passcode       = []
 
   changeArmStatus = (force=no) ->
@@ -818,7 +819,7 @@ do (app = iz) ->
 
     if onPasscode # showing passcode screen, toggle to close it
       onPasscode = no
-      $('.armAction').css 'top', armDisarmBarPosition
+      $('.armAction').css 'top', armDisarmBarPosition()
       $('.armAction .status .armDescription').html desc1
       $('.armAction .status .armButton').show()
       $('.armAction .status .closeArmAction').hide()
@@ -973,10 +974,12 @@ do (app = iz) ->
 
       $(window).on('deviceOn', ->
         deviceOnline = yes
+        showArmDisarmActionBar() if $('.body2a .pt-tab-1').hasClass 'pt-page-current'
         return
       ).on('deviceOff', ->
         deviceOnline = no
-        hideArmDisarmActionBar()
+        togglePasscode true
+        setTimeout hideArmDisarmActionBar, 50
         return
       ).on('deviceDataUpdated', changeArmStatus)
        .on('onSecurityTab', showArmDisarmActionBar)
@@ -985,6 +988,10 @@ do (app = iz) ->
       $(window).resize(screenResize).trigger 'resize'
       return
     # END init
+
+    debug: ->
+      currentTabNo.alarm
+    # END debug
 
     changePage: (from, to, reverse, tabNo, ts=@transition) ->
       debug = iz.debug
@@ -1005,6 +1012,7 @@ do (app = iz) ->
         .css 'height', sHeight # make all tabs to have same height as the screen
         $(".body#{to} .pt-tab-#{tabNo}")
         .addClass 'pt-page-current' # set the right tab to display on screen
+        currentTabNo.alarm = tabNo
 
       fixedHeader = $('#fixHeader div.header')
       if fixedHeader.length > 0 # if there is any content in current fixed header
@@ -1048,7 +1056,9 @@ do (app = iz) ->
     # END changePage
 
     changeTab: (bodyName, fTab, tTab, ts=@transition) ->
-      debug   = iz.debug
+      debug              = iz.debug
+      currentTabNo.alarm = tTab
+
       reverse = if fTab > tTab then yes else no
       fxIn    = if reverse then ts.fxRevIn else ts.fxIn
       fxOut   = if reverse then ts.fxRevOut else ts.fxOut
@@ -1058,7 +1068,7 @@ do (app = iz) ->
 
       $(".body#{bodyName} .pt-page").css 'height', sHeight
 
-      debug "from #{fTab} to #{tTab}"
+      debug "from [#{fTab}] to [#{tTab}]"
       $(fTab).addClass "pt-page-current #{fxOut}"
       $(tTab).addClass "pt-page-current #{fxIn} pt-page-ontop"
 

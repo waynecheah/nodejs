@@ -318,6 +318,15 @@ socket.on('data', function(data) {
 
         log('s', 'i', 'SERVER RESPONSE: '+data.replace(RN, ''));
 
+        if (ps = iss(data, 'en')) { // encrypted data, need decryption process first
+            str  = gv(data, ps);
+            data = decryption(str, aesKey, aesIv, 'hex');
+
+            if (!data) {
+                return;
+            }
+        }
+
         if (isg(data, 'id')) {
             write('cn='+g1('cn'), 'Send cn='+g1('cn'));
             _sdcmd = 'sn';
