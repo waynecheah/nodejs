@@ -477,7 +477,13 @@ do (app = iz) ->
     st = parseInt k[1] # status
     us = parseInt k[2] # user
 
-    stTxt = if st is 0 then 'Disarmed' else 'Armed'
+    if st is 0
+      $(window).trigger 'disarm'
+      stTxt = 'Disarmed'
+    else
+      $(window).trigger 'arm'
+      stTxt = 'Armed'
+
     ttlZn = device.data.status.zones.length
     $('div.body2 li:first-child .totalZones').html "#{ttlZn} zones detected"
     $('div.body2 li:first-child div.armStatus').html stTxt
@@ -533,6 +539,14 @@ do (app = iz) ->
     ok   = 0 # Ready/Restore
     ntok = 0 # Fault
     alrm = 0 # Alarm
+    icon =
+      1: 'PowerAdapter',
+      2: 'MenuBox',
+      3: 'Phone',
+      4: 'Siren',
+      5: 'iMac',
+      6: 'phone',
+      7: 'Message'
 
     _.each device.data.status.system, (si, i) ->
       return if i is 0
@@ -553,13 +567,16 @@ do (app = iz) ->
         stCls = 'ready'
         ok++
 
+      icCls = icon[ty]
       tyTxt = map.system.type[ty]
       stTxt = map.system.status[st]
 
+      tpl.find('li div:first span.ico').attr 'class', "ico icon-#{icCls}"
       tpl.find('li div:nth(1)').html tyTxt
-      tpl.find('li div:nth(2)').html stTxt
+      tpl.find('li div:nth(2) span:first').attr('class', stCls).html stTxt
       html += $(tpl).html()
       return
+    # END each loop
 
     $('div.body2 li:nth(1) div:last-child').html "#{ok} OK<br />#{ntok} Fail"
     $('div.body2a .pt-tab-2 .tabContent ul').html html
@@ -685,6 +702,7 @@ do (app = iz) ->
   # END curArmStatus
 
   setArmStatus = (stt, user) ->
+    if stt is 0 then $(window).trigger 'disarm' else $(window).trigger 'arm'
     websocket.devices[0].data.status.partition[0] = "1,#{stt},#{user}";
     return
   # END setArmStatus
@@ -902,13 +920,15 @@ do (app = iz) ->
         Hammer(el).on 'dragdown', () -> # Slide down to show connectivity status bar
           if $('div.fixedStatus').hasClass 'hideUp'
             $('div.fixedStatus').removeClass('hideUp').addClass 'showDown'
+            $('#overlay').show()
           return
         return
 
-      _.each $('.pt-page'), (el) ->
-        Hammer(el).on 'tap', -> # Slide up to hide connectivity status bar
+      _.each $('#overlay'), (el) ->
+        Hammer(el).on 'tap', () -> # Slide up to hide connectivity status bar
           if $('div.fixedStatus').hasClass 'showDown'
             $('div.fixedStatus').removeClass('showDown').addClass 'hideUp'
+            $('#overlay').hide()
           return
         return
 
@@ -980,6 +1000,16 @@ do (app = iz) ->
         deviceOnline = no
         togglePasscode true
         setTimeout hideArmDisarmActionBar, 50
+        return
+      ).on('arm', ->
+        $('#pt-main .pt-page-2a .passcode, #fullpage .armAction .passcode').removeClass('redTheme').addClass 'greenTheme'
+        $('#pt-main .pt-page-2a .tabsBody, #fixHeader .tabsBody').removeClass('bgRed').addClass 'bgGreen'
+        $('#pt-main .pt-page-2a .body2a, #pt-main .pt-page-2 .body2').removeClass('bgRed').addClass 'bgGreen'
+        return
+      ).on('disarm', ->
+        $('#pt-main .pt-page-2a .passcode, #fullpage .armAction .passcode').removeClass('greenTheme').addClass 'redTheme'
+        $('#pt-main .pt-page-2a .tabsBody, #fixHeader .tabsBody').removeClass('bgGreen').addClass 'bgRed'
+        $('#pt-main .pt-page-2a .body2a, #pt-main .pt-page-2 .body2').removeClass('bgGreen').addClass 'bgRed'
         return
       ).on('deviceDataUpdated', changeArmStatus)
        .on('onSecurityTab', showArmDisarmActionBar)

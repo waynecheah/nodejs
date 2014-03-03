@@ -48,6 +48,10 @@ module.exports = function (grunt) {
                 files: ['<%= yeoman.app %>/styles/{,*/}*.css'],
                 tasks: ['newer:copy:styles', 'autoprefixer:server']
             },
+            imagemin: {
+                files: ['<%= yeoman.app %>/images/{,*/}*.{gif,jpeg,jpg,png}'],
+                tasks: ['imagemin:server']
+            },
             livereload: {
                 options: {
                     livereload: '<%= connect.options.livereload %>'

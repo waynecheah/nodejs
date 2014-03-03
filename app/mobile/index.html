@@ -70,7 +70,7 @@
             <div class="col-xs-4 text-center line on">
               <div class="text">LINE</div>
               <div class="status">
-                <div class="ico"><span class="icon-World"></span></div>
+                <div class="ico"><span class="icon-Earth"></span></div>
               </div>
             </div>
             <div class="col-xs-4 text-center cloud off">
@@ -87,10 +87,11 @@
             </div>
           </div>
         </div>
+        <div id="overlay" style="display:none;"></div>
+        <div id="fullpage"></div>
         <div id="fixHeader">
           <div class="blur"></div>
         </div>
-        <div id="fullpage"></div>
 
         <div id="pt-main" class="pt-perspective">
           <div class="pt-page pt-page-1 pt-page-current">
@@ -129,7 +130,7 @@
                   <div class="col-xs-4 col-md-2 armStatus">N/A</div>
                 </li>
                 <li data-page="2-2a-f-2" class="ln row">
-                  <div class="col-xs-2 col-md-2"><span class="icon-Heart"></span></div>
+                  <div class="col-xs-2 col-md-2"><span class="icon-Health"></span></div>
                   <div class="col-xs-6 col-md-8">System Health</div>
                   <div class="col-xs-4 col-md-2">N/A</div>
                 </li>
@@ -169,7 +170,7 @@
                     <span>Security</span>
                   </div>
                   <div class="col-xs-3 text-center tab">
-                    <div class="icon icon-Heart"></div>
+                    <div class="icon icon-Health"></div>
                     <span>Health</span>
                   </div>
                   <div class="col-xs-3 text-center tab">
@@ -524,9 +525,9 @@
   <template id="systemInfo">
     <ul>
       <li class="row">
-        <div class="col-xs-2 col-md-2"><span class="ico icon-Message"></span></div>
+        <div class="col-xs-2 col-md-2"><span class="ico"></span></div>
         <div class="col-xs-7 col-md-8">Name</div>
-        <div class="col-xs-3 col-md-2">Status</div>
+        <div class="col-xs-3 col-md-2"><span>Status</span></div>
       </li>
     </ul>
   </template>

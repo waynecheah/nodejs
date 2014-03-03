@@ -90,7 +90,10 @@ $tallerHeaderHeight: 100px;
 $tallestHeaderHeight: 191px;
 $statusHeight: 100px;
 $summarySttHeight: 3px;
-$bgColor01: #EE5567;
+$bgBlue: #82B2CB;
+$bgGreen: #43AF94;
+$bgOrange: #F96F57;
+$bgRed: #EE5567;
 $on: #3DB094;
 $off: #d74352;
 $dis: gray;
@@ -196,7 +199,7 @@ div.header {
     }
     .tabsBody {
         position: relative;
-        background-color: $bgColor01;
+        background-color: $bgOrange;
         margin: 0;
         padding-bottom: 1px;
 
@@ -249,6 +252,14 @@ div.tallerMargin {
     .blur {
         -webkit-filter: $blur;
     }
+}
+#fullpage {
+    z-index: 4;
+}
+#overlay {
+    @include dimenPos(100%, 100%);
+    background-color: rgba(150, 150, 150, .5);
+    z-index: 5;
 }
 #status-summary {
     @include dimenPos(100%, $summarySttHeight, fixed);
@@ -401,10 +412,9 @@ div.armAction {
         }
     }
 
+    $dimen: 70px;
+    $border: 2px;
     .passcode {
-        $dimen: 70px;
-        $border: 2px;
-
         .digits {
             .txt {
                 margin: 3px 0;
@@ -456,6 +466,25 @@ div.armAction {
             }
             .onTap {
                 background-color: rgba(255, 152, 152, 0.66);
+            }
+        }
+    }
+
+    .greenTheme {
+        .digits {
+            table {
+                div {
+                    background-color: rgba(152, 255, 152, 0.66);
+                }
+            }
+        }
+
+        .row {
+            .passcodeButton {
+                border: $border solid rgba(152, 255, 152, 0.66);
+            }
+            .onTap {
+                background-color: rgba(152, 255, 152, 0.66);
             }
         }
     }
@@ -511,13 +540,25 @@ div.body {
             li span {
                 font-size: .6em;
             }
+            li span.alarm, li span.fault, li span.ready {
+                font-size: 1em;
+            }
+            li span.alarm {
+                color: #680000;
+            }
+            li span.fault {
+                color: #C0C0C0;
+            }
+            li span.ready {
+                //color: #15FF00;
+            }
         }
     }
 }
 div.body2 {
     @extend div.body;
     padding-top: $headerHeight;
-    background-color: $bgColor01;
+    background-color: $bgOrange;
 }
 div.body2a {
     @extend div.body2;
@@ -533,7 +574,7 @@ div.body4 {
 }
 div.body5 {
     @extend div.body;
-    background-color: #3cb194;
+    background-color: $bgOrange;
 }
 div.fixPad {
     padding-left: 4px;
@@ -543,6 +584,19 @@ div.rightCol {
     padding-left: 0;
     padding-right: 5px;
     text-align: right;
+}
+
+div.bgBlue {
+    background-color: $bgBlue !important;
+}
+div.bgGreen {
+    background-color: $bgGreen !important;
+}
+div.bgOrange {
+    background-color: $bgOrange !important;
+}
+div.bgRed {
+    background-color: $bgRed !important;
 }
 
 
@@ -577,6 +631,10 @@ div.location {
     }
 }
 
+
+/* ==========================================================================
+   Widget classes
+   ========================================================================== */
 #degree, #info {
     @include boxModel(5px, 3px);
     @include position(412px, 10px);
@@ -610,7 +668,7 @@ $sliderRadius: 500px;
     $halfSize2: ($circleSize / 2) - $halfSize1;
     @include dimenPos($borderSize, $borderSize, relative);
     @include position(-$halfSize1, $halfSize2);
-    background: white url(http://img707.imageshack.us/img707/6060/arrh.png) no-repeat center 20px;
+    background: white url(../img/arrh.png) no-repeat center 20px;
     border-radius: 30px;
 }
 #sliderWrap .track {
