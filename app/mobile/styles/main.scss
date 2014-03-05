@@ -22,7 +22,7 @@ html, body {
     padding: 0;
 }
 body {
-    font-family: 'UltraLight', sans-serif;
+    font-family: 'UltraLight',Sans-Serif;
     background: #303131;
     color: #fff;
     font-size: 2em;
@@ -78,6 +78,13 @@ textarea {
     font-style: normal;
     font-weight: 100;
     src: local('Helvetica Neue UltraLight'), local('Helvetica-Neue-UltraLight'), url(../fonts/HelveticaNeue-UltraLight.woff) format('woff');
+}
+@font-face {
+    font-family: 'Conv_HelveticaNeueLTStd-UltLt';
+    font-style: normal;
+    font-weight: normal;
+    src: url('../fonts/HelveticaNeueLTStd-UltLt.eot');
+    src: local('☺'), url('../fonts/HelveticaNeueLTStd-UltLt.woff') format('woff'), url('../fonts/HelveticaNeueLTStd-UltLt.ttf') format('truetype'), url('fonts/HelveticaNeueLTStd-UltLt.svg') format('svg');
 }
 
 $fxDuration: 400ms;
@@ -202,6 +209,7 @@ div.header {
         background-color: $bgOrange;
         margin: 0;
         padding-bottom: 1px;
+        -webkit-transition: background 1s;
 
         .arrow {
             @include dimenPos(10px, 10px);
@@ -361,7 +369,7 @@ div.armAction {
     @include position(572px, 0);
     padding-top: 2px;
     z-index: 5;
-    -webkit-transition: top 300ms;
+    -webkit-transition: top 300ms, background 300ms;
 
     .screenHeight {
         min-height: 320px;
@@ -559,10 +567,12 @@ div.body2 {
     @extend div.body;
     padding-top: $headerHeight;
     background-color: $bgOrange;
+    -webkit-transition: background 1s;
 }
 div.body2a {
     @extend div.body2;
     padding-top: 0; /* has longest header with tabs */
+    -webkit-transition: background 1s;
 
     .blur {
         -webkit-filter: $blur;

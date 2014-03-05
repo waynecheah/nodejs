@@ -415,7 +415,16 @@ getMap = (category, m1=null, m2=null, m3=null, m4=null) ->
     else false
 # END getMap
 
+confirmSocketActive = (socket) ->
+  log 'n', 's', "Clear disconnect action, device socket [#{socket.id}] has response and seems alright in connection"
+  clearTimeout socket.data.systemcheck
+  delete socket.data.systemcheck
+  return
+# END confirmSocketActive
+
 reportedOkay = (socket) ->
+  return confirmSocketActive socket if 'systemcheck' of socket.data is true
+
   cmd = socket.app.lastCommand
 
   if not cmd
@@ -684,14 +693,21 @@ Devices =
       return
     socket.on 'close', (hasErr) ->
       msg = if hasErr then 'Error occur before connection closed' else 'No error was found'
-      log 'n', 'i', "client #{socket.id} has disconnected. #{msg}"
+      log 'n', 'i', "Check if client #{socket.id} has disconnected. #{msg}"
 
-      websockets.socketOnClose socket.data.deviceId, socket.data.info
-      delete socket.data
+      fnCloseSocket = ->
+        log 'n', 'w', 'Device socket confirm closed, notify App user who connect to it'
+        websockets.socketOnClose socket.data.deviceId, socket.data.info
+        delete socket.data
 
-      i = sockets.indexOf socket
-      if i >= 0
-        sockets.splice i, 1
+        i = sockets.indexOf socket
+        sockets.splice i, 1 if i >= 0
+
+        return
+      # END fnCloseSocket
+
+      socket.data.systemcheck = setTimeout fnCloseSocket, 5000
+      socketWrite socket, 'sc?'
 
       return
 

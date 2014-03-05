@@ -330,6 +330,9 @@ socket.on('data', function(data) {
         if (isg(data, 'id')) {
             write('cn='+g1('cn'), 'Send cn='+g1('cn'));
             _sdcmd = 'sn';
+        } else if (isg(data, 'sc')) {
+            log('n', 'i', 'Check if i alive? hell yes!!!');
+            swrite('ok'+RN);
         } else if (isg(data, 'sr')) {
             log('n', 'i', 'Gain access to the server');
             write('si='+g2('si', 0), 'Send si='+g2('si', 0));

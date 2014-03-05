@@ -992,7 +992,11 @@ do (app = iz) ->
         , 200
         return
 
-      $(window).on('deviceOn', ->
+      $(window).on('serverOff', ->
+        togglePasscode true
+        setTimeout hideArmDisarmActionBar, 50
+        return
+      ).on('deviceOn', ->
         deviceOnline = yes
         showArmDisarmActionBar() if $('.body2a .pt-tab-1').hasClass 'pt-page-current'
         return

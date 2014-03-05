@@ -18,12 +18,13 @@ var config       = require('./config/config');
 var commonFn     = require('./lib/common');
 var log          = require('./lib/log');
 
-var environment = _.isUndefined(process.env.NODE_ENV) ? 'development' : process.env.NODE_ENV;
-var sockets     = [];
-var websockets  = [];
-var RN          = '\r\n';
-var _timer      = null;
-var host        = '101.99.83.20';
+var environment  = _.isUndefined(process.env.NODE_ENV) ? 'development' : process.env.NODE_ENV;
+var sockets      = [];
+var websockets   = [];
+var RN           = '\r\n';
+var _timer       = null;
+var host         = '101.99.83.20';
+var appDirectory = 'dist';
 
 
 _.each(config, function(v, name){
@@ -925,10 +926,12 @@ _.each(process.argv, function(v, i){
         return;
     }
     if (v == 'l') { // running at localhost
-        host = '127.0.0.1';
+        host         = '127.0.0.1';
+        appDirectory = 'public';
     } else if (ps = iss(v, 'n')) { // running on local network
         var sn = gv(v, ps);
-        host   = '192.168.1.'+sn;
+        host         = '192.168.1.'+sn;
+        appDirectory = 'public';
     }
 });
 
@@ -992,7 +995,7 @@ var app = connect()
     .use(connect.compress())
     .use(connect.favicon())
     .use(connect.logger(lgr))
-    .use(connect.static('dist', { maxAge: oneMonth }))
+    .use(connect.static(appDirectory, { maxAge: oneMonth }))
     //.use(connect.directory('public')) better not to list content
     //.use(connect.cookieParser()) better use local storage instead of cookie
     .use(connect.session({ secret: 'session secret at here' }))
