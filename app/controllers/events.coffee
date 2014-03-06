@@ -36,6 +36,29 @@ Events =
     return
   # END armDisarmed
 
+  alarm: (data, callback) ->
+    serial = data.ws.devices[0].serial
+    type   = data.form.type
+    status = data.form.status
+    mesg   = "em=#{type},#{status},103"
+
+    obj =
+      category: 'emergency',
+      log: mesg,
+      command: status,
+      status: status,
+      type: type
+      user: 103,
+      succeed: false
+
+    devices.write serial, obj, yes, (status) ->
+      callback
+        status: status
+        data: data.form
+
+    return
+  # END alarm
+
   method: (data, callback) ->
     callback res: data
     return

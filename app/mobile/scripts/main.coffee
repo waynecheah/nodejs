@@ -3,8 +3,8 @@ iz =
   env: 'dev'
   servers:
     development: [
-      'innerzon.com:8080'
       '127.0.0.1:8080'
+      'innerzon.com:8080'
       'cheah.homeip.net:8080'
     ]
     production: [
@@ -183,7 +183,7 @@ iz =
       changeServer = @changeServer
       serverInUse  = @serverList[@curServerId]
       numServers   = @serverList.length
-      retryCount   = 1;
+      retryCount   = 1
       onError      = () ->
         debug "Error on Socket.io at server [#{serverInUse}] and it can't be handled by the other event types", 'err'
         @changeServer()
@@ -490,6 +490,7 @@ do (app = iz) ->
 
     updateAllZones device
     updateSystemInfo device
+    updateEmergency device
 
     return
   # END updateAllDeviceStatus
@@ -582,6 +583,22 @@ do (app = iz) ->
     $('div.body2a .pt-tab-2 .tabContent ul').html html
     return
   # END updateSystemInfo
+
+  updateEmergency = (device) ->
+    map = iz.config.mapping
+
+    _.each device.data.status.emergency, (em) ->
+      k  = em.split ','
+      tp = parseInt k[0] # type
+      st = parseInt k[1] # status
+
+      if tp > 0 # all types start from index 1
+        tpTxt = map.emergency.type[tp]
+        $(window).trigger 'emergencyStatus', [tpTxt,st]
+      return
+
+    return
+  # END updateEmergency
 
   updateDeviceStatus = (data, devices) ->
     _.each devices, (device, i) ->
@@ -703,7 +720,7 @@ do (app = iz) ->
 
   setArmStatus = (stt, user) ->
     if stt is 0 then $(window).trigger 'disarm' else $(window).trigger 'arm'
-    websocket.devices[0].data.status.partition[0] = "1,#{stt},#{user}";
+    websocket.devices[0].data.status.partition[0] = "1,#{stt},#{user}"
     return
   # END setArmStatus
 
@@ -742,6 +759,28 @@ do (app = iz) ->
       return
     # END armDisarmed
 
+    alarm: (type, callbackUI) ->
+      emitReq '/events/alarm', type: type, status: 1, (data) ->
+        return callbackUI data if data.status is false
+
+        _.each websocket.devices[0].data.status.emergency, (em, i) ->
+          k  = em.split ','
+          tp = parseInt k[0] # type
+
+          if tp is 1
+            websocket.devices[0].data.status.emergency[i] = '1,1,103' # means 'panic, on, remote user'
+          else if tp is 4
+            websocket.devices[0].data.status.emergency[i] = '4,1,103' # means 'duress, on, remote user'
+
+          return
+        # END each loop
+
+        callbackUI data
+        return
+
+      return
+    # END alarm
+
     updateLights: ->
       return
     # END updateLights
@@ -754,12 +793,14 @@ do (app = iz) ->
 ## START module interface
 ## dependency modules: appInteraction ##
 do (app = iz) ->
+  debug          = app.debug
   appInteraction = app.appInteraction
   onArmStatusBar = no
   onPasscode     = no
   deviceOnline   = no
   currentTabNo   = alarm: null
   passcode       = []
+  emergencyStt   = {}
 
   changeArmStatus = (force=no) ->
     return unless onArmStatusBar or force
@@ -885,12 +926,67 @@ do (app = iz) ->
     if data.status
       console.log data
     else
-      console.warn data
+      debug 'Arm/Disarm update unsuccessful', 'err'
+      debug data
 
     togglePasscode()
     changeArmStatus()
     return
   # END armDisarmUpdateCallback
+
+  alarmUpdate = (type, data) ->
+    if data.status
+      console.log data
+    else
+      debug "Turn on Emergency #{type} unsuccessful", 'err'
+      debug data
+      return
+
+    enableButton type, 1
+    return
+  # END alarmUpdate
+
+  panicUpdateCallback = (data) ->
+    console.warn 'is 1'
+    alarmUpdate 'Panic', data
+    return
+  # END panicUpdateCallback
+
+  duressUpdateCallback = (data) ->
+    console.warn 'is 4'
+    alarmUpdate 'Duress', data
+    return
+  # END duressUpdateCallback
+
+  disableButton = ->
+    emergencyStt = {}
+    $('.button').removeClass 'on off'
+    return
+  # END disableButton
+
+  enableButton = (type, status) ->
+    if status is 1
+      remove = 'off'
+      add    = 'on'
+      stTxt  = 'On'
+    else if status is 0
+      remove = 'on'
+      add    = 'off'
+      stTxt  = 'Off'
+    else
+      debug "Invalid emergency status update: [#{status}]", 'err'
+      return
+
+    switch type
+      when 'Panic'
+        emergencyStt.panic = status
+        $('.body2a .pt-tab-3 .panic').removeClass(remove).addClass(add).html stTxt
+      when 'Duress'
+        emergencyStt.duress = status
+        $('.body2a .pt-tab-3 .duress').removeClass(remove).addClass(add).html stTxt
+
+    return
+  # END enableButton
 
   screenResize = ->
     height = $(window).height()
@@ -904,6 +1000,12 @@ do (app = iz) ->
       return
     return
   # END onTap
+
+  onTouch = (selector, event, callback) ->
+    el = document.querySelector selector
+    Hammer(el).on event, callback
+    return
+  # END onTouch
 
 
   app.interface =
@@ -991,10 +1093,21 @@ do (app = iz) ->
           return
         , 200
         return
+      onTouch '.body2a .pt-tab-3 .panic', 'tap', ->
+        return if 'panic' of emergencyStt is no or emergencyStt.panic is 1 # server or device offline || already turn on
+        emergencyStt.panic = -1 # processing..
+        appInteraction.alarm 1, panicUpdateCallback
+        return
+      onTouch '.body2a .pt-tab-3 .duress', 'tap', ->
+        return if 'duress' of emergencyStt is no or emergencyStt.duress is 1 # server or device offline || already turn on
+        emergencyStt.duress = -1 # processing..
+        appInteraction.alarm 4, duressUpdateCallback
+        return
 
       $(window).on('serverOff', ->
         togglePasscode true
         setTimeout hideArmDisarmActionBar, 50
+        disableButton()
         return
       ).on('deviceOn', ->
         deviceOnline = yes
@@ -1004,6 +1117,7 @@ do (app = iz) ->
         deviceOnline = no
         togglePasscode true
         setTimeout hideArmDisarmActionBar, 50
+        disableButton()
         return
       ).on('arm', ->
         $('#pt-main .pt-page-2a .passcode, #fullpage .armAction .passcode').removeClass('redTheme').addClass 'greenTheme'
@@ -1014,6 +1128,9 @@ do (app = iz) ->
         $('#pt-main .pt-page-2a .passcode, #fullpage .armAction .passcode').removeClass('greenTheme').addClass 'redTheme'
         $('#pt-main .pt-page-2a .tabsBody, #fixHeader .tabsBody').removeClass('bgGreen').addClass 'bgRed'
         $('#pt-main .pt-page-2a .body2a, #pt-main .pt-page-2 .body2').removeClass('bgGreen').addClass 'bgRed'
+        return
+      ).on('emergencyStatus', (event, type, status) ->
+        enableButton type, status
         return
       ).on('deviceDataUpdated', changeArmStatus)
        .on('onSecurityTab', showArmDisarmActionBar)
@@ -1028,7 +1145,6 @@ do (app = iz) ->
     # END debug
 
     changePage: (from, to, reverse, tabNo, ts=@transition) ->
-      debug = iz.debug
       fPage = "div.pt-page-#{from}"
       tPage = "div.pt-page-#{to}"
       fxIn  = if reverse then ts.fxRevIn else ts.fxIn
@@ -1090,7 +1206,6 @@ do (app = iz) ->
     # END changePage
 
     changeTab: (bodyName, fTab, tTab, ts=@transition) ->
-      debug              = iz.debug
       currentTabNo.alarm = tTab
 
       reverse = if fTab > tTab then yes else no
@@ -1137,7 +1252,6 @@ do (app = iz) ->
     # END changeIcon
 
     onTabClick: ->
-      debug = iz.debug
       return if $(@).hasClass 'selected'
 
       page = $(@).parents('.header').attr 'data-page'

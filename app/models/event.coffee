@@ -8,9 +8,9 @@ exports.Schema = mongoose.Schema
   datetime: String
   device: String
   category: String
-  log: String
+  log: String       # APP command string format that send to hardware. Eg. pt=1,1,1234
   number: Number    # [partition, zone, device, light, sensor, label]
-  command: String   # [for APP only]
+  command: String   # [REQUIRED for APP only]
   condition: Number # [zone]
   status: Number    # [system, partition, zone, emergency, device, light, sensor]
   value: String     # [device, light, sensor]

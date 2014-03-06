@@ -14,7 +14,8 @@ var clientErr = {
     e0: 'Invalid input',
     e1: 'Invalid partition status update, improper format sent',
     e2: 'Invalid zone status update, improper format sent',
-    e3: 'Invalid light status update, improper format sent'
+    e3: 'Invalid light status update, improper format sent',
+    e4: 'Invalid emergency status update, improper format sent'
 };
 var serverErr = {
     e0: 'Invalid input',
@@ -47,6 +48,19 @@ var mapping   = {
         command: {
             0: 'Disable',
             1: 'Bypass'
+        }
+    },
+    emergency: {
+        type: {
+            0: 'N/A',
+            1: 'Panic',
+            2: 'Medical',
+            3: 'Fire',
+            4: 'Duress'
+        },
+        status: {
+            0: 'Ready/Restore',
+            1: 'Alarm'
         }
     },
     light: {
@@ -88,7 +102,7 @@ var _data  = {
         zn: [
             '1,0,0,1,0', '2,1,0,1,1', '3,2,0,1,0', '4,1,2,1,0', '5,2,0,1,0', '6,2,0,2,0'
         ],
-        em: ['0,0,1'],
+        em: ['1,0,102', '4,0,102'],
         dv: [],
         li: [
             '1,1,0,0,101', '2,1,1,255,101', '3,2,2,63,101'
@@ -389,6 +403,32 @@ socket.on('data', function(data) {
 
                     log('n', 'i', 'Inform server the zone is updated successfully: zn='+znCmd);
                     write('zn='+znCmd+RN);
+                }
+            });
+        } else if (ps = iss(data, 'em')) {
+            str  = gv(data, ps);
+            info = str.split(',');
+
+            if (info.length != 3) {
+                log('n', 'e', 'Invalid emergency status update, improper format sent');
+                swrite('e4'+RN);
+                return;
+            }
+
+            log('n', 'i', 'Received emergency status update: '+mapping.emergency.type[info[0]]+' = '+mapping.emergency.status[info[1]]);
+            swrite('ok'+RN);
+
+            _.each(_data.status.em, function(str, i){
+                inf = str.split(',');
+
+                if (inf[0] == info[0]) {
+                    var command = [info[0], info[1], '103'];
+                    var emCmd   = command.join(',');
+
+                    _data.status.em[i] = emCmd;
+
+                    log('n', 'i', 'Inform server emergency is updated successfully: em='+emCmd);
+                    write('em='+emCmd+RN);
                 }
             });
         } else if (ps = iss(data, 'li')) {
