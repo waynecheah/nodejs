@@ -97,6 +97,7 @@ $tallerHeaderHeight: 100px;
 $tallestHeaderHeight: 191px;
 $statusHeight: 100px;
 $summarySttHeight: 3px;
+$buttonDimen: 40px;
 $bgBlue: #82B2CB;
 $bgGreen: #43AF94;
 $bgOrange: #F96F57;
@@ -331,7 +332,7 @@ div.fixedStatus {
             .ico {
                 @include dimenPos();
                 font-size: .8em;
-                line-height: 3.3em;
+                line-height: 2.4em;
                 background-color: $bg;
                 border: 4px solid transparent;
                 border-radius: 30px;
@@ -559,6 +560,34 @@ div.body {
             }
             li span.ready {
                 //color: #15FF00;
+            }
+            ul.taller {
+                li {
+                    div {
+                        line-height: $buttonDimen;
+                    }
+
+                    div.button {
+                        width: $buttonDimen;
+                        height: $buttonDimen;
+                        float: right;
+                        text-align: center;
+                        font-size: .7em;
+                        line-height: $buttonDimen - 2px;
+                        border: 1px dashed #fff;
+                        border-radius: $buttonDimen / 2;
+                        opacity: .5;
+                    }
+                    div.on, div.off {
+                        border-style: solid;
+                        opacity: 1;
+                    }
+                    div.on {
+                        background-color: #fff;
+                        color: $on;
+                        font-weight: bold;
+                    }
+                }
             }
         }
     }
