@@ -760,7 +760,9 @@ do (app = iz) ->
     # END armDisarmed
 
     alarm: (type, callbackUI) ->
-      emitReq '/events/alarm', type: type, status: 1, (data) ->
+      method = if type is 1 then 'panic' else 'duress'
+
+      emitReq "/events/#{method}", type: type, status: 1, (data) ->
         return callbackUI data if data.status is false
 
         _.each websocket.devices[0].data.status.emergency, (em, i) ->
@@ -947,13 +949,11 @@ do (app = iz) ->
   # END alarmUpdate
 
   panicUpdateCallback = (data) ->
-    console.warn 'is 1'
     alarmUpdate 'Panic', data
     return
   # END panicUpdateCallback
 
   duressUpdateCallback = (data) ->
-    console.warn 'is 4'
     alarmUpdate 'Duress', data
     return
   # END duressUpdateCallback

@@ -6,6 +6,30 @@ commonFn = require '../../lib/common'
 log      = require '../../lib/log'
 Event    = mongoose.model 'Event'
 
+alarm = (data, callback) ->
+  serial = data.ws.devices[0].serial
+  type   = data.form.type
+  status = data.form.status
+  mesg   = "em=#{type},#{status},103"
+
+  obj =
+    category: 'emergency',
+    log: mesg,
+    command: status,
+    status: status,
+    type: type
+    user: 103,
+    succeed: false
+
+  devices.write serial, obj, yes, (status) ->
+    callback
+      status: status
+      data: data.form
+
+  return
+# END alarm
+
+
 Events =
   appUpdate: (data, callback) ->
     return
@@ -36,28 +60,15 @@ Events =
     return
   # END armDisarmed
 
-  alarm: (data, callback) ->
-    serial = data.ws.devices[0].serial
-    type   = data.form.type
-    status = data.form.status
-    mesg   = "em=#{type},#{status},103"
-
-    obj =
-      category: 'emergency',
-      log: mesg,
-      command: status,
-      status: status,
-      type: type
-      user: 103,
-      succeed: false
-
-    devices.write serial, obj, yes, (status) ->
-      callback
-        status: status
-        data: data.form
-
+  panic: (data, callback) ->
+    alarm data, callback
     return
-  # END alarm
+  # END panic
+
+  duress: (data, callback) ->
+    alarm data, callback
+    return
+  # END duress
 
   method: (data, callback) ->
     callback res: data
