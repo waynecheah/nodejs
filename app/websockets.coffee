@@ -192,13 +192,18 @@ Websockets =
     return
   # END socketOnClose
 
-  socketOnData: (data) ->
-    sn  = data.info.sn
-    msg = "Device serial no [#{sn}] just connected to server has latest info and status need update to Apps user"
+  socketOnData: (stage, data) ->
+    sn = data.info.sn
+
+    if stage is 'initial'
+      msg = "Device serial no [#{sn}] just connected to server has latest info and status need update to Apps user"
+    else
+      msg = "Device serial no [#{sn}] just got an event update to server. Emit update to Apps user at the same time"
+
     log 'w', 's', msg
 
     _.each sockets, (websocket) ->
-      _.each websocket.data.devices, (device) ->
+      _.each websocket.data.devices, (device) -> # loop all websockets (APP User) that online now
         if sn is device.serial
           emit websocket, 'DeviceUpdate',
             serial: sn

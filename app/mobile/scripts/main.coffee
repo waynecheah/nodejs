@@ -800,6 +800,7 @@ do (app = iz) ->
   onArmStatusBar = no
   onPasscode     = no
   deviceOnline   = no
+  currentPageNo  = 0
   currentTabNo   = alarm: null
   passcode       = []
   emergencyStt   = {}
@@ -884,7 +885,13 @@ do (app = iz) ->
       $('.armAction .status .armDescription').html desc1
       $('.armAction .status .armButton').show()
       $('.armAction .status .closeArmAction').hide()
-      $('#fixHeader .header, .body2a .pt-tab-1').removeClass 'blur'
+      $('#fixHeader .header').removeClass 'blur'
+
+      if currentPageNo is '2'
+        $('.body2').removeClass 'blur'
+      else if currentPageNo is '2a'
+        $(".body2a .pt-tab-#{currentTabNo.alarm}").removeClass 'blur'
+
       passcode = []
 
       setTimeout ->
@@ -909,7 +916,11 @@ do (app = iz) ->
         return
       , 50
       setTimeout ->
-        $('#fixHeader .header, .body2a .pt-tab-1').addClass 'blur'
+        $('#fixHeader .header').addClass 'blur'
+        if currentPageNo is '2'
+          $('.body2').addClass 'blur'
+        else if currentPageNo is '2a'
+          $(".body2a .pt-tab-#{currentTabNo.alarm}").addClass 'blur'
         return
       , 310
 
@@ -1119,6 +1130,11 @@ do (app = iz) ->
         setTimeout hideArmDisarmActionBar, 50
         disableButton()
         return
+      ).on('changePage', (e, from, to) ->
+        currentPageNo = to
+        hideArmDisarmActionBar() if to isnt '2' and to isnt '2a'
+        showArmDisarmActionBar() if to is '2'
+        return
       ).on('arm', ->
         $('#pt-main .pt-page-2a .passcode, #fullpage .armAction .passcode').removeClass('redTheme').addClass 'greenTheme'
         $('#pt-main .pt-page-2a .tabsBody, #fixHeader .tabsBody').removeClass('bgRed').addClass 'bgGreen'
@@ -1134,7 +1150,8 @@ do (app = iz) ->
         return
       ).on('deviceDataUpdated', changeArmStatus)
        .on('onSecurityTab', showArmDisarmActionBar)
-       .on('onOtherTab', hideArmDisarmActionBar).trigger 'onOtherTab'
+       .on('onOtherTab', showArmDisarmActionBar).trigger('onOtherTab')
+      .trigger 'changePage', ['0', '1']
 
       $(window).resize(screenResize).trigger 'resize'
       return
@@ -1170,6 +1187,7 @@ do (app = iz) ->
         $("div.pt-page-#{hdPage}")
         .prepend fixedHeader # then put the header back tp the page
 
+      $(window).trigger 'changePage', [from, to]
       $(fPage).addClass "pt-page-current #{fxOut}"
       $(tPage).addClass "pt-page-current #{fxIn} pt-page-ontop"
 
@@ -1177,7 +1195,7 @@ do (app = iz) ->
         pHeight = $("#{tPage}").height()
         $("#{tPage} div.body").css 'min-height', 200
         debug "callback on destination page #{tPage} compare
-                 screen height #{sHeight} with page height #{pHeight}"
+              screen height #{sHeight} with page height #{pHeight}"
 
         $(fPage).removeClass "pt-page-current #{fxOut}"
         $(tPage).removeClass "#{fxIn} pt-page-ontop"

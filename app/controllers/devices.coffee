@@ -196,7 +196,7 @@ getCurrentStatus = (socket, data) ->
 
       dbUpdateLastSync socket, socket.data.info.sn
       dbStatusUpdate socket, ->
-        websockets.socketOnData socket.data
+        websockets.socketOnData 'initial', socket.data
         return
   else if data
     log 'n', 'e', "Invalid input #{data}"
@@ -329,14 +329,18 @@ getDeviceUpdate = (socket, data) ->
         log 'n', 'i', "Server reply 'ok' to device for the status update:- #{data}"
         key = null
         socketWrite socket, 'ok'
-        dbStatusUpdate socket
+        dbStatusUpdate socket, ->
+          websockets.socketOnData 'update', socket.data
+          return
+
       return
+    # END each loop
     return
   # END loopUpdate
 
   if ps = commonFn.iss data, 'si'
     str = commonFn.gv data, ps
-    key = getKeys str, 'system info update', 2
+    key = getKeys str, 'system info update', 2 # raw data, err mesg, minimum length
 
     unless key
       socketWrite socket, 'e5'
@@ -345,7 +349,7 @@ getDeviceUpdate = (socket, data) ->
     loopUpdate 'system', key[0], str
   else if ps = commonFn.iss data, 'pt'
     str = commonFn.gv data, ps
-    key = getKeys str, 'partition update', 3
+    key = getKeys str, 'partition update', 3 # raw data, err mesg, minimum length
 
     unless key
       socketWrite socket, 'e5'
@@ -354,7 +358,7 @@ getDeviceUpdate = (socket, data) ->
     loopUpdate 'partition', key[0], str
   else if ps = commonFn.iss data, 'zn'
     str = commonFn.gv data, ps
-    key = getKeys str, 'zone update', 5
+    key = getKeys str, 'zone update', 5 # raw data, err mesg, minimum length
 
     unless key
       socketWrite socket, 'e5'
@@ -363,7 +367,7 @@ getDeviceUpdate = (socket, data) ->
     loopUpdate 'zones', key[0], str
   else if ps = commonFn.iss data, 'em'
     str = commonFn.gv data, ps
-    key = getKeys str, 'emergency update', 3
+    key = getKeys str, 'emergency update', 3 # raw data, err mesg, minimum length
 
     unless key
       socketWrite socket, 'e5'
@@ -372,7 +376,7 @@ getDeviceUpdate = (socket, data) ->
     loopUpdate 'emergency', key[0], str
   else if ps = commonFn.iss data, 'li'
     str = commonFn.gv data, ps
-    key = getKeys str, 'light update', 5
+    key = getKeys str, 'light update', 5 # raw data, err mesg, minimum length
 
     unless key
       socketWrite socket, 'e5'
