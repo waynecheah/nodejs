@@ -797,6 +797,7 @@ do (app = iz) ->
 do (app = iz) ->
   debug          = app.debug
   appInteraction = app.appInteraction
+  onProgress     = {}
   onArmStatusBar = no
   onPasscode     = no
   deviceOnline   = no
@@ -804,6 +805,46 @@ do (app = iz) ->
   currentTabNo   = alarm: null
   passcode       = []
   emergencyStt   = {}
+
+  onProgressHandle = (taskname) ->
+    if taskname is 'armAction'
+      status  = appInteraction.curArmStatus()
+      element = $ '.armAction .status'
+
+      onProgress.armAction = on
+      setTimeout ->
+        onProgressHandle 'armActionCompleted' if onProgress.armAction is on
+        return
+      , 5000
+
+      element.find('.armDescription').html 'In progress, please wait..'
+      $('.armAction .status .armButton').hide()
+      $('.armAction .status .closeArmAction .ico').hide()
+      $('.armAction .status .closeArmAction .loading').show()
+      $('.armAction .status .closeArmAction').show()
+
+      if status
+        element.find('.curArmStatus').html 'Disarming...'
+      else
+        element.find('.curArmStatus').html 'Arming...'
+    else if taskname is 'armActionCompleted'
+      status  = appInteraction.curArmStatus()
+      element = $ '.armAction .status'
+
+      onProgress.armAction = off
+
+      if status
+        element.find('.curArmStatus').html 'Armed Away.'
+        element.find('.armDescription').html 'Press to Disarm'
+      else
+        element.find('.curArmStatus').html 'Disarmed.'
+        element.find('.armDescription').html 'Press to Arm'
+
+      $('.armAction .status .armButton').show()
+      $('.armAction .status .closeArmAction').hide()
+
+    return
+  # END onProgressHandle
 
   changeArmStatus = (force=no) ->
     return unless onArmStatusBar or force
@@ -908,7 +949,7 @@ do (app = iz) ->
 
       setTimeout ->
         fullpageAction = $ '#fullpage .armAction'
-        $("div.pt-page-2a").prepend fullpageAction
+        $('#pt-main').prepend fullpageAction
 
         $('.armAction .passcode .digits table tr td div').remove()
         $('.armAction .passcode .keypad .ok').hide()
@@ -917,13 +958,15 @@ do (app = iz) ->
       , 400
     else # Passcode is hidden at bottom, toggle to show it
       onPasscode = yes
-      actionBar  = $ '.pt-page-2a .armAction'
+      actionBar  = $ '#pt-main .armAction'
       $('#fullpage').html actionBar
 
       setTimeout ->
         $('.armAction').css 'top', 0
         $('.armAction .status .armDescription').html desc2
         $('.armAction .status .armButton').hide()
+        $('.armAction .status .closeArmAction .ico').hide()
+        $('.armAction .status .closeArmAction .close').show()
         $('.armAction .status .closeArmAction').show()
         return
       , 50
@@ -953,9 +996,7 @@ do (app = iz) ->
     else
       debug 'Arm/Disarm update unsuccessful', 'err'
       debug data
-
-    togglePasscode()
-    changeArmStatus()
+      onProgressHandle 'armActionCompleted'
     return
   # END armDisarmUpdateCallback
 
@@ -972,13 +1013,14 @@ do (app = iz) ->
   # END alarmUpdate
 
   panicUpdateCallback = (data) ->
+    # onProgressHandle 'panicCompleted'
     alarmUpdate 'Panic', data
-    hideArmDisarmActionBar()
     changePageBgColor 'red'
     return
   # END panicUpdateCallback
 
   duressUpdateCallback = (data) ->
+    # onProgressHandle 'duressCompleted'
     alarmUpdate 'Duress', data
     return
   # END duressUpdateCallback
@@ -1084,7 +1126,9 @@ do (app = iz) ->
         togglePasscode()
         return
       onTap '.armAction .keypad .ok', 'tap', ->
+        onProgressHandle 'armAction'
         appInteraction.armDisarmed passcode.join(''), armDisarmUpdateCallback
+        togglePasscode yes
         return
       onTap '.armAction .cancel', 'tap', ->
         length = $('.armAction .passcode .digits table tr td div').length
@@ -1154,9 +1198,13 @@ do (app = iz) ->
         showArmDisarmActionBar() if to is '2'
         return
       ).on('arm', ->
+        onProgressHandle 'armActionCompleted'
+        changeArmStatus()
         changePageBgColor 'green'
         return
       ).on('disarm', ->
+        onProgressHandle 'armActionCompleted'
+        changeArmStatus()
         changePageBgColor 'red'
         return
       ).on('emergencyStatus', (event, type, status) ->

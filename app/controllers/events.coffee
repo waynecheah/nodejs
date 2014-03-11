@@ -66,18 +66,7 @@ Events =
   # END panic
 
   duress: (data, callback) ->
-    d =
-      form:
-        no: data.form.no
-        cmd: '0'
-        password: 'emergency'
-      ws: data.ws
-
-    @armDisarmed d, (status, data2) ->
-      callback status, data2 if not status
-      alarm data, callback if status
-      return
-
+    alarm data, callback
     return
   # END duress
 

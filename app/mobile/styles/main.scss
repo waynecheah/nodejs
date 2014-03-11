@@ -257,10 +257,6 @@ div.tallerMargin {
 #fixHeader {
     position: absolute;
     top: $summarySttHeight;
-
-    .blur {
-        -webkit-filter: $blur;
-    }
 }
 #fullpage {
     z-index: 4;
@@ -607,10 +603,6 @@ div.body2a {
     @extend div.body2;
     padding-top: 0; /* has longest header with tabs */
     -webkit-transition: background 1s;
-
-    .blur {
-        -webkit-filter: $blur;
-    }
 }
 div.body4 {
     @extend div.body2;
