@@ -514,7 +514,7 @@ div.body {
             line-height: 35px;
 
             .ico {
-                font-size: .8em !important;
+                font-size: .9em !important;
             }
         }
     }
@@ -578,14 +578,19 @@ div.body {
                         border-radius: $buttonDimen / 2;
                         opacity: .5;
                     }
-                    div.on, div.off {
-                        border-style: solid;
+                    div.activate {
+                        opacity: .5;
+                    }
+                }
+            }
+            ul.online {
+                li.row {
+                    div.activate {
                         opacity: 1;
                     }
-                    div.on {
-                        background-color: #fff;
-                        color: $on;
-                        font-weight: bold;
+                    div.off {
+                        border-style: solid;
+                        opacity: 1;
                     }
                 }
             }

@@ -762,7 +762,7 @@ do (app = iz) ->
     alarm: (type, callbackUI) ->
       method = if type is 1 then 'panic' else 'duress'
 
-      emitReq "/events/#{method}", type: type, status: 1, (data) ->
+      emitReq "/events/#{method}", no: 1, type: type, status: 1, (data) ->
         return callbackUI data if data.status is false
 
         _.each websocket.devices[0].data.status.emergency, (em, i) ->
@@ -828,6 +828,18 @@ do (app = iz) ->
       s.find('.armDescription').html desc
       s.find('.armButton').html 'Arm'
   # END changeArmStatus
+
+  changePageBgColor = (color) ->
+    if color is 'green'
+      $('#pt-main .pt-page-2a .passcode, #fullpage .armAction .passcode').removeClass('redTheme').addClass 'greenTheme'
+      $('#pt-main .pt-page-2a .tabsBody, #fixHeader .tabsBody').removeClass('bgRed').addClass 'bgGreen'
+      $('#pt-main .pt-page-2a .body2a, #pt-main .pt-page-2 .body2').removeClass('bgRed').addClass 'bgGreen'
+    else if color is 'red'
+      $('#pt-main .pt-page-2a .passcode, #fullpage .armAction .passcode').removeClass('greenTheme').addClass 'redTheme'
+      $('#pt-main .pt-page-2a .tabsBody, #fixHeader .tabsBody').removeClass('bgGreen').addClass 'bgRed'
+      $('#pt-main .pt-page-2a .body2a, #pt-main .pt-page-2 .body2').removeClass('bgGreen').addClass 'bgRed'
+    return
+  # END changePageBgColor
 
   tabArrowPostion = (nth, selector='#fixHeader') ->
     width = $(window).width()
@@ -961,6 +973,8 @@ do (app = iz) ->
 
   panicUpdateCallback = (data) ->
     alarmUpdate 'Panic', data
+    hideArmDisarmActionBar()
+    changePageBgColor 'red'
     return
   # END panicUpdateCallback
 
@@ -969,20 +983,22 @@ do (app = iz) ->
     return
   # END duressUpdateCallback
 
-  disableButton = ->
+  disableButton = -> # server or device offline
     emergencyStt = {}
-    $('.button').removeClass 'on off'
+    $('.body2a .pt-tab-3 ul.online').removeClass 'online'
     return
   # END disableButton
 
-  enableButton = (type, status) ->
+  enableButton = (type, status) -> # display emergency in activated or off status
+    $('.body2a .pt-tab-3 ul').addClass 'online'
+
     if status is 1
-      remove = 'off'
-      add    = 'on'
-      stTxt  = 'On'
+      remove = 'off button'
+      add    = 'activate'
+      stTxt  = 'Activated'
     else if status is 0
-      remove = 'on'
-      add    = 'off'
+      remove = 'activate'
+      add    = 'off button'
       stTxt  = 'Off'
     else
       debug "Invalid emergency status update: [#{status}]", 'err'
@@ -1105,12 +1121,14 @@ do (app = iz) ->
         , 200
         return
       onTouch '.body2a .pt-tab-3 .panic', 'tap', ->
-        return if 'panic' of emergencyStt is no or emergencyStt.panic is 1 # server or device offline || already turn on
+        # em status not updated, server/device may offline || already turn on em
+        return if 'panic' of emergencyStt is no or emergencyStt.panic is 1
         emergencyStt.panic = -1 # processing..
         appInteraction.alarm 1, panicUpdateCallback
         return
       onTouch '.body2a .pt-tab-3 .duress', 'tap', ->
-        return if 'duress' of emergencyStt is no or emergencyStt.duress is 1 # server or device offline || already turn on
+        # em status not updated, server/device may offline || already turn on em
+        return if 'duress' of emergencyStt is no or emergencyStt.duress is 1
         emergencyStt.duress = -1 # processing..
         appInteraction.alarm 4, duressUpdateCallback
         return
@@ -1122,7 +1140,7 @@ do (app = iz) ->
         return
       ).on('deviceOn', ->
         deviceOnline = yes
-        showArmDisarmActionBar() if $('.body2a .pt-tab-1').hasClass 'pt-page-current'
+        showArmDisarmActionBar() if currentPageNo is '2' or currentPageNo is '2a'
         return
       ).on('deviceOff', ->
         deviceOnline = no
@@ -1136,14 +1154,10 @@ do (app = iz) ->
         showArmDisarmActionBar() if to is '2'
         return
       ).on('arm', ->
-        $('#pt-main .pt-page-2a .passcode, #fullpage .armAction .passcode').removeClass('redTheme').addClass 'greenTheme'
-        $('#pt-main .pt-page-2a .tabsBody, #fixHeader .tabsBody').removeClass('bgRed').addClass 'bgGreen'
-        $('#pt-main .pt-page-2a .body2a, #pt-main .pt-page-2 .body2').removeClass('bgRed').addClass 'bgGreen'
+        changePageBgColor 'green'
         return
       ).on('disarm', ->
-        $('#pt-main .pt-page-2a .passcode, #fullpage .armAction .passcode').removeClass('greenTheme').addClass 'redTheme'
-        $('#pt-main .pt-page-2a .tabsBody, #fixHeader .tabsBody').removeClass('bgGreen').addClass 'bgRed'
-        $('#pt-main .pt-page-2a .body2a, #pt-main .pt-page-2 .body2').removeClass('bgGreen').addClass 'bgRed'
+        changePageBgColor 'red'
         return
       ).on('emergencyStatus', (event, type, status) ->
         enableButton type, status
