@@ -94,6 +94,79 @@
         </div>
 
         <div id="pt-main" class="pt-perspective">
+          <!-- Login Screen -->
+          <div class="pt-page pt-page-0">
+            <div class="header">
+              <div class="row">
+                <div data-page="0-1-r" class="ln col-xs-2 col-md-1"></div>
+                <div class="pageTitle col-xs-8 col-md-10 text-center">Sign In</div>
+                <div data-page="0-1" class="ln col-xs-2 col-md-1" style="padding-left:10px;"></div>
+              </div>
+            </div>
+
+            <div class="body body0">
+              <div data-role="fieldcontain" class="text-center" style="padding:30px 0 15px;">
+                <img src="img/innerzon.png" />
+                <span style="font-size:30px; display:none;">
+                  <span style="color:#7092BE;">INNER</span><span style="color:#7F7F7F;">ZON
+                  <span style="font-size:18px; vertical-align:top;">&#174;</span></span>
+                </span>
+              </div>
+              <div class="authOptions">
+                <div class="authOption useSignin pull-left text-center">
+                  <h1 style="margin:6px 0 30px;">Sign-In</h1>
+                  <div data-role="fieldcontain">
+                    <div class="errPop">
+                      <span class="msg" style="display:none;">...Please enter your email here...</span>
+                    </div>
+                    <input name="username" id="username" placeholder="email" value="" type="text" data-mini="true">
+                  </div>
+                  <div data-role="fieldcontain">
+                    <div class="errPop">
+                      <span class="msg" style="display:none;">...Please enter your password here...</span>
+                    </div>
+                    <input name="password" id="password" placeholder="password" value="" type="password" data-mini="true">
+                  </div>
+                  <div data-role="fieldcontain">
+                    <label>Save Password</label>
+                    <div class="savePassword button">No</div>
+                  </div>
+                  <div data-role="fieldcontain">
+                    <div style="width:37%; display:inline-block;">&nbsp;</div>
+                    <div style="width:63%; display:inline-block;">
+                      <a href="#" id="login" data-role="button" data-inline="true" data-transition="flip">
+                        <span class="ico-login"></span> Login
+                      </a>
+                    </div>
+                  </div>
+                  <div data-role="fieldcontain" style="padding-top:10px;">
+                    <div class="text-right">Don't have an account?
+                      <a href="#page-register" data-transition="slideup">Register Now</a>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="authDivider"></div>
+
+                <div class="authOption withServices pull-right">
+                  <a href="#" class="authButton facebook">
+                    <span class="authIcon i-facbook ico-facebook"></span>
+                    <span class="text">Sign in with <b>Facebook</b></span>
+                  </a>
+                  <a href="#" class="authButton google">
+                    <span class="authIcon i-google ico-gplus"></span>
+                    <span class="text">Sign in with <b>Google</b></span>
+                  </a>
+                  <a href="#" class="googleGlass">
+                    <img src="img/getitonglass_172x60_action_button.png" style="display:none;" />
+                  </a>
+                </div>
+                <div class="clearfix"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Home -->
           <div class="pt-page pt-page-1 pt-page-current">
             <div style="text-align:center; margin:50px 0 20px;">
               <span class="icon-IZCircle" style="font-size:2.8em;"></span>
@@ -107,6 +180,7 @@
             </ul>
           </div>
 
+          <!-- Alarm Dashboard -->
           <div class="pt-page pt-page-2">
             <div class="header">
               <div class="row">
@@ -119,6 +193,7 @@
                 </div>
               </div>
             </div>
+
             <div class="body body2">
               <ul class="lgRow">
                 <li data-page="2-2a-f-1" class="ln row">
@@ -147,6 +222,7 @@
               </ul>
             </div>
           </div>
+          <!-- Home Alarm -->
           <div class="pt-page pt-page-2a">
             <div data-page="2a" class="header tallerHead">
               <div class="row tabsHead">
@@ -364,6 +440,7 @@
               </div>
             </div>
 
+          <!-- Location List -->
           <div class="pt-page pt-page-3">
             <div class="header">
               <div class="row">
@@ -376,6 +453,7 @@
                 </div>
               </div>
             </div>
+
             <div class="body">
               <div style="padding:4px;">
                 <div class="col-xs-6 fixPad">
@@ -438,6 +516,7 @@
             </div>
           </div>
 
+          <!-- Circular Slider -->
           <div class="pt-page pt-page-4">
             <div class="header tallerHead">
               <div class="row">
@@ -456,6 +535,7 @@
                 </div>
               </div>
             </div>
+
             <div class="body body4 tallerMargin">
               <div style="position:relative; height:480px;">
                 <div id="info">
@@ -491,6 +571,7 @@
                 </div>
               </div>
             </div>
+
             <div class="body body5">body 5</div>
           </div>
 
