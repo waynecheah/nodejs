@@ -39,9 +39,6 @@
 .icon-shop:before {
     content: "\e60e";
 }
-.icon-video:before {
-    content: "\e60f";
-}
 .icon-search:before {
     content: "\e610";
 }
@@ -60,125 +57,173 @@
 .icon-key:before {
     content: "\e618";
 }
-.icon-note:before {
-    content: "\e61a";
-}
-.icon-Share:before {
-    content: "\e63a";
-}
-.icon-Bulb:before {
-    content: "\e627";
-}
-.icon-Location:before {
-    content: "\e628";
-}
-.icon-Star:before {
-    content: "\e63b";
-}
-.icon-Heart:before {
-    content: "\e63c";
-}
-.icon-Server:before {
-    content: "\e629";
-}
-.icon-AlarmClock:before {
-    content: "\e606";
-}
-.icon-World:before {
-    content: "\e63d";
-}
-.icon-ServerSync:before {
-    content: "\e601";
-}
-.icon-House:before {
-    content: "\e603";
-}
-.icon-Locked:before {
-    content: "\e62a";
-}
-.icon-UnLock:before {
-    content: "\e62b";
-}
-.icon-Timer:before {
-    content: "\e62d";
-}
-.icon-IZCircle:before {
-    content: "\e62e";
-}
-.icon-Clock:before {
-    content: "\e62f";
-}
-.icon-Setting:before {
-    content: "\e630";
-}
-.icon-False:before {
-    content: "\e631";
-}
-.icon-Refresh:before {
-    content: "\e632";
-}
-.icon-CloudSync:before {
-    content: "\e63e";
-}
-.icon-True:before {
-    content: "\e633";
-}
-.icon-Message:before {
-    content: "\e634";
-}
-.icon-iMac:before {
-    content: "\e635";
-}
-.icon-Mail:before {
-    content: "\e608";
-}
-.icon-Sms:before {
-    content: "\e63f";
-}
-.icon-Email:before {
-    content: "\e636";
-}
-.icon-Trash:before {
-    content: "\e637";
-}
-.icon-Zone8:before {
-    content: "\e638";
-}
-.icon-Zone20:before {
-    content: "\e639";
-}
-.icon-MainMenu:before {
-    content: "\e609";
-}
-.icon-Back:before {
-    content: "\e60b";
-}
-.icon-Forward:before {
-    content: "\e60c";
-}
 .icon-Phone:before {
     content: "\e600";
 }
-.icon-MenuBox:before {
-    content: "\e604";
+.icon-Phone2:before {
+    content: "\e626";
 }
-.icon-Siren:before {
-    content: "\e605";
+.icon-PhoneFail:before {
+    content: "\e62c";
 }
-.icon-Health:before {
-    content: "\e612";
+.icon-Left:before {
+    content: "\e613";
 }
-.icon-Earth:before {
-    content: "\e619";
+.icon-Right:before {
+    content: "\e61c";
 }
 .icon-PowerAdapter:before {
+    content: "\e640";
+}
+.icon-Battery:before {
+    content: "\e641";
+}
+.icon-PowerAdapter2:before {
     content: "\e61b";
 }
-.icon-Cctv:before {
-    content: "\e60d";
+.icon-Gsm:before {
+    content: "\e61d";
+}
+.icon-CommFail:before {
+    content: "\e61e";
+}
+.icon-Peripheral:before {
+    content: "\e61f";
+}
+.icon-Log:before {
+    content: "\e620";
+}
+.icon-Security:before {
+    content: "\e621";
+}
+.icon-Add:before {
+    content: "\e622";
+}
+.icon-Minus:before {
+    content: "\e642";
+}
+.icon-HomeAlarm:before {
+    content: "\e624";
+}
+.icon-Wave:before {
+    content: "\e623";
+}
+.icon-IZWave:before {
+    content: "\e625";
+}
+.icon-Security3:before {
+    content: "\e643";
+}
+.icon-Security2:before {
+    content: "\e644";
+}
+.icon-Health:before {
+    content: "\e645";
+}
+.icon-Earth:before {
+    content: "\e646";
+}
+.icon-Siren:before {
+    content: "\e612";
+}
+.icon-MenuBox:before {
+    content: "\e619";
+}
+.icon-MainMenu:before {
+    content: "\e604";
+}
+.icon-Back:before {
+    content: "\e605";
+}
+.icon-Forward:before {
+    content: "\e647";
 }
 .icon-IZ:before {
+    content: "\e648";
+}
+.icon-Cctv:before {
+    content: "\e60c";
+}
+.icon-Share:before {
+    content: "\e609";
+}
+.icon-Star:before {
+    content: "\e60b";
+}
+.icon-Heart:before {
+    content: "\e60d";
+}
+.icon-CloudSync:before {
+    content: "\e63b";
+}
+.icon-ServerSync:before {
     content: "\e614";
+}
+.icon-House:before {
+    content: "\e63a";
+}
+.icon-UnLock:before {
+    content: "\e63c";
+}
+.icon-Locked:before {
+    content: "\e63e";
+}
+.icon-Bulb:before {
+    content: "\e649";
+}
+.icon-Location:before {
+    content: "\e627";
+}
+.icon-Server:before {
+    content: "\e62a";
+}
+.icon-AlarmClock:before {
+    content: "\e62b";
+}
+.icon-Clock:before {
+    content: "\e628";
+}
+.icon-Timer:before {
+    content: "\e629";
+}
+.icon-IZCircle:before {
+    content: "\e64a";
+}
+.icon-Zone20:before {
+    content: "\e603";
+}
+.icon-Zone8:before {
+    content: "\e606";
+}
+.icon-Trash:before {
+    content: "\e61a";
+}
+.icon-Email:before {
+    content: "\e62d";
+}
+.icon-Sms:before {
+    content: "\e601";
+}
+.icon-Mail:before {
+    content: "\e62e";
+}
+.icon-iMac:before {
+    content: "\e62f";
+}
+.icon-Message:before {
+    content: "\e635";
+}
+.icon-True:before {
+    content: "\e636";
+}
+.icon-False:before {
+    content: "\e637";
+}
+.icon-Refresh:before {
+    content: "\e638";
+}
+.icon-Setting:before {
+    content: "\e639";
 }
 .icon-facebook:before {
     content: "\e806";

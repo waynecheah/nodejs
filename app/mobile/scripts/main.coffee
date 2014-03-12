@@ -807,41 +807,59 @@ do (app = iz) ->
   emergencyStt   = {}
 
   onProgressHandle = (taskname) ->
-    if taskname is 'armAction'
-      status  = appInteraction.curArmStatus()
-      element = $ '.armAction .status'
+    switch taskname
+      when 'armAction'
+        status  = appInteraction.curArmStatus()
+        element = $ '.armAction .status'
 
-      onProgress.armAction = on
-      setTimeout ->
-        onProgressHandle 'armActionCompleted' if onProgress.armAction is on
-        return
-      , 5000
+        onProgress.armAction = on
+        setTimeout ->
+          onProgressHandle 'armActionCompleted' if onProgress.armAction is on
+          return
+        , 5000
 
-      element.find('.armDescription').html 'In progress, please wait..'
-      $('.armAction .status .armButton').hide()
-      $('.armAction .status .closeArmAction .ico').hide()
-      $('.armAction .status .closeArmAction .loading').show()
-      $('.armAction .status .closeArmAction').show()
+        element.find('.armDescription').html 'In progress, please wait..'
+        $('.armAction .status .armButton').hide()
+        $('.armAction .status .closeArmAction .ico').hide()
+        $('.armAction .status .closeArmAction .loading').show()
+        $('.armAction .status .closeArmAction').show()
 
-      if status
-        element.find('.curArmStatus').html 'Disarming...'
-      else
-        element.find('.curArmStatus').html 'Arming...'
-    else if taskname is 'armActionCompleted'
-      status  = appInteraction.curArmStatus()
-      element = $ '.armAction .status'
+        if status
+          element.find('.curArmStatus').html 'Disarming...'
+        else
+          element.find('.curArmStatus').html 'Arming...'
+      when 'armActionCompleted'
+        status  = appInteraction.curArmStatus()
+        element = $ '.armAction .status'
 
-      onProgress.armAction = off
+        onProgress.armAction = off
 
-      if status
-        element.find('.curArmStatus').html 'Armed Away.'
-        element.find('.armDescription').html 'Press to Disarm'
-      else
-        element.find('.curArmStatus').html 'Disarmed.'
-        element.find('.armDescription').html 'Press to Arm'
+        if status
+          element.find('.curArmStatus').html 'Armed Away.'
+          element.find('.armDescription').html 'Press to Disarm'
+        else
+          element.find('.curArmStatus').html 'Disarmed.'
+          element.find('.armDescription').html 'Press to Arm'
 
-      $('.armAction .status .armButton').show()
-      $('.armAction .status .closeArmAction').hide()
+        $('.armAction .status .armButton').show()
+        $('.armAction .status .closeArmAction').hide()
+      when 'panic'
+        onProgress.panic = on
+        setTimeout ->
+          onProgressHandle 'panicCompleted' if onProgress.panic is on
+          return
+        , 5000
+      when 'panicCompleted'
+        onProgress.panic = off
+      when 'duress'
+        onProgress.duress = on
+        setTimeout ->
+          onProgressHandle 'duressCompleted' if onProgress.duress is on
+          return
+        , 5000
+      when 'duressCompleted'
+        onProgress.duress = off
+    # END switch
 
     return
   # END onProgressHandle
@@ -852,11 +870,22 @@ do (app = iz) ->
     status = appInteraction.curArmStatus()
     s      = $ '.armAction .status'
 
+    if 'panic' of emergencyStt is yes and emergencyStt.panic # in Panic activated status
+      desc = if onPasscode then 'Enter Passcode to Disarm' else 'Press to Disarm'
+      $('.armAction').removeClass('armedBgColor').addClass 'disarmBgColor'
+      s.removeClass('disarm').addClass 'armed'
+      s.find('.icon').removeClass('icon-UnLock icon-Locked').addClass 'icon-Siren'
+      s.find('.curArmStatus').html 'Panic.'
+      s.find('.armDescription').html desc
+      s.find('.armButton').html 'Disarm'
+      return
+
+
     if status
       desc = if onPasscode then 'Enter Passcode to Disarm' else 'Press to Disarm'
       $('.armAction').removeClass('disarmBgColor').addClass 'armedBgColor'
       s.removeClass('disarm').addClass 'armed'
-      s.find('.icon').removeClass('icon-UnLock').addClass 'icon-Locked'
+      s.find('.icon').removeClass('icon-UnLock icon-Siren').addClass 'icon-Locked'
       s.find('.curArmStatus').html 'Armed Away.'
       s.find('.armDescription').html desc
       s.find('.armButton').html 'Disarm'
@@ -864,19 +893,21 @@ do (app = iz) ->
       desc = if onPasscode then 'Enter Passcode to Arm' else 'Press to Arm'
       $('.armAction').removeClass('armedBgColor').addClass 'disarmBgColor'
       s.removeClass('armed').addClass 'disarm'
-      s.find('.icon').removeClass('icon-Locked').addClass 'icon-UnLock'
+      s.find('.icon').removeClass('icon-Locked icon-Siren').addClass 'icon-UnLock'
       s.find('.curArmStatus').html 'Disarmed.'
       s.find('.armDescription').html desc
       s.find('.armButton').html 'Arm'
   # END changeArmStatus
 
   changePageBgColor = (color) ->
+    color = 'red' if 'panic' of emergencyStt is yes and emergencyStt.panic # in Panic activated status
+
     if color is 'green'
-      $('#pt-main .pt-page-2a .passcode, #fullpage .armAction .passcode').removeClass('redTheme').addClass 'greenTheme'
-      $('#pt-main .pt-page-2a .tabsBody, #fixHeader .tabsBody').removeClass('bgRed').addClass 'bgGreen'
+      $('#pt-main .passcode, #fullpage .armAction .passcode').removeClass('redTheme').addClass 'greenTheme'
+      $('#pt-main .tabsBody, #fixHeader .tabsBody').removeClass('bgRed').addClass 'bgGreen'
       $('#pt-main .pt-page-2a .body2a, #pt-main .pt-page-2 .body2').removeClass('bgRed').addClass 'bgGreen'
     else if color is 'red'
-      $('#pt-main .pt-page-2a .passcode, #fullpage .armAction .passcode').removeClass('greenTheme').addClass 'redTheme'
+      $('#pt-main .passcode, #fullpage .armAction .passcode').removeClass('greenTheme').addClass 'redTheme'
       $('#pt-main .pt-page-2a .tabsBody, #fixHeader .tabsBody').removeClass('bgGreen').addClass 'bgRed'
       $('#pt-main .pt-page-2a .body2a, #pt-main .pt-page-2 .body2').removeClass('bgGreen').addClass 'bgRed'
     return
@@ -966,7 +997,7 @@ do (app = iz) ->
         $('.armAction .status .armDescription').html desc2
         $('.armAction .status .armButton').hide()
         $('.armAction .status .closeArmAction .ico').hide()
-        $('.armAction .status .closeArmAction .close').show()
+        $('.armAction .status .closeArmAction .closeKeypad').show()
         $('.armAction .status .closeArmAction').show()
         return
       , 50
@@ -1000,28 +1031,21 @@ do (app = iz) ->
     return
   # END armDisarmUpdateCallback
 
-  alarmUpdate = (type, data) ->
+  panicUpdateCallback = (data) ->
     if data.status
       console.log data
     else
-      debug "Turn on Emergency #{type} unsuccessful", 'err'
-      debug data
-      return
-
-    enableButton type, 1
-    return
-  # END alarmUpdate
-
-  panicUpdateCallback = (data) ->
-    # onProgressHandle 'panicCompleted'
-    alarmUpdate 'Panic', data
-    changePageBgColor 'red'
+      debug "Turn on Emergency Panic unsuccessful", 'err'
+      onProgressHandle 'panicCompleted'
     return
   # END panicUpdateCallback
 
   duressUpdateCallback = (data) ->
-    # onProgressHandle 'duressCompleted'
-    alarmUpdate 'Duress', data
+    if data.status
+      console.log data
+    else
+      onProgressHandle 'duressCompleted'
+      debug "Turn on Emergency Duress unsuccessful", 'err'
     return
   # END duressUpdateCallback
 
@@ -1122,13 +1146,14 @@ do (app = iz) ->
         return
 
       onTap '.tab', 'tap', @onTabClick
-      onTap '.armAction .armButton, .armAction .closeArmAction', 'tap', ->
+      onTap '.armAction .armButton, .armAction .closeArmAction', 'tap', -> # tap to close passcode keypad
+        return if $('.armAction .status .closeArmAction .loading:visible').length
         togglePasscode()
         return
-      onTap '.armAction .keypad .ok', 'tap', ->
-        onProgressHandle 'armAction'
+      onTap '.armAction .keypad .ok', 'tap', -> # send arm/disarm command to server
         appInteraction.armDisarmed passcode.join(''), armDisarmUpdateCallback
         togglePasscode yes
+        onProgressHandle 'armAction'
         return
       onTap '.armAction .cancel', 'tap', ->
         length = $('.armAction .passcode .digits table tr td div').length
@@ -1169,12 +1194,14 @@ do (app = iz) ->
         return if 'panic' of emergencyStt is no or emergencyStt.panic is 1
         emergencyStt.panic = -1 # processing..
         appInteraction.alarm 1, panicUpdateCallback
+        onProgressHandle 'panic'
         return
       onTouch '.body2a .pt-tab-3 .duress', 'tap', ->
         # em status not updated, server/device may offline || already turn on em
         return if 'duress' of emergencyStt is no or emergencyStt.duress is 1
         emergencyStt.duress = -1 # processing..
         appInteraction.alarm 4, duressUpdateCallback
+        onProgressHandle 'duress'
         return
 
       $(window).on('serverOff', ->

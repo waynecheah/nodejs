@@ -323,7 +323,7 @@ socket.aes = function(str){
 log('n', 'i', 'Socket created.');
 socket.on('data', function(data) {
     var dt = data.split(RN);
-    var info, ps, str;
+    var info, inf, ps, str;
 
     _.each(dt, function(data,i){
         if (!data) { // empty data
@@ -374,8 +374,19 @@ socket.on('data', function(data) {
 
                     _data.status.pt[i] = ptCmd;
 
-                    log('n', 'i', 'Inform server the partition is updated successfully: zn='+ptCmd);
+                    log('n', 'i', 'Inform server the partition is updated successfully: pt='+ptCmd);
                     write('pt='+ptCmd+RN);
+
+                    _.each(_data.status.em, function(str, i){
+                        inf = str.split(',');
+
+                        if (inf[0] == '1' && inf[1] == '1') { // if found Panic activated in alarm status, make it deactivate
+                            var emCmd = '1,0,102';
+                            log('n', 'i', 'Inform server emergency is deactivate because of partition has Armed : em='+emCmd);
+                            _data.status.em[i] = emCmd;
+                            write('em='+emCmd+RN);
+                        }
+                    });
                 }
             });
         } else if (ps = iss(data, 'zn')) {
@@ -429,6 +440,20 @@ socket.on('data', function(data) {
 
                     log('n', 'i', 'Inform server emergency is updated successfully: em='+emCmd);
                     write('em='+emCmd+RN);
+
+                    if (info[0] == '1' && info[1] == '1') { // If type is Panic and it's activated, perform arming
+                        _.each(_data.status.pt, function(str, i){
+                            inf = str.split(',');
+
+                            var command = [inf[0], '1', '102'];
+                            var ptCmd   = command.join(',');
+
+                            _data.status.pt[i] = ptCmd;
+
+                            log('n', 'i', 'Inform server the partition is armed because of Panic activated: pt='+ptCmd);
+                            write('pt='+ptCmd+RN);
+                        });
+                    }
                 }
             });
         } else if (ps = iss(data, 'li')) {
