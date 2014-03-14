@@ -942,13 +942,25 @@ _.each(process.argv, function(v, i){
 //
 if (config.replication) {
     var hosts = config.dbHosts.join(',');
-    var opts  = { replset: { rs_name: 'innerzon' } };
+    var opts  = {
+        db: { native_parser: false },
+        server: { auto_reconnect: true },
+        replset: { rs_name: 'innerzon' }
+        //user: '',
+        //pass: ''
+    };
     var onOpen = function(db){
         log('s', 'i', 'MongoDB is now opened with following info');
         log('s', 'd', db.hosts);
         log('s', 'd', db.options);
     };
-    mongoose.connect('mongodb://'+hosts+'/mydb?replicaSet=innerzon&w=majority&journal=true', opts);
+
+    mongoose.plugin(function(schema) {
+        schema.options.safe = {
+            j: 1, w: 2, wtimeout: 10000
+        };
+    });
+    mongoose.connect(hosts, 'mydb', opts);
     setTimeout(function(){
         log('s', 'i', 'Connecting to MongoDB...');
     }, 100);

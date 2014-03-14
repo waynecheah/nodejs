@@ -3,9 +3,10 @@ iz =
   env: 'dev'
   servers:
     development: [
-      '127.0.0.1:8080'
       'innerzon.com:8080'
+      'innerzon.com.my:8080'
       'cheah.homeip.net:8080'
+      '127.0.0.1:8080'
     ]
     production: [
       'innerzon.com:8080'
@@ -151,7 +152,7 @@ iz =
       debug = iz.debug
 
       serverInUse = @serverList[@curServerId]
-      reAttempt   = if @serverList.length is 1 then 1000 else 5 # 5 times retry equal to 7.5 seconds
+      reAttempt   = if @serverList.length is 1 then 1000 else 4 # attempt 6 times retry take about 5 seconds
 
       debug "Socket.io is connecting to server [#{serverInUse}]"
       @socket = io.connect "http://#{serverInUse}",
@@ -180,7 +181,6 @@ iz =
     socketHandler: () ->
       debug        = iz.debug
       socket       = @socket
-      changeServer = @changeServer
       serverInUse  = @serverList[@curServerId]
       numServers   = @serverList.length
       retryCount   = 1
@@ -195,7 +195,7 @@ iz =
       onRecoFailed = () ->
         debug "Reconnect to server [#{serverInUse}] failed after #{retryCount} times", 'warn'
         retryCount = 1
-        if numServers is 1 then socket.socket.connect() else changeServer()
+        if numServers is 1 then socket.socket.connect() else @changeServer()
         return
 
       @socket.on 'error', onError.bind @
@@ -457,6 +457,7 @@ $ () ->
 ## dependency modules: null ##
 do (app = iz) ->
   respondCallback = {}
+  firstPull = yes # App make the first pulling request all data when connected server
 
   init = (e, socket) ->
     app.websocket.init socket
@@ -473,15 +474,17 @@ do (app = iz) ->
     armStt = device.data.status.partition[0] # arm status
     k      = armStt.split ','
 
+    updateEmergency device # emergency status has to update first before others
+
     n  = k[0] # partition number
     st = parseInt k[1] # status
     us = parseInt k[2] # user
 
     if st is 0
-      $(window).trigger 'disarm'
+      $(window).trigger 'disarm', [firstPull]
       stTxt = 'Disarmed'
     else
-      $(window).trigger 'arm'
+      $(window).trigger 'arm', [firstPull]
       stTxt = 'Armed'
 
     ttlZn = device.data.status.zones.length
@@ -490,8 +493,8 @@ do (app = iz) ->
 
     updateAllZones device
     updateSystemInfo device
-    updateEmergency device
 
+    firstPull = no
     return
   # END updateAllDeviceStatus
 
@@ -594,7 +597,7 @@ do (app = iz) ->
 
       if tp > 0 # all types start from index 1
         tpTxt = map.emergency.type[tp]
-        $(window).trigger 'emergencyStatus', [tpTxt,st]
+        $(window).trigger 'emergencyStatus', [firstPull,tpTxt,st]
       return
 
     return
@@ -718,11 +721,20 @@ do (app = iz) ->
     if info[1] is '0' then 0 else 1
   # END curArmStatus
 
-  setArmStatus = (stt, user) ->
-    if stt is 0 then $(window).trigger 'disarm' else $(window).trigger 'arm'
-    websocket.devices[0].data.status.partition[0] = "1,#{stt},#{user}"
-    return
-  # END setArmStatus
+  curPanicStatus = ->
+    return if not websocket.devices
+
+    status = off
+    _.each websocket.devices[0].data.status.emergency, (em) ->
+      k  = em.split ','
+      tp = parseInt k[0] # type
+      st = parseInt k[1] # status
+
+      status = st if tp is 1 # type=1 is Panic
+      return
+
+    status
+  # END curPanicStatus
 
 
   app.appInteraction =
@@ -740,21 +752,10 @@ do (app = iz) ->
     # END curArmStatus
 
     armDisarmed: (passcode, callbackUI) ->
-      callback = (data) ->
-        if data.status is false
-          callbackUI data
-          return
-
-        stt = curArmStatus()
-        stt = if stt then 0 else 1
-        setArmStatus stt, 103
-        callbackUI data
-        return
-      # END callback
-
       stt = curArmStatus()
-      stt = if stt then 0 else 1
-      emitReq '/events/armDisarmed', no: 1, cmd: stt, password: passcode, callback
+      pnc = curPanicStatus()
+      stt = if stt or pnc then 0 else 1
+      emitReq '/events/armDisarmed', no: 1, cmd: stt, password: passcode, callbackUI
 
       return
     # END armDisarmed
@@ -870,7 +871,7 @@ do (app = iz) ->
     status = appInteraction.curArmStatus()
     s      = $ '.armAction .status'
 
-    if 'panic' of emergencyStt is yes and emergencyStt.panic # in Panic activated status
+    if 'panic' of emergencyStt is yes and emergencyStt.panic is 1 # in Panic activated status
       desc = if onPasscode then 'Enter Passcode to Disarm' else 'Press to Disarm'
       $('.armAction').removeClass('armedBgColor').addClass 'disarmBgColor'
       s.removeClass('disarm').addClass 'armed'
@@ -900,7 +901,7 @@ do (app = iz) ->
   # END changeArmStatus
 
   changePageBgColor = (color) ->
-    color = 'red' if 'panic' of emergencyStt is yes and emergencyStt.panic # in Panic activated status
+    color = 'red' if 'panic' of emergencyStt is yes and emergencyStt.panic is 1 # in Panic activated status, change background to red
 
     if color is 'green'
       $('#pt-main .passcode, #fullpage .armAction .passcode').removeClass('redTheme').addClass 'greenTheme'
@@ -1224,18 +1225,23 @@ do (app = iz) ->
         hideArmDisarmActionBar() if to isnt '2' and to isnt '2a'
         showArmDisarmActionBar() if to is '2'
         return
-      ).on('arm', ->
-        onProgressHandle 'armActionCompleted'
+      ).on('arm', (event, firstPull) ->
+        onProgressHandle 'armActionCompleted' if not firstPull
         changeArmStatus()
         changePageBgColor 'green'
         return
-      ).on('disarm', ->
-        onProgressHandle 'armActionCompleted'
+      ).on('disarm', (event, firstPull) ->
+        onProgressHandle 'armActionCompleted' if not firstPull
         changeArmStatus()
         changePageBgColor 'red'
         return
-      ).on('emergencyStatus', (event, type, status) ->
+      ).on('emergencyStatus', (event, firstPull, type, status) ->
+        if not firstPull
+          taskname = if type is 1 then 'panicCompleted' else 'duressCompleted'
+          onProgressHandle taskname
+
         enableButton type, status
+        changeArmStatus()
         return
       ).on('deviceDataUpdated', changeArmStatus)
        .on('onSecurityTab', showArmDisarmActionBar)
@@ -1247,7 +1253,7 @@ do (app = iz) ->
     # END init
 
     debug: ->
-      currentTabNo.alarm
+      emergencyStt
     # END debug
 
     changePage: (from, to, reverse, tabNo, ts=@transition) ->

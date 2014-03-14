@@ -174,9 +174,10 @@ $blur: blur(3px);
     }
 }
 
-
+.pt-page-2 div.blur, .body2a div.blur:first-child {
+    -webkit-filter: blur(8px);
+}
 div.blur {
-    @include dimenPos(100%, 60px, fixed);
     -webkit-filter: $blur;
     z-index: 5;
 }

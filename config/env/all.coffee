@@ -12,16 +12,16 @@ module.exports =
   dbHost: 'mongodb://cheah.homeip.net/mydb'
 
   dbHosts: [
-    'ns1.node-server.com:27101'
-    'ns1.node-server.com:27102'
-    'cheah.homeip.net:27201'
-    'innerzon.dyndns.ws:27301'
-    'cheah.homeip.net:27401'
-    'cheah.homeip.net:27501'
-    #'node.homeip.net:27605'
+    'mongodb://ns1.node-server.com:27101'
+    'mongodb://innerzon.com:27102'
+    'mongodb://cheah.homeip.net:27201'
+    'mongodb://innerzon.dyndns.ws:27301'
+    'mongodb://cheah.homeip.net:27401'
+    'mongodb://cheah.homeip.net:27501'
+    #'mongodb://node.homeip.net:27605'
   ]
 
-  replication: false
+  replication: true
 
   aesKey: 'MtKKLowsPeak4095'
 

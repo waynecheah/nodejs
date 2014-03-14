@@ -440,20 +440,6 @@ socket.on('data', function(data) {
 
                     log('n', 'i', 'Inform server emergency is updated successfully: em='+emCmd);
                     write('em='+emCmd+RN);
-
-                    if (info[0] == '1' && info[1] == '1') { // If type is Panic and it's activated, perform arming
-                        _.each(_data.status.pt, function(str, i){
-                            inf = str.split(',');
-
-                            var command = [inf[0], '1', '102'];
-                            var ptCmd   = command.join(',');
-
-                            _data.status.pt[i] = ptCmd;
-
-                            log('n', 'i', 'Inform server the partition is armed because of Panic activated: pt='+ptCmd);
-                            write('pt='+ptCmd+RN);
-                        });
-                    }
                 }
             });
         } else if (ps = iss(data, 'li')) {
