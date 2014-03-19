@@ -95,17 +95,10 @@
 
         <div id="pt-main" class="pt-perspective">
           <!-- Login Screen -->
-          <div class="pt-page pt-page-0">
-            <div class="header">
-              <div class="row">
-                <div data-page="0-1-r" class="ln col-xs-2 col-md-1"></div>
-                <div class="pageTitle col-xs-8 col-md-10 text-center">Sign In</div>
-                <div data-page="0-1" class="ln col-xs-2 col-md-1" style="padding-left:10px;"></div>
-              </div>
-            </div>
-
+          <div class="pt-page pt-page-0 screenHeight pt-page-current">
+            <div class="background"></div>
             <div class="body body0">
-              <div data-role="fieldcontain" class="text-center" style="padding:30px 0 15px;">
+              <div data-role="fieldcontain" class="text-center logo">
                 <img src="img/innerzon.png" />
                 <span style="font-size:30px; display:none;">
                   <span style="color:#7092BE;">INNER</span><span style="color:#7F7F7F;">ZON
@@ -113,70 +106,83 @@
                 </span>
               </div>
               <div class="authOptions">
-                <div class="authOption useSignin pull-left text-center">
-                  <h1 style="margin:6px 0 30px;">Sign-In</h1>
-                  <div data-role="fieldcontain">
-                    <div class="errPop">
-                      <span class="msg" style="display:none;">...Please enter your email here...</span>
-                    </div>
-                    <input name="username" id="username" placeholder="email" value="" type="text" data-mini="true">
-                  </div>
-                  <div data-role="fieldcontain">
-                    <div class="errPop">
-                      <span class="msg" style="display:none;">...Please enter your password here...</span>
-                    </div>
-                    <input name="password" id="password" placeholder="password" value="" type="password" data-mini="true">
-                  </div>
-                  <div data-role="fieldcontain">
-                    <label>Save Password</label>
-                    <div class="savePassword button">No</div>
-                  </div>
-                  <div data-role="fieldcontain">
-                    <div style="width:37%; display:inline-block;">&nbsp;</div>
-                    <div style="width:63%; display:inline-block;">
-                      <a href="#" id="login" data-role="button" data-inline="true" data-transition="flip">
-                        <span class="ico-login"></span> Login
-                      </a>
+                <div class="authOption text-center col-xs-10 col-xs-offset-1 col-sm-4 col-md-3 withServices">
+                  <div class="inputWrap facebook">
+                    <div class="icon icon-facebook"></div>
+                    <div class="input">
+                      <span class="text">Sign in with <b>Facebook</b></span>
                     </div>
                   </div>
-                  <div data-role="fieldcontain" style="padding-top:10px;">
-                    <div class="text-right">Don't have an account?
-                      <a href="#page-register" data-transition="slideup">Register Now</a>
+                  <div class="inputWrap google">
+                    <div class="icon icon-gplus"></div>
+                    <div class="input">
+                      <span class="text">Sign in with <b>Google</b></span>
                     </div>
                   </div>
-                </div>
-
-                <div class="authDivider"></div>
-
-                <div class="authOption withServices pull-right">
-                  <a href="#" class="authButton facebook">
-                    <span class="authIcon i-facbook ico-facebook"></span>
-                    <span class="text">Sign in with <b>Facebook</b></span>
-                  </a>
-                  <a href="#" class="authButton google">
-                    <span class="authIcon i-google ico-gplus"></span>
-                    <span class="text">Sign in with <b>Google</b></span>
-                  </a>
                   <a href="#" class="googleGlass">
                     <img src="img/getitonglass_172x60_action_button.png" style="display:none;" />
                   </a>
                 </div>
+                <div class="clearfix"></div>
+
+                <div class="authDivider col-xs-9 col-sm-3 col-md-2">
+                  <div class="divider"></div>
+                  <div class="or">or</div>
+                  <div class="divider"></div>
+                </div>
+                <div class="clearfix"></div>
+
+                <div class="authOption text-center col-xs-10 col-xs-offset-1 col-sm-4 col-md-3">
+                  <div class="inputWrap">
+                    <div class="icon icon-Email"></div>
+                    <div class="input">
+                      <span class="msg" style="display:none;">...Please enter your email here...</span>
+                      <input name="username" id="username" placeholder="Enter email" />
+                    </div>
+                  </div>
+                  <div class="inputWrap">
+                    <div class="icon icon-Locked"></div>
+                    <div class="input">
+                      <span class="msg" style="display:none;">...Please enter your password here...</span>
+                      <input type="password" name="password" id="password" placeholder="What is your password?" />
+                    </div>
+                  </div>
+                  <div class="savePasswordWrap">
+                    <div class="col">
+                      <div class="savePassword button">No</div>
+                    </div>
+                    <div class="col">
+                      <label>Save Password</label>
+                    </div>
+                    <div class="clearfix"></div>
+                  </div>
+                  <div data-page="0-1" class="inputWrap signin ln">
+                    Sign in
+                  </div>
+                  <div class="options">
+                    <div>
+                      <span class="txt">Don't have an account?</span>
+                      <span class="signup">Sign up</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="clearfix"></div>
               </div>
             </div>
           </div>
 
           <!-- Home -->
-          <div class="pt-page pt-page-1 pt-page-current">
+          <div class="pt-page pt-page-1">
             <div style="text-align:center; margin:50px 0 20px;">
               <span class="icon-IZCircle" style="font-size:2.8em;"></span>
             </div>
             <ul class="mainmenu">
               <li id="test" data-page="1-2" class="ln">Waves</li>
               <li>Profile</li>
-              <li>Scheduling</li>
               <li>Settings</li>
               <li>Add Device</li>
+              <li data-page="1-0-r" class="ln">Sign out</li>
             </ul>
           </div>
 

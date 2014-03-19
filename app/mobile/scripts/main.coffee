@@ -1190,6 +1190,12 @@ do (app = iz) ->
           return
         , 200
         return
+      onTouch '.savePassword', 'tap', ->
+        if $('.savePassword').hasClass('on') is yes
+          $('.savePassword').html('No').removeClass 'on'
+        else
+          $('.savePassword').html('Yes').addClass 'on'
+        return
       onTouch '.body2a .pt-tab-3 .panic', 'tap', ->
         # em status not updated, server/device may offline || already turn on em
         return if 'panic' of emergencyStt is no or emergencyStt.panic is 1

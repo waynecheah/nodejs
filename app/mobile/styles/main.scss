@@ -496,6 +496,15 @@ div.armAction {
     }
 }
 
+
+
+div.background {
+    @include dimenPos();
+    background: #fff url(../img/bg.jpg) no-repeat center center;
+    background-origin: border-box;
+    background-size: cover;
+    -webkit-filter: blur(8px);
+}
 div.body {
     padding-top: $headerHeight;
     margin-top: 3px;
@@ -595,8 +604,169 @@ div.body {
     }
 }
 div.body0 {
-    background-color: #fff;
-    color: #000;
+    position: absolute;
+    padding-top: 0;
+    $height: 35px;
+    overflow-y: auto;
+    font-size: 16px;
+
+    a {
+        color: #fff;
+    }
+    input {
+        width: 100%;
+        border: 0;
+        padding-left: 8px;
+        margin-top: 6px;
+        background-color: transparent;
+    }
+    div.logo {
+        padding: 15px 0 0;
+
+        @media only screen and (min-height: 568px) {
+            padding: 15px 0 18px;
+        }
+        @media only screen and (min-height: 640px) {
+            padding: 15px 0 62px;
+        }
+    }
+    div.authOption {
+        margin-top: 20px;
+    }
+    div.withServices {
+        .inputWrap {
+            .icon {
+                font-size: 10px;
+                line-height: 23px;
+            }
+            .input {
+                line-height: $height;
+                font-size: 13px;
+                text-align: left;
+
+                .text {
+                    @media only screen and (min-width: 160px) {
+                        padding-left: 8px;
+                    }
+                    @media only screen and (min-width: 320px) {
+                        padding-left: 15px;
+                    }
+                }
+            }
+        }
+        .facebook {
+            background-color: rgba(60, 90, 152, .8);
+
+            .icon-facebook {
+                background-color: #3c5a98;
+            }
+        }
+        .google {
+            background-color: rgba(221, 75, 57, .8);
+
+            .icon-gplus {
+                background-color: #dd4b39;
+            }
+        }
+    }
+    div.authDivider {
+        @media only screen and (min-width: 160px) {
+            float: none;
+            margin: 15px auto 0;
+        }
+        @media only screen and (min-width: 320px) {
+            float: none;
+            margin: 20px auto 0;
+        }
+        @media only screen and (min-width: 568px) {
+            margin-left: 12%;
+        }
+
+        div {
+            float: left;
+        }
+        div.divider {
+            width: 43%;
+            height: 1px;
+            margin-top: 8px;
+            background: #ddd;
+        }
+        div.or {
+            width: 14%;
+            font-size: 12px;
+            text-align: center;
+        }
+    }
+    .inputWrap {
+        background-color: rgba(255, 255, 255, .5);
+        margin-bottom: 8px;
+        height: $height;
+
+        div {
+            float: left;
+        }
+        .icon {
+            @include dimen($height, $height);
+            background-color: #F96F58;
+            padding-top: 6px;
+            font-size: 15px;
+        }
+        .input {
+            @media only screen and (min-width: 160px) {
+                min-width: 90px;
+            }
+            @media only screen and (min-width: 320px) {
+                min-width: 200px;
+            }
+            @media only screen and (min-width: 768px) {
+                min-width: 190px;
+            }
+        }
+    }
+    .savePasswordWrap {
+        margin-bottom: 20px;
+
+        div.col {
+            float: right;
+            padding-right: 10px;
+
+            label {
+                font-size: 15px;
+                line-height: 32px;
+                margin-bottom: 0;
+            }
+            div.button {
+                color: rgba(255, 255, 255, .5);
+            }
+            div.on {
+                background-color: #fff;
+                color: green;
+                font-weight: bold;
+                border-color: green;
+            }
+        }
+    }
+    .button {
+        @include dimen(35px, 35px);
+        border: 1px solid #fff;
+        line-height: 32px;
+        border-radius: 20px;
+    }
+    .signin {
+        line-height: $height;
+        background-color: rgba(238, 90, 60, .8);
+    }
+    .options {
+        font-size: 13px;
+        margin-top: 18px;
+
+        .txt {
+            color: rgba(255, 255, 255, .7);
+        }
+        .signup {
+            text-decoration: underline;
+        }
+    }
 }
 div.body2 {
     @extend div.body;
@@ -815,6 +985,11 @@ textarea[contenteditable] {
    Theses examples override the primary ('mobile first') styles.
    Modify as content requires.
    ========================================================================== */
+@media only screen and (min-width: 160px) {
+    .col-xs-10 {
+        padding: 0;
+    }
+}
 @media only screen and (min-width: 800px) {
     // Style adjustments for viewports that meet the condition
 }
