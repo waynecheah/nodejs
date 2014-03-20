@@ -13,6 +13,18 @@ iz =
       'innerzon.com.my:8080'
     ]
   config:
+    fbParams:
+      appId: '553789621375577'
+      status: true
+      cookie: false
+      email: true
+
+    glParams:
+      apiKey: 'AIzaSyD6z5RkfXSuBKGwm0djIHoRWm-OLsS7IYI'
+      client_id: '341678844265-5ak3e1c5eiaglb2h9ortqbs9q57ro6gb.apps.googleusercontent.com'
+      scope: 'https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/userinfo.email'
+      immediate: true
+
     mapping:
       system:
         type:
@@ -109,6 +121,7 @@ iz =
           ss: 'Sensor'
           us: 'User'
 
+  userLogged: no
   progressTasks: []
   templates: {}
   socket: null
@@ -865,6 +878,70 @@ do (app = iz) ->
     return
   # END onProgressHandle
 
+  fbLogin = () ->
+    window.fbAsyncInit = () ->
+      FB.init app.config.fbParams
+
+      FB.getLoginStatus (res) ->
+        if res.status is 'connected'
+          debug 'User has logged with Facebook'
+          app.userLogged = yes
+          data =
+            username: res.email
+            fullname: res.name
+            services: facebook: res.authResponse
+
+          app.interface.changePage '0', '1'
+        else if res.status is 'not_authorized'
+          debug 'User has not sign-in App with Facebook'
+          onTouch '.authOption .facebook', 'tap', loginFn
+        else
+          debug 'User is not logged in to Facebook'
+          onTouch '.authOption .facebook', 'tap', loginFn
+        return
+      # END FB.getLoginStatus
+
+      return
+    # END fbAsyncInit
+
+    loginFn = ->
+      $('.authOptions').css 'opacity', 0
+      $('.loadWrap .txt').html 'logging with facebook..'
+      $('.loading').show()
+
+      FB.login (res) ->
+        if res.status is 'connected'
+          app.userLogged = yes
+          userID = res.authResponse.userID
+          data   =
+            username: res.email
+            fullname: res.name
+            services: facebook: res.authResponse
+        else
+          debug 'User cancel the login process'
+          $('.loading').hide()
+          $('.authOptions').css 'opacity', 1
+        return
+      # END FB.login
+
+      return
+    # loginFn
+
+
+    # load facebook JavaScript SDK
+    id = 'facebook-jssdk'
+    return if document.getElementById(id)
+
+    ref      = document.getElementsByTagName('script')[0]
+    js       = document.createElement('script')
+    js.id    = id
+    js.async = true
+    js.src   = '//connect.facebook.net/en_US/all.js'
+    ref.parentNode.insertBefore js, ref
+
+    return
+  # END fbLogin
+
   changeArmStatus = (force=no) ->
     return unless onArmStatusBar or force
 
@@ -1211,7 +1288,21 @@ do (app = iz) ->
         onProgressHandle 'duress'
         return
 
-      $(window).on('serverOff', ->
+      $(window).on('internetOff', ->
+        return if app.userLogged
+        $('.authOptions').css 'opacity', 0
+        $('.loadWrap .icon').removeClass('icon-Refresh animate-spin').addClass 'icon-CommFail'
+        $('.loadWrap .txt').html 'no internet connection'
+        $('.loading').show()
+        return
+      ).on('internetOn', ->
+        return if app.userLogged
+        $('.loading').hide()
+        $('.loadWrap .icon').removeClass('icon-CommFail').addClass 'icon-Refresh animate-spin'
+        $('.authOptions').show().css 'opacity', 1
+        fbLogin()
+        return
+      ).on('serverOff', ->
         togglePasscode true
         setTimeout hideArmDisarmActionBar, 50
         disableButton()
@@ -1253,6 +1344,11 @@ do (app = iz) ->
        .on('onSecurityTab', showArmDisarmActionBar)
        .on('onOtherTab', showArmDisarmActionBar).trigger('onOtherTab')
       .trigger 'changePage', ['0', '1']
+
+      if app.userLogged
+        $('.pt-page-1').addClass 'pt-page-current'
+      else
+        $('.pt-page-0').addClass 'pt-page-current'
 
       $(window).resize(screenResize).trigger 'resize'
       return

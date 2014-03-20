@@ -177,6 +177,20 @@ $blur: blur(3px);
 .pt-page-2 div.blur, .body2a div.blur:first-child {
     -webkit-filter: blur(8px);
 }
+div.loading {
+    @include dimenPos();
+    @include position(0, 0);
+
+    .loadWrap {
+        @include dimenPos(168px, null, relative);
+        @include boxModel(auto, 5px);
+        top: 50%;
+        margin-top: -30px;
+        text-align: center;
+        border-radius: 10px;
+        background-color: rgba(255, 255, 255, .3);
+    }
+}
 div.blur {
     -webkit-filter: $blur;
     z-index: 5;
@@ -630,6 +644,11 @@ div.body0 {
             padding: 15px 0 62px;
         }
     }
+    div.authOptions {
+        opacity: 0;
+        -webkit-transition: opacity 1s;
+    }
+
     div.authOption {
         margin-top: 20px;
     }
