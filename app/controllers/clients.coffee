@@ -86,11 +86,12 @@ Clients =
       if status
         data.info = mesg
       else
-        data.message = mesg if mesg?
-        data.field   = field if field?
+        data.message = mesg if mesg
+        data.field   = field if field
 
-      if sessions? then callback data, sessions else callback data
-      null
+      if sessions then callback data, sessions else callback data
+      return
+    # END resFn
 
     Client.findOne cond, fields, (err, doc) ->
       if err
@@ -100,19 +101,19 @@ Clients =
         log 's', 'd', err
 
         resFn false, msg
-        return null
+        return
 
       if not doc or doc.length is 0
         msg = 'The email you entered does not belong to any account'
         log 's', 'e', msg
         resFn false, msg, 'username'
-        return null
+        return
 
       if doc.password is not form.password
         msg = 'The password you entered is incorrect. Please try again (make sure your caps lock is off)'
         log 's', 'e', msg
         resFn false, msg, 'password'
-        return null
+        return
 
       token   = commonFn.encryption doc._id.toString(), 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex'
       expire  = moment().add 'add', 7
@@ -129,7 +130,7 @@ Clients =
           log 's', 'e', msg
           log 's', 'd', err
           resFn false, msg
-          return null
+          return
 
         log 's', 's', 'Login successfully and access token create to user '+form.username
         log 's', 'd', update.accessToken
@@ -146,9 +147,11 @@ Clients =
           time: commonFn.datetime()
 
         resFn true, msg, null, sessions
-        null
+        return
+      # END findByIdAndUpdate
+    # END findOne
 
-    null
+    return
   # END appSignin
 
   fbSignin: (data, callback) ->
@@ -164,10 +167,11 @@ Clients =
     resFn = (status, mesg, sessions) ->
       data = status: status
 
-      data.message = mesg if mesg?
+      data.message = mesg if mesg
 
-      if sessions? then callback data, sessions else callback data
-      null
+      if sessions then callback data, sessions else callback data
+      return
+    # END resFn
 
     Client.findOneAndUpdate cond, form, opts, (err, doc) ->
       if err
@@ -177,7 +181,7 @@ Clients =
         log 's', 'd', err
 
         resFn false, msg
-        return null
+        return
 
       log 's', 's', 'User sign-in info has save to DB successfully.'
 
@@ -188,9 +192,10 @@ Clients =
         time: commonFn.datetime()
 
       resFn true, null, sessions
-      null
+      return
+    # END findOneAndUpdate
 
-    null
+    return
   # END fbSignin
 
   glSignin: (data, callback) ->
@@ -209,7 +214,8 @@ Clients =
       data.message = mesg if mesg?
 
       if sessions? then callback data, sessions else callback data
-      null
+      return
+    # END resFn
 
     Client.findOneAndUpdate cond, form, opts, (err, doc) ->
       if err
@@ -219,7 +225,7 @@ Clients =
         log 's', 'd', err
 
         resFn false, msg
-        return null
+        return
 
       log 's', 's', 'User sign-in info has save to DB successfully.'
 
@@ -230,9 +236,10 @@ Clients =
         time: commonFn.datetime()
 
       resFn true, null, sessions
-      null
+      return
+    # END findOneAndUpdate
 
-    null
+    return
   # END glSignin
 
   testing: (data, callback) ->

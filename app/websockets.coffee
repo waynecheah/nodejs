@@ -159,7 +159,7 @@ Websockets =
             log 's', 'i', "Processed controller [#{contrl}] and method [#{method}] has completed"
             websocket.emit 'ResponseOnRequest', req, res
 
-            _.assign socket.data, sessions if sessions? and _.isObject sessions
+            _.assign websocket.data, sessions if sessions and _.isObject sessions
             return
 
       return

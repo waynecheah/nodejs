@@ -821,6 +821,7 @@ do (app = iz) ->
 ## dependency modules: appInteraction ##
 do (app = iz) ->
   debug          = app.debug
+  gdebug         = app.gdebug
   appInteraction = app.appInteraction
   onProgress     = {}
   onArmStatusBar = no
@@ -890,6 +891,31 @@ do (app = iz) ->
     return
   # END onProgressHandle
 
+  saveLoginInfo = (channel, data) ->
+    return false if typeof Storage is 'undefined'
+    app.userLogged = channel
+    localStorage.setItem 'userLogged', channel
+    localStorage.setItem 'data', JSON.stringify data
+    return
+  # END saveLoginInfo
+
+  getLoginInfo = ->
+    return false if typeof Storage is 'undefined'
+
+    debug 'Get user login info from local storage'
+    app.userLogged = localStorage.getItem 'userLogged'
+
+    unless app.userLogged
+      debug 'User has not logged', 'warn'
+      return false
+
+    debug "User has logged with [#{app.userLogged}], getting user data", 'info'
+
+    data = localStorage.getItem 'data'
+    debug(JSON.parse data)
+    app.userLogged
+  # END getLoginInfo
+
   fbLogin = () ->
     window.fbAsyncInit = () ->
       FB.init app.config.fbParams
@@ -897,6 +923,8 @@ do (app = iz) ->
       FB.getLoginStatus (res) ->
         if res.status is 'connected'
           debug 'User has logged with Facebook before', 'info'
+
+          return if app.userLogged is 'fb'
 
           fbApi 'loginInfo', res.authResponse.userID, (data) ->
             data =
@@ -907,7 +935,7 @@ do (app = iz) ->
             # update user data to database
             appInteraction.fbLogin data, () ->
               debug 'Server has updated the user data to database'
-              app.userLogged = yes
+              saveLoginInfo 'fb', data
               onUserLogged()
               return
             return
@@ -956,7 +984,7 @@ do (app = iz) ->
               services: facebook: res.authResponse
             appInteraction.fbLogin data, () ->
               debug 'Server has inserted the user data to database'
-              app.userLogged = yes
+              saveLoginInfo 'fb', data
               onUserLogged()
               $('.loading').hide()
               $('.body0 .logo, .body0 .authOptions').css '-webkit-filter', 'blur(0)'
@@ -968,6 +996,7 @@ do (app = iz) ->
           $('.loading').hide()
           $('.body0 .logo, .body0 .authOptions').css '-webkit-filter', 'blur(0)'
         return
+      , scope: 'email,user_location,user_online_presence,read_stream'#,publish_stream'
       # END FB.login
 
       return
@@ -988,6 +1017,39 @@ do (app = iz) ->
     return
   # END fbLogin
 
+  userSignOut = ->
+    channel        = app.userLogged
+    app.userLogged = no
+
+    # TODO(signout flow): blur the screen and put loading?
+    onUserLogout()
+
+    if channel is 'fb'
+      gdebug 'Facebook sign out'
+      FB.api '/me/permissions', 'delete', (res) ->
+        debug 'Sign out App from facebook', 'info'
+        debug res
+        gdebug false
+        #onUserLogout()
+        return
+      # END FB.api
+
+      return false if typeof Storage is 'undefined'
+      localStorage.removeItem 'userLogged'
+      localStorage.removeItem 'data'
+    else if channel is 'gl'
+      gdebug 'Google sign out'
+      debug 'Sign out App from google+', 'info'
+      gdebug false
+      #onUserLogout()
+    else
+      gdebug 'Innerzon sign out'
+      debug 'Sign out App from innerzon', 'info'
+      gdebug false
+
+    return
+  # userSignOut
+
   onUserLogged = ->
     fx =
       fxOut: 'pt-page-rotateCubeLeftOut'
@@ -995,6 +1057,14 @@ do (app = iz) ->
     app.interface.changePage '0', '1', null, null, fx
     return
   # END onUserLogged
+
+  onUserLogout = ->
+    fx =
+      fxRevOut: 'pt-page-rotateCubeRightOut'
+      fxRevIn: 'pt-page-rotateCubeRightIn'
+    app.interface.changePage '1', '0', yes, null, fx
+    return
+  # END onUserLogout
 
   changeArmStatus = (force=no) ->
     return unless onArmStatusBar or force
@@ -1255,6 +1325,7 @@ do (app = iz) ->
       fxIn: 'pt-page-moveFromRight'
       fxRevOut: 'pt-page-moveToRight'
       fxRevIn: 'pt-page-moveFromLeft'
+    userLogged: no
 
     init: ->
       that = @
@@ -1362,6 +1433,9 @@ do (app = iz) ->
         else
           $('.savePassword').html('Yes').addClass 'on'
         return
+      onTouch '.pt-page-1 .signOut', 'tap', ->
+        userSignOut()
+        return
       onTouch '.body2a .pt-tab-3 .panic', 'tap', ->
         # em status not updated, server/device may offline || already turn on em
         return if 'panic' of emergencyStt is no or emergencyStt.panic is 1
@@ -1378,19 +1452,17 @@ do (app = iz) ->
         return
 
       $(window).on('internetOff', ->
-        return if app.userLogged
         $('.authOptions').css 'opacity', 0
         $('.loadWrap .icon').removeClass('icon-Refresh animate-spin').addClass 'icon-CommFail'
         $('.loadWrap .txt').html 'no internet connection'
         $('.loading').show()
         return
       ).on('internetOn', ->
-        return if app.userLogged
+        fbLogin()
         opacity = if serverOnline then 1 else .4
         $('.loading').hide()
         $('.loadWrap .icon').removeClass('icon-CommFail').addClass 'icon-Refresh animate-spin'
         $('.authOptions').show().css 'opacity', opacity
-        fbLogin()
         return
       ).on('serverOn', ->
         serverOnline = yes
@@ -1448,10 +1520,12 @@ do (app = iz) ->
         console.warn 'Page animation end! use fx '+e.originalEvent.animationName
       ###
 
-      if app.userLogged
+      gdebug 'Check login status'
+      if getLoginInfo()
         $('.pt-page-1').addClass 'pt-page-current'
       else
         $('.pt-page-0').addClass 'pt-page-current'
+      gdebug false
 
       $(window).resize(screenResize).trigger 'resize'
       return

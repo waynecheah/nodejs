@@ -21,7 +21,7 @@ module.exports =
     #'mongodb://node.homeip.net:27605'
   ]
 
-  replication: true
+  replication: false
 
   aesKey: 'MtKKLowsPeak4095'
 
