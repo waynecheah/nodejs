@@ -157,7 +157,8 @@ iz =
       servers = if env is 'dev' then servers.development else servers.production
       @serverList = if _.isString servers then [servers] else servers
 
-      $(window).on 'internetOn', onInternetOn.bind @ # only make socket connection when internet enabled
+      # only make socket connection when internet enabled
+      $(window).on 'internetOn', onInternetOn.bind @
       return
     # END init
 
@@ -722,6 +723,7 @@ do (app = iz) ->
 ## START module [ appInteraction ]
 ## dependency modules: websocket ##
 do (app = iz) ->
+  debug     = app.debug
   websocket = app.websocket
 
   emitReq = (req, data, callback) ->
@@ -815,7 +817,7 @@ do (app = iz) ->
 # END module appInteraction
 
 
-## START module interface
+## START module [ interface ]
 ## dependency modules: appInteraction ##
 do (app = iz) ->
   debug          = app.debug
@@ -896,15 +898,20 @@ do (app = iz) ->
         if res.status is 'connected'
           debug 'User has logged with Facebook before', 'info'
 
-          data =
-            username: res.email
-            fullname: res.name
-            services: facebook: res.authResponse
-          appInteraction.fbLogin data, () ->
-            debug 'Server has updated the user data to database'
-            app.userLogged = yes
-            onUserLogged()
+          fbApi 'loginInfo', res.authResponse.userID, (data) ->
+            data =
+              username: data[0].email
+              fullname: data[0].name
+              services: facebook: res.authResponse
+
+            # update user data to database
+            appInteraction.fbLogin data, () ->
+              debug 'Server has updated the user data to database'
+              app.userLogged = yes
+              onUserLogged()
+              return
             return
+          # END fbApi
         else if res.status is 'not_authorized'
           debug 'User has not sign-in App with Facebook', 'info'
           onTouch '.authOption .facebook', 'tap', loginFn
@@ -1525,7 +1532,7 @@ do (app = iz) ->
 
       selector = if fxIn then tPage else fPage
       PrefixedEvent selector, 'AnimationEnd', (e) ->
-        console.warn 'Page animation end! Use fx name '+e.originalEvent.animationName
+        debug 'Page animation end! Use fx name '+e.originalEvent.animationName
         fnFxComplete fPage, tPage
 
       return

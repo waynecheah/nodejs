@@ -32,6 +32,7 @@ getDeviceInfo = (data, callback) ->
       resData[i] =
         serial: doc.serial
         info: doc
+        status: {}
         online: false
       _.each curOnlineDevices, (device) -> # find if user's device is connected to server
         return if 'data' of resData[i] is yes

@@ -108,6 +108,9 @@ $off: #d74352;
 $dis: gray;
 $blur: blur(3px);
 
+.animate-spin {
+    -webkit-animation-direction: reverse;
+}
 .pt-page-moveToLeft {
     @include animation(moveToLeft, $pageFxDuration, $pageFxEaseCB, $pageFxFillMode);
 }
@@ -119,6 +122,9 @@ $blur: blur(3px);
 }
 .pt-page-moveFromRight {
     @include animation(moveFromRight, $pageFxDuration, $pageFxEaseCB, $pageFxFillMode);
+}
+.moveToLeftFade, .moveFromLeftFade {
+    -webkit-animation-timing-function: $pageFxEaseCB
 }
 
 .pt-perspective {
