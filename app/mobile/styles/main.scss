@@ -23,7 +23,7 @@ html, body {
 }
 body {
     font-family: 'UltraLight',Sans-Serif;
-    background: #303131;
+    background: #727271;
     color: #fff;
     font-size: 2em;
     line-height: 1.4;
@@ -98,6 +98,7 @@ $tallestHeaderHeight: 191px;
 $statusHeight: 100px;
 $summarySttHeight: 3px;
 $buttonDimen: 40px;
+$bgDefault: #303131;
 $bgBlue: #82B2CB;
 $bgGreen: #43AF94;
 $bgOrange: #F96F57;
@@ -122,7 +123,7 @@ $blur: blur(3px);
 
 .pt-perspective {
     @include dimenPos(100%, 100%, relative);
-    perspective: $perpective;
+    -webkit-perspective: $perpective;
 }
 .pt-page {
     @include dimen(100%, null, null, $minHeight);
@@ -130,10 +131,11 @@ $blur: blur(3px);
     @include abs;
     visibility: hidden;
     display: none;
-    overflow: hidden;
-    backface-visibility: hidden;
-    transform: translate3d(0, 0, 0);
-    transform-style: preserve-3d;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-backface-visibility: hidden;
+    -webkit-transform: translate3d(0, 0, 0);
+    -webkit-transform-style: preserve-3d;
 
     .armedBgColor {
         background-color: rgba(74, 217, 182, 0.85);
@@ -141,6 +143,9 @@ $blur: blur(3px);
     .disarmBgColor {
         background-color: rgba(221, 68, 84, 0.85);
     }
+}
+.pt-page-1, .pt-page-3 {
+    background-color: $bgDefault;
 }
 .pt-page-current, .no-js .pt-page {
     visibility: visible;
@@ -620,7 +625,7 @@ div.body {
 div.body0 {
     position: absolute;
     padding-top: 0;
-    $height: 35px;
+    $height: 45px;
     overflow-y: auto;
     font-size: 16px;
 
@@ -631,11 +636,12 @@ div.body0 {
         width: 100%;
         border: 0;
         padding-left: 8px;
-        margin-top: 6px;
+        margin-top: 11px;
         background-color: transparent;
     }
     div.logo {
         padding: 15px 0 0;
+        -webkit-transition: -webkit-filter 2s;
 
         @media only screen and (min-height: 568px) {
             padding: 15px 0 18px;
@@ -646,7 +652,7 @@ div.body0 {
     }
     div.authOptions {
         opacity: 0;
-        -webkit-transition: opacity 1s;
+        -webkit-transition: -webkit-filter 2s, opacity 1s;
     }
 
     div.authOption {
@@ -660,7 +666,6 @@ div.body0 {
             }
             .input {
                 line-height: $height;
-                font-size: 13px;
                 text-align: left;
 
                 .text {
@@ -727,7 +732,7 @@ div.body0 {
         .icon {
             @include dimen($height, $height);
             background-color: #F96F58;
-            padding-top: 6px;
+            padding-top: 11px;
             font-size: 15px;
         }
         .input {

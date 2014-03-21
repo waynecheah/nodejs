@@ -199,14 +199,17 @@ iz =
       retryCount   = 1
       onError      = () ->
         debug "Error on Socket.io at server [#{serverInUse}] and it can't be handled by the other event types", 'err'
+        $(window).trigger 'serverOff'
         @changeServer()
         return
       onConnFailed = () ->
         debug "Socket.io fail to make connection to server [#{serverInUse}]", 'warn'
+        $(window).trigger 'serverOff'
         @changeServer()
         return
       onRecoFailed = () ->
         debug "Reconnect to server [#{serverInUse}] failed after #{retryCount} times", 'warn'
+        $(window).trigger 'serverOff'
         retryCount = 1
         if numServers is 1 then socket.socket.connect() else @changeServer()
         return
@@ -760,8 +763,15 @@ do (app = iz) ->
       return
     # END init
 
+    fbLogin: (data, callbackUI) ->
+      debug 'Send user data at facebook to server'
+      emitReq '/clients/fbSignin', data, callbackUI
+      return
+    # END fbLogin
+
     curArmStatus: ->
       curArmStatus()
+      return
     # END curArmStatus
 
     armDisarmed: (passcode, callbackUI) ->
@@ -769,7 +779,6 @@ do (app = iz) ->
       pnc = curPanicStatus()
       stt = if stt or pnc then 0 else 1
       emitReq '/events/armDisarmed', no: 1, cmd: stt, password: passcode, callbackUI
-
       return
     # END armDisarmed
 
@@ -814,6 +823,7 @@ do (app = iz) ->
   onProgress     = {}
   onArmStatusBar = no
   onPasscode     = no
+  serverOnline   = no
   deviceOnline   = no
   currentPageNo  = 0
   currentTabNo   = alarm: null
@@ -884,19 +894,22 @@ do (app = iz) ->
 
       FB.getLoginStatus (res) ->
         if res.status is 'connected'
-          debug 'User has logged with Facebook'
-          app.userLogged = yes
+          debug 'User has logged with Facebook before', 'info'
+
           data =
             username: res.email
             fullname: res.name
             services: facebook: res.authResponse
-
-          app.interface.changePage '0', '1'
+          appInteraction.fbLogin data, () ->
+            debug 'Server has updated the user data to database'
+            app.userLogged = yes
+            onUserLogged()
+            return
         else if res.status is 'not_authorized'
-          debug 'User has not sign-in App with Facebook'
+          debug 'User has not sign-in App with Facebook', 'info'
           onTouch '.authOption .facebook', 'tap', loginFn
         else
-          debug 'User is not logged in to Facebook'
+          debug 'User is not logged in to Facebook', 'info'
           onTouch '.authOption .facebook', 'tap', loginFn
         return
       # END FB.getLoginStatus
@@ -904,23 +917,49 @@ do (app = iz) ->
       return
     # END fbAsyncInit
 
+    fbApi = (req, uid, callback) ->
+      return unless req is 'loginInfo'
+
+      FB.api
+        method: 'fql.query'
+        query: "SELECT email, first_name, last_name, name, username FROM user WHERE uid =#{uid}"
+      , (data) ->
+        return debug 'Error occurred', 'err' if not data or data.error or not data[0]
+        callback data
+        return
+
+      return
+    # END fbApi
+
     loginFn = ->
-      $('.authOptions').css 'opacity', 0
+      return unless serverOnline
+
+      $('.body0 .logo, .body0 .authOptions').css '-webkit-filter', 'blur(5px)'
       $('.loadWrap .txt').html 'logging with facebook..'
       $('.loading').show()
 
       FB.login (res) ->
         if res.status is 'connected'
-          app.userLogged = yes
-          userID = res.authResponse.userID
-          data   =
-            username: res.email
-            fullname: res.name
-            services: facebook: res.authResponse
+          debug 'User has just logged with Facebook', 'info'
+
+          fbApi 'loginInfo', res.authResponse.userID, (data) ->
+            data =
+              username: data[0].email
+              fullname: data[0].name
+              services: facebook: res.authResponse
+            appInteraction.fbLogin data, () ->
+              debug 'Server has inserted the user data to database'
+              app.userLogged = yes
+              onUserLogged()
+              $('.loading').hide()
+              $('.body0 .logo, .body0 .authOptions').css '-webkit-filter', 'blur(0)'
+              return
+            return
+          # END fbApi
         else
           debug 'User cancel the login process'
           $('.loading').hide()
-          $('.authOptions').css 'opacity', 1
+          $('.body0 .logo, .body0 .authOptions').css '-webkit-filter', 'blur(0)'
         return
       # END FB.login
 
@@ -941,6 +980,14 @@ do (app = iz) ->
 
     return
   # END fbLogin
+
+  onUserLogged = ->
+    fx =
+      fxOut: 'pt-page-rotateCubeLeftOut'
+      fxIn: 'pt-page-rotateCubeLeftIn'
+    app.interface.changePage '0', '1', null, null, fx
+    return
+  # END onUserLogged
 
   changeArmStatus = (force=no) ->
     return unless onArmStatusBar or force
@@ -1159,11 +1206,27 @@ do (app = iz) ->
     return
   # END enableButton
 
+
   screenResize = ->
     height = $(window).height()
     $('.screenHeight').css 'height', "#{height}px"
+    $('.armAction').css 'top', "#{height}px" unless onArmStatusBar
     return
   # END screenResize
+
+  PrefixedEvent = (element, type, callback) ->
+    pfx = ['webkit', 'moz', 'MS', 'o', '']
+    i   = 0
+
+    while i < pfx.length
+      type = type.toLowerCase() if pfx[i] is ''
+      element.addEventListener pfx[i]+type, callback, false if typeof element is 'object'
+      $(element).one pfx[i]+type, callback if typeof element is 'string'
+      i++
+
+    return
+    # eg. PrefixedEvent(anim, "AnimationEnd", AnimationListener)
+  # END PrefixedEvent
 
   onTap = (selector, evt, callback) ->
     _.each $(selector), (el) ->
@@ -1213,7 +1276,26 @@ do (app = iz) ->
           if pages[0] and pages[1]
             reverse = if pages[2] is 'r' then yes else no
             tabNo   = if pages[3] then pages[3] else null
-            that.changePage pages[0], pages[1], reverse, tabNo
+            fx      = that.transition
+
+            if pages[0] is '0' and pages[1] is '1'
+              fx =
+                fxOut: 'pt-page-rotateCubeLeftOut'
+                fxIn: 'pt-page-rotateCubeLeftIn'
+            else if pages[0] is '1' and pages[1] is '0'
+              fx =
+                fxRevOut: 'pt-page-rotateCubeRightOut'
+                fxRevIn: 'pt-page-rotateCubeRightIn'
+            else if pages[0] is '1' and pages[1] is '2'
+              fx =
+                fxOut: 'pt-page-moveToLeft'
+                fxIn: ''
+            else if pages[0] is '2' and pages[1] is '1'
+              fx =
+                fxRevOut: ''
+                fxRevIn: 'pt-page-moveFromLeft'
+
+            that.changePage pages[0], pages[1], reverse, tabNo, fx
           return
         return
 
@@ -1297,12 +1379,19 @@ do (app = iz) ->
         return
       ).on('internetOn', ->
         return if app.userLogged
+        opacity = if serverOnline then 1 else .4
         $('.loading').hide()
         $('.loadWrap .icon').removeClass('icon-CommFail').addClass 'icon-Refresh animate-spin'
-        $('.authOptions').show().css 'opacity', 1
+        $('.authOptions').show().css 'opacity', opacity
         fbLogin()
         return
+      ).on('serverOn', ->
+        serverOnline = yes
+        $('.authOptions').css 'opacity', 1 if window.onLine
+        return
       ).on('serverOff', ->
+        serverOnline = no
+        $('.authOptions').css 'opacity', .4 if window.onLine
         togglePasscode true
         setTimeout hideArmDisarmActionBar, 50
         disableButton()
@@ -1345,6 +1434,13 @@ do (app = iz) ->
        .on('onOtherTab', showArmDisarmActionBar).trigger('onOtherTab')
       .trigger 'changePage', ['0', '1']
 
+      ###
+      PrefixedEvent '#pt-main .pt-page', 'AnimationEnd', (e) ->
+        console.warn 'called'
+        return unless $(e.target).hasClass 'pt-page-ontop'
+        console.warn 'Page animation end! use fx '+e.originalEvent.animationName
+      ###
+
       if app.userLogged
         $('.pt-page-1').addClass 'pt-page-current'
       else
@@ -1385,10 +1481,20 @@ do (app = iz) ->
         .prepend fixedHeader # then put the header back tp the page
 
       $(window).trigger 'changePage', [from, to]
-      $(fPage).addClass "pt-page-current #{fxOut}"
-      $(tPage).addClass "pt-page-current #{fxIn} pt-page-ontop"
 
-      setTimeout () -> # when transition is done
+      if reverse
+        $(fPage).addClass "pt-page-current #{fxOut}"
+        $(tPage).addClass "pt-page-current #{fxIn} pt-page-ontop"
+      else
+        if fxIn
+          $(fPage).addClass "pt-page-current #{fxOut}"
+          $(tPage).addClass "pt-page-current #{fxIn} pt-page-ontop"
+        else
+          $(fPage).addClass "pt-page-current #{fxOut} pt-page-ontop"
+          $(tPage).addClass "pt-page-current #{fxIn}"
+
+
+      fnFxComplete = (fPage, tPage) -> # when transition is done
         pHeight = $("#{tPage}").height()
         $("#{tPage} div.body").css 'min-height', 200
         debug "callback on destination page #{tPage} compare
@@ -1415,7 +1521,12 @@ do (app = iz) ->
           $("#{tPage} div.body").css 'height', "#{sHeight}px"
 
         return
-      , 400
+      # END fnFxComplete
+
+      selector = if fxIn then tPage else fPage
+      PrefixedEvent selector, 'AnimationEnd', (e) ->
+        console.warn 'Page animation end! Use fx name '+e.originalEvent.animationName
+        fnFxComplete fPage, tPage
 
       return
     # END changePage
