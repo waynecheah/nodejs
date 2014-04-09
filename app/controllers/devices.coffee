@@ -14,7 +14,13 @@ RN         = '\r\n';
 
 encryption = (socket, data) ->
   str = commonFn.decryption data, config.aesKey, config.aesIv, 'hex'
-  dataRoutes socket, str if str
+
+  commands = str.split ';'
+  _.each commands, (cmd) ->
+    dataRoutes socket, cmd if cmd
+    return
+
+  #dataRoutes socket, str if str
   return
 # END encryption
 
@@ -632,7 +638,7 @@ dataHandler = (socket, data) ->
         log 'n', 'i', "Socket id: #{sockets[i].id}"
         log 'n', 'd', sockets[i].data
         i++
-    else if dt.substr 0,7 == '-hello-' # device is checking if server alive and responding
+    else if dt.substr(0,7) is '-hello-' # device is checking if server alive and responding
       log 'n', 'i', "#{socket.id} says hello"
       socketWrite socket, 'ok'
     else if not socket.tmp and not commonFn.iss dt, 'cn'
