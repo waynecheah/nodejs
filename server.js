@@ -23,7 +23,7 @@ var sockets      = [];
 var websockets   = [];
 var RN           = '\r\n';
 var _timer       = null;
-var host         = '101.99.83.20';
+var host         = '168.144.134.208';
 var appDirectory = 'dist';
 
 
