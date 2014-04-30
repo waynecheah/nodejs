@@ -50,8 +50,12 @@ dataRoutes = (socket, data) ->
 # END dataRoutes
 
 getDeviceInfo = (socket, data) ->
+  socket.tmp = {} if socket.tmp is null
+
   if ps = commonFn.iss data, 'cn'
-    socket.tmp.cn = commonFn.gv data, ps
+    value = commonFn.gv data, ps
+    log 'n', 'i', "Receive code name: #{value}"
+    socket.tmp.cn = value
     socketWrite socket, 'ok'
   else if ps = commonFn.iss data, 'sn'
     value = commonFn.gv data, ps
@@ -649,7 +653,10 @@ dataHandler = (socket, data) ->
     else if ps = commonFn.iss dt, 'en'
       encryption socket, commonFn.gv dt, ps
     else
-      dataRoutes socket, dt
+      commands = dt.split ';'
+      _.each commands, (cmd) ->
+        dataRoutes socket, cmd if cmd
+        return
 
     return
   # END each loop
