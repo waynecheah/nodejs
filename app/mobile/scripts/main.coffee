@@ -1242,7 +1242,7 @@ do (app = iz) ->
 
   armDisarmUpdateCallback = (data) ->
     if data.status
-      console.log data
+      debug data
     else
       debug 'Arm/Disarm update unsuccessful', 'err'
       debug data
