@@ -181,7 +181,8 @@ Websockets =
   # END socketOnconnected
 
   socketOnClose: (deviceId, info) ->
-    log 'w', 'w', "Device ID #{deviceId} with serial no #{info.sn} has disconnected from server"
+    serial = if 'sn' of info is true then info.sn else '-'
+    log 'w', 'w', "Device ID #{deviceId} with serial no #{serial} has disconnected from server"
 
     _.each sockets, (websocket) ->
       _.each websocket.data.devices, (device) ->
