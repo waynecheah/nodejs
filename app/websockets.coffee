@@ -216,6 +216,17 @@ Websockets =
     return
   # END socketOnData
 
+  socketOnDebug: (serial, data) ->
+    _.each sockets, (websocket) ->
+      _.each websocket.data.devices, (device) -> # loop all websockets (APP User) that online now
+        log 'w', 'd', data
+        emit websocket, 'DeviceDebug', data if serial is device.serial
+        return
+      return
+
+    return
+  # END socketOnDebug
+
   getSockets: () ->
     sockets
   # END getSocket

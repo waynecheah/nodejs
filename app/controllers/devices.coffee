@@ -332,7 +332,7 @@ getDeviceUpdate = (socket, data) ->
     _.each socket.data.status[type], (s, i) ->
       k = s.split ','
 
-      if key and k[0] is key
+      if key and k[0] is key # make sure update to the same record by using key match
         log 's', 's', "Socket status data '#{type}' has updated to [#{str}]"
         socket.data.status[type][i] = str
 
@@ -663,6 +663,20 @@ dataHandler = (socket, data) ->
 
   return
 # END dataHandler
+
+debugOnApp = (socket, raw) ->
+    if ps = commonFn.iss raw, 'en'
+      encr = commonFn.gv raw, ps
+      decr = commonFn.decryption encr, config.aesKey, config.aesIv, 'hex'
+      data =
+        encrypted: raw
+        text: decr
+    else
+      data.text = raw
+
+    websockets.socketOnDebug socket.data.info.sn, data
+    return
+# END debugOnApp
 
 getKeys = (str, err, length) ->
   key = str.split ','

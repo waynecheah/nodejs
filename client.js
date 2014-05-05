@@ -311,12 +311,12 @@ socket.get = function(type, item) {
     log('n', 'd', _data[type][item]);
 };
 socket.aes = function(str){
-    var secret = encryption(str, 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
+    var secret = encryption(str, 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
 
     if (secret) {
         _stage = 'aes';
         log('n', 's', 'Sent encrypted data: '+secret);
-        socket.swrite('aes='+secret+RN);
+        swrite('en='+secret+RN);
     }
 }
 

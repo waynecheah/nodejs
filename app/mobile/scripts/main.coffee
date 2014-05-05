@@ -680,6 +680,9 @@ do (app = iz) ->
       socket.on 'ResponseOnRequest', (req, data) ->
         respondCallback[req] data if req of respondCallback is true
         return
+      socket.on 'DeviceDebug', (data) ->
+        console.log data
+        return
 
 
       return if @serverOnListened
