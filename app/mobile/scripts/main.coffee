@@ -1,6 +1,8 @@
 
 iz =
   env: 'dev'
+  logMode: 0 # 0 = disable debug ; 1 = enable debug
+  defaultMode: 0
   servers:
     development: [
       'innerzon.com:8080'
@@ -440,7 +442,7 @@ iz =
 
 
   gdebug: (name, collapsed=false) ->
-    if @env is 'pro'
+    if @env is 'pro' or not @logMode
       return
 
     if not name
@@ -452,7 +454,7 @@ iz =
   # END gdebug
 
   debug: (msg, type='log') ->
-    return if @env is 'pro'
+    return if @env is 'pro' or not @logMode
 
     switch type
       when 'log' then console.log msg
@@ -681,7 +683,19 @@ do (app = iz) ->
         respondCallback[req] data if req of respondCallback is true
         return
       socket.on 'DeviceDebug', (data) ->
-        console.log data
+        if 'encrypted' of data is true
+          app.logMode = 1
+          app.gdebug 'AES'
+          app.debug data.encrypted
+          app.debug data.text
+          app.gdebug()
+          app.logMode = 0 unless app.defaultMode
+        else
+          app.logMode = 1
+          app.gdebug 'NON-AES'
+          app.debug data.text
+          app.gdebug()
+          app.logMode = 0 unless app.defaultMode
         return
 
 

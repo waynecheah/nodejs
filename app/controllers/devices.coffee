@@ -623,6 +623,7 @@ dataHandler = (socket, data) ->
   _.each info, (dt, i) ->
     return if end
     return if not dt
+    debugOnApp socket, dt
 
     if commonFn.isc dt, 'quit' # device is asking self termination
       end = true
@@ -665,6 +666,8 @@ dataHandler = (socket, data) ->
 # END dataHandler
 
 debugOnApp = (socket, raw) ->
+    data = {}
+
     if ps = commonFn.iss raw, 'en'
       encr = commonFn.gv raw, ps
       decr = commonFn.decryption encr, config.aesKey, config.aesIv, 'hex'
@@ -674,7 +677,12 @@ debugOnApp = (socket, raw) ->
     else
       data.text = raw
 
-    websockets.socketOnDebug socket.data.info.sn, data
+    if 'data' of socket is true and 'info' of socket.data is true and 'sn' of socket.data.info is true
+      serial = socket.data.info.sn;
+    else
+      serial = null
+
+    websockets.socketOnDebug serial, data
     return
 # END debugOnApp
 

@@ -34,7 +34,7 @@ var serverErr = {
     e13: ''
 };
 var aesKey    = 'MtKKLowsPeak4095';
-var aesIv    = 'ConnectingPeople';
+var aesIv     = 'ConnectingPeople';
 var mapping   = {
     partition: {
         command: {
