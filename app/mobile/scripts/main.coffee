@@ -2,7 +2,6 @@
 iz =
   env: 'dev'
   logMode: 0 # 0 = disable debug ; 1 = enable debug
-  defaultMode: 0
   servers:
     development: [
       'innerzon.com:8080'
@@ -669,6 +668,7 @@ do (app = iz) ->
 
     init: (socket) ->
       that    = @
+      resume  = app.logMode
       @socket = socket
 
       socket.on 'Online', (data) ->
@@ -702,13 +702,13 @@ do (app = iz) ->
           app.debug data.encrypted
           app.debug data.text
           app.gdebug()
-          app.logMode = 0 unless app.defaultMode
+          app.logMode = resume
         else
           app.logMode = 1
           app.gdebug 'NON-AES'
           app.debug data.text
           app.gdebug()
-          app.logMode = 0 unless app.defaultMode
+          app.logMode = resume
         return
 
 
