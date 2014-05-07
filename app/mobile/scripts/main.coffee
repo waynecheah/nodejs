@@ -141,14 +141,15 @@ iz =
   socketio:
     serverList: []
     curServerId: 0
+    reAttempt: 4 # plus 1 socket.io first attempt
     socket: null
 
-    init: () ->
+    init: ->
       servers = iz.servers
       env     = iz.env
       #connect = @connect.bind @
 
-      onInternetOn = () ->
+      onInternetOn = ->
         if @socket
           @socket.socket.reconnect()
         else
@@ -164,81 +165,93 @@ iz =
       return
     # END init
 
-    connect: () ->
+    connect: ->
       debug = iz.debug
 
       serverInUse = @serverList[@curServerId]
-      reAttempt   = if @serverList.length is 1 then 1000 else 4 # attempt 6 times retry take about 5 seconds
+
+      if @serverList.length is 1
+        reAttempt = 1000
+        connLimit = 60000
+      else
+        reAttempt = @reAttempt # attempt 5 times retry take about 10 seconds, 6 times retry take about 15 seconds
+        connLimit = 3000
 
       debug "Socket.io is connecting to server [#{serverInUse}]"
       @socket = io.connect "http://#{serverInUse}",
-        'reconnection limit': 60000 # maximum 60 seconds delay of each reconnection
+        'reconnection limit': connLimit # maximum seconds delay of each reconnection
         'max reconnection attempts': reAttempt
+        'try multiple transports': false
       @socketHandler()
       $(window).trigger 'initSocketListener', [@socket] # fire and check any other listener wants attact to socket
 
       return
     # END connect
 
-    changeServer: () ->
+    changeServer: ->
       debug     = iz.debug
-      nextIndex = @curServerId + 1
+      socketio  = iz.socketio
+      nextIndex = socketio.curServerId + 1
 
-      return if not window.onLine # internet is down, socket is not able to do reconnect
-      return if @serverList.length is 1 # there is no extra server to switch connection
+      return debug 'Internet is down, socket is not able to do reconnect', 'warn' if not window.onLine
+      return debug 'There is no extra server to switch connection', 'warn' if socketio.serverList.length is 1
 
       debug 'Swtich other server and make connection to it'
-      @curServerId = if nextIndex > @serverList.length then 0 else nextIndex
-      @connect()
+      socketio.curServerId = if nextIndex > socketio.serverList.length then 0 else nextIndex
+      socketio.connect()
 
       return
     # END changeServer
 
-    socketHandler: () ->
+    socketHandler: ->
       debug        = iz.debug
       socket       = @socket
       serverInUse  = @serverList[@curServerId]
       numServers   = @serverList.length
+      changeServer = @changeServer
+      reAttempt    = @reAttempt
       retryCount   = 1
-      onError      = () ->
+      onError      = ->
         debug "Error on Socket.io at server [#{serverInUse}] and it can't be handled by the other event types", 'err'
         $(window).trigger 'serverOff'
-        @changeServer()
+        changeServer()
         return
-      onConnFailed = () ->
+      onConnFailed = ->
         debug "Socket.io fail to make connection to server [#{serverInUse}]", 'warn'
         $(window).trigger 'serverOff'
-        @changeServer()
+        changeServer()
         return
-      onRecoFailed = () ->
+      onRecoFailed = ->
         debug "Reconnect to server [#{serverInUse}] failed after #{retryCount} times", 'warn'
         $(window).trigger 'serverOff'
         retryCount = 1
-        if numServers is 1 then socket.socket.connect() else @changeServer()
+        if numServers is 1 then socket.socket.connect() else changeServer()
         return
 
-      @socket.on 'error', onError.bind @
-      @socket.on 'connect', () ->
+      @socket.on 'error', onError
+      @socket.on 'connect', ->
         debug "Socket.io has make connection to server [#{serverInUse}] successfully!", 'info'
         $(window).trigger 'serverOn', ['connected']
         return
-      @socket.on 'connect_failed', onConnFailed.bind @
-      @socket.on 'connecting', () ->
+      @socket.on 'connect_failed', onConnFailed
+      @socket.on 'connecting', ->
         debug 'Socket.io fires connecting event'
         return
-      @socket.on 'disconnect', () ->
+      @socket.on 'disconnect', ->
         debug "Socket.io is disconnected from server [#{serverInUse}]", 'warn'
         retryCount = 1
         $(window).trigger 'serverOff'
         return
-      @socket.on 'reconnect', () ->
+      @socket.on 'reconnect', ->
         debug 'Socket.io has reconnected back to server successfully!', 'info'
         $(window).trigger 'serverOn', ['reconnected']
         return
-      @socket.on 'reconnect_failed', onRecoFailed.bind @
-      @socket.on 'reconnecting', () ->
-        debug "Reconnecting to server [#{serverInUse}] for #{retryCount} times"
+      @socket.on 'reconnect_failed', -> onRecoFailed
+      @socket.on 'reconnecting', ->
+        debug "Reconnecting to server [#{serverInUse}] for #{retryCount} times of maximum #{reAttempt} times"
         retryCount++
+        return unless numServers > 1 and retryCount > reAttempt # manual fix for even [reconnect_failed] not trigger
+        setTimeout onRecoFailed, 4500
         return
 
       return
@@ -782,6 +795,12 @@ do (app = iz) ->
       return
     # END init
 
+    glLogin: (data, callbackUI) ->
+      debug 'Send user data at google to server'
+      emitReq '/clients/glSignin', data, callbackUI
+      return
+    # END glLogin
+
     fbLogin: (data, callbackUI) ->
       debug 'Send user data at facebook to server'
       emitReq '/clients/fbSignin', data, callbackUI
@@ -932,8 +951,178 @@ do (app = iz) ->
     debug(JSON.parse data)
     app.userLogged
   # END getLoginInfo
+    
+  glLogin = ->
+    if 'gapi' of window is off
+      window.gapi = {}
+      #return
 
-  fbLogin = () ->
+    apiKey = app.config.glParams.apiKey
+    delete app.config.glParams.apiKey
+
+    glParams = app.config.glParams
+    element  = $ '.authOption .google'
+
+
+    onComplete = (status) ->
+      return unless status
+      element.fadeOut 'fast'
+      appInteraction.glLogin gapi.user, ->
+        debug 'Server has inserted the user data to database'
+        saveLoginInfo 'gl', gapi.user
+        onUserLogged()
+        $('.loading').hide()
+        $('.body0 .logo, .body0 .authOptions').css '-webkit-filter', 'blur(0)'
+        return
+      return
+    # END onComplete
+
+
+    gapi =
+      status: null,
+      user: {}
+
+      onload: ->
+        debug 'Google APIs Client library is loaded'
+        gapi.client.setApiKey apiKey
+
+        window.setTimeout -> # check authorization
+          debug 'Getting authorize result from google..'
+          gapi.auth.authorize glParams, gapi.handleAuthResult
+          return
+        , 1
+        return
+
+      handleAuthResult: (authResult) ->
+        debug 'Auth Results:'
+        debug authResult
+
+        if authResult and not authResult.error
+          user   = localStorage.getItem 'user'
+          logged = authResult.status.google_logged_in # Todo(check): not sure if this done correctly
+          if logged and user # return result if already sign in with Google+
+            debug 'User has already sign-in with Google+', 'info'
+            gapi.status = 'logged'
+            gapi.user   = JSON.parse user
+            onComplete yes
+          else # make API request and get user data
+            gapi.makeApiCall()
+        else # user has not make authorisation to the App, show Sign-in button
+          debug 'User has not sign-in with Google+', 'info'
+          gapi.status = no
+          element.click gapi.handleAuthClick
+          element.removeClass 'disabled'
+        return
+
+      getGooglePlusLib: ->
+        debug 'Get Goolge+ API library'
+        gapi.client.load 'plus', 'v1', gapi.makeApiCall
+        return
+
+      makeApiCall: ->
+        return gapi.getGooglePlusLib() if 'plus' of gapi.client is false
+        token = gapi.auth.getToken() # should have auth token before make API request
+
+        debug 'Make Google+ API request'
+        request = gapi.client.plus.people.get
+          userId: 'me'
+          fields: 'id,displayName,emails,image,name,nickname'
+        gapi.status = 'request'
+        request.execute (res) ->
+          debug 'Response user data for the API request'
+          gapi.status = 'responsed'
+          gapi.user   =
+            username: res.emails[0].value
+            fullname: res.displayName
+            services:
+              google: token
+
+          # skip local storage if unavailable
+          return onComplete yes if typeof(localStorage) is 'undefined'
+
+          try
+            debug 'Storage user data to local storage'
+            localStorage.setItem 'user', JSON.stringify(gapi.user)
+            onComplete yes
+          catch e
+            debug 'Quota exceeded!', 'warn' if e is QUOTA_EXCEEDED_ERR
+          return
+        return
+
+      handleAuthClick: ->
+        return unless serverOnline
+        return if element.hasClass 'disabled'
+        debug 'Attempt get authorisation from user'
+        glParams.immediate = false
+        gapi.status        = 'authorising'
+        gapi.auth.authorize glParams, (authResult) ->
+          token = gapi.auth.getToken()
+          if token
+            debug 'User has authorised the App to make API request'
+            gapi.status = 'callback'
+          else
+            debug 'User has cancelled the authorisation process', 'warn'
+            gapi.status = 'cancelled'
+          gapi.handleAuthResult authResult
+          return
+        off
+    # END gapi
+
+    window.gapi       = gapi
+    window.gapiOnload = gapi.onload
+
+    return if 'gapiInjected' of window is on
+    window.gapiInjected = yes
+    window.onblur = ->
+      if window.gapi.status is 'authorising'
+        debug 'Waiting user to give authorise to the App'
+        $('.body0 .logo, .body0 .authOptions').css '-webkit-filter', 'blur(5px)'
+        $('.loadWrap .txt').html 'logging with google..'
+        $('.loading').show()
+      return
+    window.onfocus = ->
+      if window.gapi.status is 'authorising' or window.gapi.status is 'incompleted'
+        debug 'User has return back from incompleted authorisation process', 'warn'
+        window.gapi.status = 'incompleted'
+        $('.loading').hide()
+        $('.body0 .logo, .body0 .authOptions').css '-webkit-filter', 'blur(0)'
+      return
+
+    # load google JavaScript SDK
+    po       = document.createElement 'script'
+    po.type  = 'text/javascript'
+    po.async = yes
+    po.src   = '//apis.google.com/js/client.js?onload=gapiOnload'
+    scriptEl = document.getElementsByTagName('script')[0]
+    scriptEl.parentNode.insertBefore po, scriptEl
+  
+    return
+  # END glLogin
+  
+  glLogout = ->
+    token = gapi.auth.getToken()
+    gdebug 'Google sign out'
+    $.ajax
+      type: 'GET'
+      url: "https://accounts.google.com/o/oauth2/revoke?token=#{token.access_token}"
+      async: false
+      contentType: 'application/json'
+      dataType: 'jsonp'
+      success: (res) ->
+        debug 'Sign out App from google', 'info'
+        debug res
+        gdebug false
+        localStorage.removeItem 'user'
+        return
+      error: (e) ->
+        debug 'Fail logout App from google'
+        debug e, 'warn'
+        gdebug false
+        return
+    return
+  # END glLogout
+
+  fbLogin = ->
     window.fbAsyncInit = () ->
       FB.init app.config.fbParams
 
@@ -999,7 +1188,7 @@ do (app = iz) ->
               username: data[0].email
               fullname: data[0].name
               services: facebook: res.authResponse
-            appInteraction.fbLogin data, () ->
+            appInteraction.fbLogin data, ->
               debug 'Server has inserted the user data to database'
               saveLoginInfo 'fb', data
               onUserLogged()
@@ -1009,7 +1198,7 @@ do (app = iz) ->
             return
           # END fbApi
         else
-          debug 'User cancel the login process'
+          debug 'User cancel the login process', 'warn'
           $('.loading').hide()
           $('.body0 .logo, .body0 .authOptions').css '-webkit-filter', 'blur(0)'
         return
@@ -1025,7 +1214,7 @@ do (app = iz) ->
     return if document.getElementById(id)
 
     ref      = document.getElementsByTagName('script')[0]
-    js       = document.createElement('script')
+    js       = document.createElement 'script'
     js.id    = id
     js.async = true
     js.src   = '//connect.facebook.net/en_US/all.js'
@@ -1034,7 +1223,25 @@ do (app = iz) ->
     return
   # END fbLogin
 
+  fbLogout = (appOnly=true) ->
+    gdebug 'Facebook sign out'
+    if appOnly # log out from our APP only
+      FB.api '/me/permissions', 'delete', (res) ->
+        debug 'Sign out App from facebook', 'info'
+        debug res
+        gdebug false
+        return
+    else # logout from Facebook
+      FB.logout (res) ->
+        debug 'Logout user from facebook'
+        debug res
+        gdebug false
+        return
+    return
+  # END fbLogout
+
   userSignOut = ->
+    app.userLogged = localStorage.getItem 'userLogged' unless app.userLogged
     channel        = app.userLogged
     app.userLogged = no
 
@@ -1042,28 +1249,17 @@ do (app = iz) ->
     onUserLogout()
 
     if channel is 'fb'
-      gdebug 'Facebook sign out'
-      FB.api '/me/permissions', 'delete', (res) ->
-        debug 'Sign out App from facebook', 'info'
-        debug res
-        gdebug false
-        #onUserLogout()
-        return
-      # END FB.api
-
-      return false if typeof Storage is 'undefined'
-      localStorage.removeItem 'userLogged'
-      localStorage.removeItem 'data'
+      fbLogout()
     else if channel is 'gl'
-      gdebug 'Google sign out'
-      debug 'Sign out App from google+', 'info'
-      gdebug false
-      #onUserLogout()
+      glLogout()
     else
       gdebug 'Innerzon sign out'
       debug 'Sign out App from innerzon', 'info'
       gdebug false
 
+    return false if typeof Storage is 'undefined'
+    localStorage.removeItem 'userLogged'
+    localStorage.removeItem 'data'
     return
   # userSignOut
 
@@ -1475,6 +1671,7 @@ do (app = iz) ->
         $('.loading').show()
         return
       ).on('internetOn', ->
+        glLogin()
         fbLogin()
         opacity = if serverOnline then 1 else .4
         $('.loading').hide()
