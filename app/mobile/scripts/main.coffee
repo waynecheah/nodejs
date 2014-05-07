@@ -1,13 +1,13 @@
 
 iz =
   env: 'dev'
-  logMode: 0 # 0 = disable debug ; 1 = enable debug
+  logMode: 1 # 0 = disable debug ; 1 = enable debug
   servers:
     development: [
+      '127.0.0.1:8080'
       'innerzon.com:8080'
       'innerzon.com.my:8080'
       'cheah.homeip.net:8080'
-      '127.0.0.1:8080'
     ]
     production: [
       'innerzon.com:8080'
@@ -454,7 +454,7 @@ iz =
 
 
   gdebug: (name, collapsed=false) ->
-    if @env is 'pro' or not @logMode
+    if iz.env is 'pro' or not iz.logMode
       return
 
     if not name
@@ -466,7 +466,7 @@ iz =
   # END gdebug
 
   debug: (msg, type='log') ->
-    return if @env is 'pro' or not @logMode
+    return if iz.env is 'pro' or not iz.logMode
 
     switch type
       when 'log' then console.log msg
@@ -1137,6 +1137,7 @@ do (app = iz) ->
               username: data[0].email
               fullname: data[0].name
               services: facebook: res.authResponse
+            $('.authOption .facebook').fadeOut 'fast'
 
             # update user data to database
             appInteraction.fbLogin data, () ->
@@ -1272,6 +1273,8 @@ do (app = iz) ->
   # END onUserLogged
 
   onUserLogout = ->
+    $('.authOption .google').show()
+    $('.authOption .facebook').show()
     fx =
       fxRevOut: 'pt-page-rotateCubeRightOut'
       fxRevIn: 'pt-page-rotateCubeRightIn'

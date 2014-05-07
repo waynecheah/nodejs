@@ -161,7 +161,7 @@ Clients =
       upsert: true,
       select: 'id'
 
-    log 'w', 'i', 'Sign-in with facebook by web client '+data.ws.wsid
+    log 'w', 'i', "Sign-in with facebook by web client #{data.ws.wsid}"
     log 'w', 'd', form
 
     resFn = (status, mesg, sessions) ->
@@ -205,7 +205,7 @@ Clients =
       upsert: true,
       select: 'id'
 
-    log 'w', 'i', 'Sign-in with google by web client '+data.ws.wsid
+    log 'w', 'i', "Sign-in with google by web client #{data.ws.wsid}"
     log 'w', 'd', form
 
     resFn = (status, mesg, sessions) ->
@@ -213,7 +213,7 @@ Clients =
 
       data.message = mesg if mesg?
 
-      if sessions? then callback data, sessions else callback data
+      if sessions then callback data, sessions else callback data
       return
     # END resFn
 
@@ -232,7 +232,7 @@ Clients =
       sessions =
         id: doc._id,
         name: doc.fullname,
-        method: 'facebook',
+        method: 'google',
         time: commonFn.datetime()
 
       resFn true, null, sessions
