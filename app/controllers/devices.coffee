@@ -12,8 +12,11 @@ Status     = mongoose.model 'Status'
 sockets    = []
 RN         = '\r\n';
 
-encryption = (socket, data) ->
-  str = commonFn.decryption data, config.aesKey, config.aesIv, 'hex'
+encryption = (socket, data, method='tea') ->
+  if method is 'aes'
+    str = commonFn.decryption data, config.aesKey, config.aesIv, 'hex'
+  else
+    str = commonFn.decryptionTea data, config.teaKey
 
   commands = str.split ';'
   _.each commands, (cmd) ->
@@ -757,7 +760,7 @@ Devices =
     sockets
   # END getSocket
 
-  write: (serial, data, encrption, callback) ->
+  write: (serial, data, encryption, callback) ->
     total = sockets.length
     time  = (new Date).getTime()
     sent  = no
@@ -765,10 +768,14 @@ Devices =
 
     data.datetime = time
 
-    if encrption
-      msg = commonFn.encryption data.log, config.aesKey, config.aesIv, 'hex'
+    if encryption is 'tea'
+      msg = commonFn.encryptionTea data.log, config.teaKey
       return if not msg
       msg = "en=#{msg}"
+    else if encryption is 'aes'
+      msg = commonFn.encryption data.log, config.aesKey, config.aesIv, 'hex'
+      return if not msg
+      msg = "ae=#{msg}"
     else
       msg = data.log
 
@@ -779,6 +786,9 @@ Devices =
       if serial is sn
         log 'w', 'i', "App make update to device serial [#{sn}] with command [#{msg}]"
         socketWrite socket, msg
+        debugdata =
+              text: "App make update to device serial [#{sn}] with command [#{msg}]"
+        websockets.socketOnDebug serial, debugdata
 
         data.device = socket.data.deviceId
         dbAddAppEvent data, (err, doc) ->

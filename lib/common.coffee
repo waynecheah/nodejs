@@ -44,6 +44,11 @@ exports.gv = (data, start) -> # get value
   data.substr start
 # gv
 
+exports.datetime = ->
+    moment().format 'YYMMDDHHmmss'
+# datetime
+
+
 exports.encryption = (data, key, iv, format) ->
   cipher = crypto.createCipheriv 'aes-128-cbc', key, iv
   strlen = data.length
@@ -97,6 +102,141 @@ exports.decryption = (data, key, iv, format) ->
   decrData.substr position+1;
 # decryption
 
-exports.datetime = ->
-  moment().format 'YYMMDDHHmmss'
-# datetime
+
+strToLong = (str) ->
+    ar  = new Array()
+    len = Math.ceil(str.length / 4)
+    i   = 0
+
+    while i < len
+        ar[i] = str.charCodeAt(i << 2) + (str.charCodeAt((i << 2) + 1) << 8) + (str.charCodeAt((i << 2) + 2) << 16) + (str.charCodeAt((i << 2) + 3) << 24)
+        i++
+    ar
+# END strToLong
+
+longToStr = (ar) ->
+    len = ar.length
+    i = 0
+
+    while i < len
+        ar[i] = String.fromCharCode(ar[i] & 0xff, ar[i] >>> 8 & 0xff, ar[i] >>> 16 & 0xff, ar[i] >>> 24 & 0xff)
+        i++
+    ar.join ''
+# END longToStr
+
+strToHex = (str) ->
+    charHex = new Array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f")
+    out = ""
+    len = str.length
+    str = new String(str)
+    i = 0
+
+    while i < len
+        s = str.charCodeAt(i)
+        h = "" + charHex[s >> 4] + "" + charHex[0xf & s]
+        out += "" + h
+        i++
+    out
+# END strToHex
+
+hexToStr = (str) ->
+    charHex   = new Array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f")
+    stringHex = "0123456789abcdef"
+    out = ""
+    len = str.length
+    str = new String(str)
+    str = str.toLowerCase()
+    str += "0"  if (len % 2) is 1
+    i = 0
+
+    while i < len
+        s1 = str.substr(i, 1)
+        s2 = str.substr(i + 1, 1)
+        index1 = stringHex.indexOf(s1)
+        index2 = stringHex.indexOf(s2)
+        throw HEX_BROKEN  if index1 is -1 or index2 is -1
+        val  = (index1 << 4) | index2
+        out += "" + String.fromCharCode(parseInt(val))
+        i += 2
+    out
+# END hexToStr
+
+exports.encryptionTea = (str, key) ->
+    v = strToLong(str)
+
+    if key.length isnt 4
+        k = strToLong key.slice(0, 16)
+    else
+        k = key
+
+    n = v.length
+    return '' if n is 0
+    v[n++] = 0 if n is 1
+
+    z     = v[n - 1] # long
+    y     = v[0]
+    sum   = 0
+    e     = undefined
+    DELTA = 0x9E3779B9
+    q     = Math.floor((6 + 52 / n))
+
+    while q-- > 0
+        sum += DELTA
+        e = sum >>> 2 & 3
+        p = 0 # long
+
+        while p < n - 1
+            y = v[p + 1]
+            z = v[p] += (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z)
+            p++
+
+        y = v[0]
+        z = v[n - 1] += (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z)
+
+    data = longToStr v
+    log 's', 'i', "Encrypt data in Tea: #{data}"
+    enc = strToHex data
+    log 's', 's', "Encrypted data in Tea: #{enc}"
+    enc
+# END encryptionTea
+
+exports.decryptionTea = (cipher, key) ->
+    str   = hexToStr cipher
+    v     = strToLong str
+    bytes = str.length / 2
+    log 's', 'i', "Decrypt data in Tea (#{bytes} bytes): #{str}"
+
+    if key.length isnt 4
+        k = strToLong(key.slice(0, 16))
+    else
+        k = key
+
+    n     = v.length
+    z     = v[n - 1]
+    y     = v[0]
+    sum   = 0
+    e     = undefined
+    DELTA = 0x9E3779B9
+    p     = undefined
+    q     = undefined
+    z     = v[n - 1]
+    q     = Math.floor(6 + 52 / n)
+    sum   = q * DELTA
+
+    until sum is 0
+        e = sum >>> 2 & 3
+        p = n - 1
+
+        while p > 0
+            z = v[p - 1]
+            y = v[p] -= (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z)
+            p--
+
+        z    = v[n - 1]
+        y    = v[0] -= (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z)
+        sum -= DELTA
+
+    decrData = longToStr v
+    log 's', 's', "Decrypted data in Tea: #{decrData}"
+    decrData
+# END decryptionTea

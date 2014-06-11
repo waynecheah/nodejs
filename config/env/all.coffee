@@ -23,6 +23,8 @@ module.exports =
 
   replication: false
 
+  teaKey: 'MtKKLowsPeak4095'
+
   aesKey: 'MtKKLowsPeak4095'
 
   aesIv: 'ConnectingPeople'

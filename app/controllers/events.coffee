@@ -21,7 +21,7 @@ alarm = (data, callback) ->
     user: 103,
     succeed: false
 
-  devices.write serial, obj, yes, (status) ->
+  devices.write serial, obj, 'tea', (status) ->
     callback
       status: status
       data: data.form
