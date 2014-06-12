@@ -161,24 +161,46 @@ hexToStr = (str) ->
     out
 # END hexToStr
 
-exports.encryptionTea = (str, key) ->
-    v = strToLong(str)
+genRandom = (n) ->
+    dict = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`!@#$%^&*()_+-=\\{}[]:<>,.?/\"';"
+    ran  = ""
+    size = dict.length
+    i    = 0
 
+    while i < n
+        ran = ran + dict.substr(Math.floor(Math.random() * size), 1)
+        i++
+    ran
+# END genRandom
+
+exports.encryptionTea = (str, key) ->
+    str = str + '|'
+    remainder = str.length % 16
+
+    if remainder > 13 # 12chars max (4 for padding) (minimum 3 rand chars)
+        str = str + genRandom((16 - remainder) + 16)
+    else
+        str = str + genRandom(16 - remainder)
+
+    bytes = str.length
+    log 's', 'i', "Encrypt data (#{bytes} bytes) in Tea: #{str}"
+
+    v = strToLong(str)
     if key.length isnt 4
-        k = strToLong key.slice(0, 16)
+        k = strToLong(key.slice(0, 16))
     else
         k = key
 
     n = v.length
-    return '' if n is 0
-    v[n++] = 0 if n is 1
+    return ""  if n is 0
 
-    z     = v[n - 1] # long
-    y     = v[0]
-    sum   = 0
-    e     = undefined
-    DELTA = 0x9E3779B9
-    q     = Math.floor((6 + 52 / n))
+    v[n++] = 0  if n is 1
+    z      = v[n - 1] # long
+    y      = v[0]
+    sum    = 0
+    e      = undefined
+    DELTA  = 0x9E3779B9
+    q      = Math.floor((6 + 52 / n))
 
     while q-- > 0
         sum += DELTA
@@ -193,9 +215,7 @@ exports.encryptionTea = (str, key) ->
         y = v[0]
         z = v[n - 1] += (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z)
 
-    data = longToStr v
-    log 's', 'i', "Encrypt data in Tea: #{data}"
-    enc = strToHex data
+    enc = strToHex(longToStr(v))
     log 's', 's', "Encrypted data in Tea: #{enc}"
     enc
 # END encryptionTea
@@ -206,7 +226,7 @@ exports.decryptionTea = (cipher, key) ->
     bytes = str.length / 2
     log 's', 'i', "Decrypt data in Tea (#{bytes} bytes): #{str}"
 
-    if key.length isnt 4
+    if key.length isnt 4 # not 4 integer, assume 16bytes string
         k = strToLong(key.slice(0, 16))
     else
         k = key
@@ -231,12 +251,12 @@ exports.decryptionTea = (cipher, key) ->
             z = v[p - 1]
             y = v[p] -= (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z)
             p--
-
-        z    = v[n - 1]
-        y    = v[0] -= (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z)
+        z = v[n - 1]
+        y = v[0] -= (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z)
         sum -= DELTA
 
     decrData = longToStr v
+    decrData = decrData.substr(0, decrData.lastIndexOf('|')) if decrData.indexOf('|') isnt -1
     log 's', 's', "Decrypted data in Tea: #{decrData}"
     decrData
 # END decryptionTea

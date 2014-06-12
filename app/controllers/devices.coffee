@@ -673,6 +673,12 @@ debugOnApp = (socket, raw) ->
 
     if ps = commonFn.iss raw, 'en'
       encr = commonFn.gv raw, ps
+      decr = commonFn.decryptionTea encr, config.teaKey
+      data =
+        encrypted: raw
+        text: decr
+    else if ps = commonFn.iss raw, 'ae'
+      encr = commonFn.gv raw, ps
       decr = commonFn.decryption encr, config.aesKey, config.aesIv, 'hex'
       data =
         encrypted: raw
