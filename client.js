@@ -33,6 +33,7 @@ var serverErr = {
     e12: '',
     e13: ''
 };
+var teaKey    = 'MtKKLowsPeak4095';
 var aesKey    = 'MtKKLowsPeak4095';
 var aesIv     = 'ConnectingPeople';
 var mapping   = {
@@ -115,6 +116,7 @@ var _data  = {
 var _stage = 'authorisation';
 var _sdcmd = '';
 var _cmdcn = 0;
+var _encry = 'tea';
 
 
 function write (cmd, lg, type, stage, encrypt) {
@@ -129,8 +131,13 @@ function write (cmd, lg, type, stage, encrypt) {
             _stage = stage;
         }
         if (encrypt === null || encrypt !== false) {
-            var enc = 'en='+encryption(cmd, aesKey, aesIv, 'hex');
-            log('n', 's', 'Encrypted data: '+enc);
+            if (_encry == 'aes') {
+                var enc = 'ae='+encryption(cmd, aesKey, aesIv, 'hex');
+                log('n', 's', 'Encrypted AES data: '+enc);
+            } else if (_encry == 'tea') {
+                var enc = 'en='+encryptionTea(cmd, teaKey);
+                log('n', 's', 'Encrypted Tea data: '+enc);
+            }
             socket.write(enc+RN);
         } else {
             socket.write(cmd+RN);
@@ -251,6 +258,147 @@ function decryption (data, key, iv, format) {
     return decrData.substr(position+1);
 } // decryption
 
+function decryptionTea (cipher, key) {
+    var v = strToLong(hexToStr(cipher));
+    if(key.length!==4)	//not 4 integer, assume 16bytes string
+        var k = strToLong(key.slice(0,16));
+    else
+        var k=key;
+    var n = v.length;
+
+    var z = v[n-1], y=v[0], sum=0, e, DELTA=0x9E3779B9;
+    var p, q;
+    z=v[n-1];
+    q = Math.floor(6+52/n);
+    sum = q*DELTA;
+    while (sum != 0) {
+        e = sum>>>2 & 3;
+        for (p=n-1; p>0; p--) {
+            z = v[p-1];
+            y = v[p] -= (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z);
+        }
+        z = v[n-1];
+        y = v[0] -= (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z);
+        sum -= DELTA;
+    }
+
+    var completeStr = longToStr(v);
+    if (completeStr.indexOf('|') !== -1)
+        decrData = completeStr.substr(0, completeStr.lastIndexOf('|'));
+    else
+        decrData = completeStr;
+
+    log('n', 's', 'Decrypted Tea data: from ['+cipher+'] to ['+decrData+']');
+    return decrData;
+}
+function encryptionTea (str, key) {
+    str = str + '|';
+    var remainder = str.length % 16;
+
+    if (remainder >13) {	// 12chars max (4 for padding) (minimum 3 rand chars)
+        str = str + genRandom((16-remainder) + 16);
+    } else {
+        str = str + genRandom(16-remainder);
+    }
+
+    var v = strToLong(str);
+    if (key.length!==4)
+        var k = strToLong(key.slice(0,16));
+    else
+        var k=key;
+
+    var n = v.length;
+    if (n == 0) {
+        return "";
+    }
+    if (n == 1) {
+        v[n++] = 0;
+    }
+    var z = v[n - 1], y = v[0], sum = 0, e;  // long
+    var DELTA = 0x9E3779B9;
+    var q = Math.floor((6 + 52 / n));
+    while (q-- > 0) {
+        sum += DELTA;
+        e = sum >>> 2 & 3;
+        for (var p = 0; p < n - 1; p++) { // long
+            y = v[p + 1];
+            z = v[p] += (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z);
+        }
+        y = v[0];
+        z = v[n - 1] += (z >>> 5 ^ y << 2) + (y >>> 3 ^ z << 4) ^ (sum ^ y) + (k[p & 3 ^ e] ^ z);
+    }
+
+    data = strToHex(longToStr(v));
+    log('n', 'i', 'Encrypt Tea data: from ['+str+'] to ['+data+']');
+    return data;
+}
+function strToLong (str) {
+    var ar = new Array();
+    var len = Math.ceil(str.length / 4);
+    for (var i=0; i<len; i++) {
+        ar[i] = str.charCodeAt(i << 2) + (str.charCodeAt((i << 2) + 1) << 8) +
+            (str.charCodeAt((i << 2) + 2) << 16) + (str.charCodeAt((i << 2) + 3) << 24);
+    }
+    return ar;
+}
+function longToStr (ar) {
+    var len = ar.length;
+    for (var i=0; i<len; i++) {
+        ar[i] = String.fromCharCode(ar[i] & 0xff, ar[i] >>> 8 & 0xff,
+                ar[i] >>> 16 & 0xff, ar[i] >>> 24 & 0xff);
+    }
+    return ar.join('');
+}
+function strToHex (str) {
+    var charHex = new Array('0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f');
+    var out = "";
+    var len = str.length;
+    str = new String(str);
+    for (var i = 0; i < len; i++) {
+        var s = str.charCodeAt(i);
+        var h = "" + charHex[s >> 4] + "" + charHex[0xf & s];
+        out += "" + h;
+    }
+    return out;
+}
+function hexToStr (str) {
+    var charHex = new Array('0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f');
+    var stringHex = "0123456789abcdef";
+
+    var out = "";
+    var len = str.length;
+    str = new String(str);
+    str = str.toLowerCase();
+    if ((len % 2) == 1) {
+        str += "0";
+    }
+    for (var i = 0; i < len; i+=2) {
+        var s1 = str.substr(i, 1);
+        var s2 = str.substr(i+1, 1);
+        var index1 = stringHex.indexOf(s1);
+        var index2 = stringHex.indexOf(s2);
+
+        if (index1 == -1 || index2 == -1)
+        {
+            throw HEX_BROKEN;
+        }
+
+        var val = (index1 << 4) | index2;
+
+        out += "" + String.fromCharCode(parseInt(val));
+    }
+    return out;
+}
+function genRandom(n) {
+    var dict = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`!@#$%^&*()_+-=\\{}[]:<>,.?/\"\'\;";
+    var ran='';
+    var size = dict.length;
+    for (var i=0;i<n;i++) {
+        ran = ran + dict.substr(Math.floor(Math.random()*size),1);
+    }
+    return ran;
+}
+
 function lightUpdate () {
 
 } // lightUpdate
@@ -311,14 +459,23 @@ socket.get = function(type, item) {
     log('n', 'd', _data[type][item]);
 };
 socket.aes = function(str){
-    var secret = encryption(str, 'MtKKLowsPeak4095', 'ConnectingPeople', 'hex');
+    var secret = encryption(str, aesKey, aesIv, 'hex');
 
     if (secret) {
         _stage = 'aes';
-        log('n', 's', 'Sent encrypted data: '+secret);
+        log('n', 's', 'Sent Aes encrypted data: '+secret);
+        swrite('ae='+secret+RN);
+    }
+};
+socket.tea = function(str){
+    var secret = encryptionTea(str, teaKey);
+
+    if (secret) {
+        _stage = 'tea';
+        log('n', 's', 'Sent Tea encrypted data: '+secret);
         swrite('en='+secret+RN);
     }
-}
+};
 
 log('n', 'i', 'Socket created.');
 socket.on('data', function(data) {
@@ -332,7 +489,14 @@ socket.on('data', function(data) {
 
         log('s', 'i', 'SERVER RESPONSE: '+data.replace(RN, ''));
 
-        if (ps = iss(data, 'en')) { // encrypted data, need decryption process first
+        if (ps = iss(data, 'en')) { // Tea encrypted data, need decryption process first
+            str  = gv(data, ps);
+            data = decryptionTea(str, teaKey);
+
+            if (!data) {
+                return;
+            }
+        } else if (ps = iss(data, 'ae')) { // AES encrypted data, need decryption process first
             str  = gv(data, ps);
             data = decryption(str, aesKey, aesIv, 'hex');
 
@@ -535,8 +699,15 @@ socket.on('data', function(data) {
             }
             resetTime();
         } else if (_stage == 'aes') {
-            _stage = 'ready'
-            str    = decryption(data, 'MtKKLowsPeak4095', 'ConnectingPeople', 'binary');
+            _stage = 'ready';
+            str    = decryption(data, aesKey, aesIv, 'binary');
+
+            if (str) {
+                log('s', 'i', 'Secret came from server: '+str);
+            }
+        } else if (_stage == 'tea') {
+            _stage = 'ready';
+            str    = decryptionTea(data, teaKey);
 
             if (str) {
                 log('s', 'i', 'Secret came from server: '+str);
